@@ -14,6 +14,9 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import utility.Constants;
+import api.Configuration;
+
 
 /**
  * This class offers JUnit testing for the Configuration class.
@@ -40,7 +43,7 @@ public class ConfigurationTest {
 	private byte[] authenticationBytes = null;
 	private int torControlPort = -1;
 	private int torSOCKSProxyPort = -1;
-	private int connectionPoll = -1;
+	private int dispatcherThreadsNumber = -1;
 	private int socketTimeout = -1;
 	private int socketTTL = -1;
 	private int ttlPoll;
@@ -66,7 +69,7 @@ public class ConfigurationTest {
 		torControlPort = random.nextInt();
 		torSOCKSProxyPort = random.nextInt();
 		hiddenServicePort = random.nextInt();
-		connectionPoll = random.nextInt();
+		dispatcherThreadsNumber = random.nextInt();
 		socketTimeout = random.nextInt();
 		socketTTL = random.nextInt();
 		ttlPoll = random.nextInt();
@@ -76,13 +79,13 @@ public class ConfigurationTest {
 		BufferedWriter output = new BufferedWriter(writer);
 
 		System.out.println(Configuration.HiddenServicePort + " " + hiddenServicePort);
-		System.out.println(Configuration.ConnectionPoll + " " + connectionPoll + newline);
+		System.out.println(Configuration.DispatcherThreadsNumber + " " + dispatcherThreadsNumber + newline);
 		System.out.println(Configuration.SocketConnectTimeout + " " + socketTimeout + newline);
 		System.out.println(Configuration.SocketTTL + " " + socketTTL + newline);
 		System.out.println(Configuration.SocketTTLPoll + " " + ttlPoll + newline);
 
 		output.write(Configuration.HiddenServicePort + " " + hiddenServicePort + newline);
-		output.write(Configuration.ConnectionPoll + " " + connectionPoll + newline);
+		output.write(Configuration.DispatcherThreadsNumber + " " + dispatcherThreadsNumber + newline);
 		output.write(Configuration.SocketConnectTimeout + " " + socketTimeout + newline);
 		output.write(Configuration.SocketTTL + " " + socketTTL + newline);
 		output.write(Configuration.SocketTTLPoll + " " + ttlPoll + newline);
@@ -91,7 +94,8 @@ public class ConfigurationTest {
 		output.close();
 
 		// Create the configuration.
-		configuration = new Configuration(file.getCanonicalPath(), Paths.get("").toString(), torControlPort, torSOCKSProxyPort);
+		configuration = new Configuration(file.getCanonicalPath());
+		configuration.setTorConfiguration(Paths.get("").toString(), torControlPort, torSOCKSProxyPort);
 	}
 
 	/**
@@ -105,7 +109,7 @@ public class ConfigurationTest {
 	}
 
 	/**
-	 * Test method for {@link p2p.Configuration#getHiddenServiceDirectory()}.
+	 * Test method for {@link api.Configuration#getHiddenServiceDirectory()}.
 	 *
 	 * Checks whether the configuration read the hidden service directory property correctly.
 	 *
@@ -119,7 +123,7 @@ public class ConfigurationTest {
 	}
 
 	/**
-	 * Test method for {@link p2p.Configuration#getHiddenServicePort()}.
+	 * Test method for {@link api.Configuration#getHiddenServicePort()}.
 	 *
 	 * Checks whether the configuration read the hidden service port number property correctly.
 	 *
@@ -132,7 +136,7 @@ public class ConfigurationTest {
 	}
 
 	/**
-	 * Test method for {@link p2p.Configuration#getAuthenticationBytes()}.
+	 * Test method for {@link api.Configuration#getAuthenticationBytes()}.
 	 *
 	 * Checks whether the configuration read the authentication bytes property correctly.
 	 *
@@ -145,7 +149,7 @@ public class ConfigurationTest {
 	}
 
 	/**
-	 * Test method for {@link p2p.Configuration#getTorControlPort()}.
+	 * Test method for {@link api.Configuration#getTorControlPort()}.
 	 *
 	 * Checks whether the configuration read the Tor control port number property correctly.
 	 *
@@ -158,7 +162,7 @@ public class ConfigurationTest {
 	}
 
 	/**
-	 * Test method for {@link p2p.Configuration#getTorSOCKSProxyPort()}.
+	 * Test method for {@link api.Configuration#getTorSOCKSProxyPort()}.
 	 *
 	 * Checks whether the configuration read the SOCKS proxy port number property correctly.
 	 *
@@ -171,20 +175,20 @@ public class ConfigurationTest {
 	}
 
 	/**
-	 * Test method for {@link p2p.Configuration#getConnectionPoll()}.
+	 * Test method for {@link api.Configuration#getConnectionPoll()}.
 	 *
 	 * Checks whether the configuration read the connection poll property correctly.
 	 *
 	 * Fails iff the read property is not equal to the written property.
 	 */
 	@Test
-	public void testGetConnectionPoll() {
-		if (connectionPoll != configuration.getConnectionPoll())
-			fail("Connection poll property does not match: " + connectionPoll + " != " + configuration.getConnectionPoll());
+	public void testGetDispatcherThreadsNumber() {
+		if (dispatcherThreadsNumber != configuration.getDispatcherThreadsNumber())
+			fail("Connection poll property does not match: " + dispatcherThreadsNumber + " != " + configuration.getDispatcherThreadsNumber());
 	}
 
 	/**
-	 * Test method for {@link p2p.Configuration#getSocketTimeout()}.
+	 * Test method for {@link api.Configuration#getSocketTimeout()}.
 	 *
 	 * Checks whether the configuration read the socket timeout property correctly.
 	 *
@@ -197,7 +201,7 @@ public class ConfigurationTest {
 	}
 
 	/**
-	 * Test method for {@link p2p.Configuration#getSocketTTL()}.
+	 * Test method for {@link api.Configuration#getSocketTTL()}.
 	 *
 	 * Checks whether the configuration read the socket TTL property correctly.
 	 *
@@ -210,7 +214,7 @@ public class ConfigurationTest {
 	}
 
 	/**
-	 * Test method for {@link p2p.Configuration#getTTLPoll()}.
+	 * Test method for {@link api.Configuration#getTTLPoll()}.
 	 *
 	 * Checks whether the configuration read the TTL poll property correctly.
 	 *

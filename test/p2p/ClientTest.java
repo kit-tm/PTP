@@ -10,7 +10,11 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import thread.TorManager;
+import api.Client;
+import api.Configuration;
+import callback.ReceiveListener;
+import tor.TorManager;
+import utility.Constants;
 import utility.RNG;
 
 
@@ -56,6 +60,18 @@ public class ClientTest {
 		// Create a random message within the length bounds.
 		message = random.string(minMessageLength, maxMessageLength);
 
+		// Read the configurations.
+		try {
+			configuration1 = new Configuration(Constants.configfile);
+			configuration2 = new Configuration(Constants.configfile);
+		} catch (IllegalArgumentException e) {
+			// If the configuration file is broken, the test is invalid.
+			assertTrue(false);
+		} catch (IOException e) {
+			// If a failure occurred while reading the configuration file, the test is invalid.
+			assertTrue(false);
+		}
+
 		// Create the two TorManagers.
 		manager1 = new TorManager();
 		manager2 = new TorManager();
@@ -76,17 +92,8 @@ public class ClientTest {
 		if (!manager1.ready() || !manager2.ready())
 			assertTrue(false);
 
-		// Read the configurations.
-		try {
-			configuration1 = new Configuration(Constants.configfile, manager1.directory(), manager1.controlport(), manager1.socksport());
-			configuration2 = new Configuration(Constants.configfile, manager2.directory(), manager2.controlport(), manager2.socksport());
-		} catch (IllegalArgumentException e) {
-			// If the configuration file is broken, the test is invalid.
-			assertTrue(false);
-		} catch (IOException e) {
-			// If a failure occured while reading the configuration file, the test is invalid.
-			assertTrue(false);
-		}
+		configuration1.setTorConfiguration(manager1.directory(), manager1.controlport(), manager1.socksport());
+		configuration2.setTorConfiguration(manager2.directory(), manager2.controlport(), manager2.socksport());
 	}
 
 	/**

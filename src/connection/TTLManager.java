@@ -1,4 +1,4 @@
-package thread;
+package connection;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -7,8 +7,10 @@ import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import p2p.Constants;
-import p2p.Identifier;
+import callback.ExpireListener;
+import api.Identifier;
+import thread.Suspendable;
+import utility.Constants;
 
 
 /**
@@ -18,25 +20,6 @@ import p2p.Identifier;
  *
  */
 public class TTLManager extends Suspendable {
-
-
-	/**
-	 * A listener that will be notified of connections with expired TTL. Used by the API wrapper to automatically disconnect connections.
-	 *
-	 * @author Simeon Andreev
-	 *
-	 */
-	public static interface Listener {
-
-		/**
-		 * Notifies this listener of a connections expired TTL.
-		 *
-		 * @param identifier The hidden service identifier whos connections TTL expired.
-		 * @throws IOException Propagates any IOException the API received while disconnecting a hidden service identifier.
-		 */
-		public void expired(Identifier identifier) throws IOException;
-
-	}
 
 
 	/**
@@ -56,7 +39,7 @@ public class TTLManager extends Suspendable {
 	/** The logger for this class. */
 	private final Logger logger = Logger.getLogger(Constants.managerlogger);
 	/** The client whos connections should be automatically closed. */
-	private final Listener listener;
+	private final ExpireListener listener;
 	/** The mapping from identifiers to TTL. */
 	private final HashMap<Identifier, Timeout> map = new HashMap<Identifier, Timeout>();
 	/** The interval in milliseconds at which the socket TTLs are updated. */
@@ -69,7 +52,7 @@ public class TTLManager extends Suspendable {
 	 * @param listener The listener that should be notified of expired connection TTLs.
 	 * @param step The interval in milliseconds at which the socket TTLs are updated.
 	 */
-	public TTLManager(Listener listener, int step) {
+	public TTLManager(ExpireListener listener, int step) {
 		this.listener = listener;
 		this.step = step;
 		logger.log(Level.INFO, "TTLManager object created.");

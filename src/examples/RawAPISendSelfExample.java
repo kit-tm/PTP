@@ -3,11 +3,11 @@ package examples;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import p2p.Client;
-import p2p.Configuration;
-import p2p.Constants;
-import p2p.ReceiveListener;
-import thread.TorManager;
+import api.Client;
+import api.Configuration;
+import callback.ReceiveListener;
+import tor.TorManager;
+import utility.Constants;
 
 
 /**
@@ -36,7 +36,8 @@ public class RawAPISendSelfExample {
 			}
 		}
 
-		final Configuration configuration = new Configuration(Constants.configfile, "./config", manager.controlport(), manager.socksport());
+		final Configuration configuration = new Configuration(Constants.configfile);
+		configuration.setTorConfiguration( "./config", manager.controlport(), manager.socksport());
 		Client client = new Client(configuration);
 		client.listener(new ReceiveListener() {
 

@@ -13,9 +13,11 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import p2p.Identifier;
-import p2p.Message;
-import p2p.SendListener;
+import api.Identifier;
+import api.Message;
+import callback.DispatchListener;
+import callback.SendListener;
+import dispatch.MessageDispatcher;
 
 
 /**
@@ -33,7 +35,7 @@ public class MessageDispatcherTest {
 	 * @author Simeon Andreev
 	 *
 	 */
-	private static class Client implements MessageDispatcher.Listener {
+	private static class Client extends DispatchListener {
 
 		/** An atomic counter indicating the number of dispatched messages. */
 		public final AtomicInteger counter = new AtomicInteger(0);
@@ -77,9 +79,7 @@ public class MessageDispatcherTest {
 	};
 
 	/** The started message dispatcher. */
-	private MessageDispatcher dispatcher1;
-	/** The stopped message dispatcher. */
-	private MessageDispatcher dispatcher2;
+	private MessageDispatcher dispatcher;
 	/** The dummy client. */
 	private Client client;
 	/** A RNG for message identifiers. */
@@ -90,13 +90,9 @@ public class MessageDispatcherTest {
 	 */
 	@Before
 	public void setUp() {
-		final int poll = 250;
 		client = new Client();
-		dispatcher1 = new MessageDispatcher(client, poll);
-		dispatcher2 = new MessageDispatcher(client, poll);
+		dispatcher = new MessageDispatcher(client, 2);
 		random = new Random();
-
-		dispatcher1.start();
 
 		// Wait for the dispatcher thread to enter its execution loop.
 		final long start = System.currentTimeMillis();
@@ -114,26 +110,11 @@ public class MessageDispatcherTest {
 	 */
 	@After
 	public void tearDown() {
-		dispatcher1.stop();
-		dispatcher2.stop();
+		dispatcher.stop();
 	}
 
 	/**
-	 * Test method for {@link thread.MessageDispatcher#stop()}.
-	 *
-	 * Checks the state the started dispatcher returns after being stopped.
-	 *
-	 * Fails iff the returned state is running.
-	 */
-	@Test
-	public void testStop() {
-		dispatcher1.stop();
-		if (dispatcher1.running())
-			fail("Started dispatcher returns running state after being stopped.");
-	}
-
-	/**
-	 * Test method for {@link thread.MessageDispatcher#dispatchMessage(p2p.Message, long, p2p.SendListener)}.
+	 * Test method for {@link dispatch.MessageDispatcher#dispatchMessage(api.Message, long, callback.SendListener)}.
 	 */
 	@Test
 	public void testDispatchMessage() {
@@ -145,7 +126,7 @@ public class MessageDispatcherTest {
 
 		// Sent messages with the random identifiers, check if they are all dispatched before a timeout.
 		for (Long i : sent)
-			dispatcher1.enqueueMessage(new Message(i, "", new Identifier("")), 5 * 1000, listener);
+			dispatcher.enqueueMessage(new Message(i, "", new Identifier("")), 5 * 1000, listener);
 
 		// Wait for some time.
 		final long start = System.currentTimeMillis();
@@ -162,17 +143,6 @@ public class MessageDispatcherTest {
 			if (!client.dispatched.contains(i))
 				fail("Dispatched message identifier not contained in received identifiers: " + i);
 		}
-	}
-
-	/**
-	 * Test method for {@link thread.Suspendable#running()}.
-	 */
-	@Test
-	public void testRunning() {
-		if (!dispatcher1.running())
-			fail("The started dispatcher returns non-running state.");
-		if (dispatcher2.running())
-			fail("The stopped dispatcher returns a running state.");
 	}
 
 }

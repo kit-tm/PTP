@@ -1,6 +1,6 @@
 package examples;
 
-import p2p.Constants;
+import utility.Constants;
 
 
 /**

@@ -1,4 +1,4 @@
-package p2p;
+package api;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -12,12 +12,14 @@ import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
-import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import thread.ServerWaiter;
+import utility.Constants;
+import callback.ReceiveListener;
+import connection.ServerWaiter;
 import net.freehaven.tor.control.TorControlConnection;
 
 
@@ -94,7 +96,7 @@ public class Client {
 	/** The server socket receiving messages. */
 	private final ServerWaiter waiter;
 	/** The open socket connections to Tor hidden services. */
-	private final HashMap<String, Socket> sockets = new HashMap<String, Socket>();
+	private final ConcurrentHashMap<String, Socket> sockets = new ConcurrentHashMap<String, Socket>();
 	/** The hidden service sub-directory of this client. */
 	private String directory = null;
 

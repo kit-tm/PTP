@@ -1,4 +1,4 @@
-package p2p;
+package utility;
 
 
 /**
@@ -97,6 +97,8 @@ public class Constants {
 	public static final String waiterlogger = "threads.Waiter";
 	/** The name of the logger for the socket TTL manager class. */
 	public static final String managerlogger = "threads.TTLManager";
+	/** The name of the logger for the socket TTL manager class. */
+	public static final String dispatcherlogger = "threads.Dispatcher";
 	/** The name of the logger for the Configuration class. */
 	public static final String configlogger = "p2p.Configuration";
 

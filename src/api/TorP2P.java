@@ -1,12 +1,17 @@
-package p2p;
+package api;
 
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import thread.MessageDispatcher;
-import thread.TTLManager;
-import thread.TorManager;
+import callback.DispatchListener;
+import callback.ExpireListener;
+import callback.ReceiveListener;
+import callback.SendListener;
+import connection.TTLManager;
+import dispatch.MessageDispatcher;
+import tor.TorManager;
+import utility.Constants;
 
 
 /**
@@ -61,10 +66,15 @@ public class TorP2P {
 	public TorP2P() throws IllegalArgumentException, IOException {
 		// Create the Tor process manager and start the Tor process.
 		tor = new TorManager();
+
+		// Read the configuration.
+		config = new Configuration(Constants.configfile);
+
+		// Start the Tor process.
 		tor.start();
 
 		// Wait until Tors bootstrapping is complete.
-		// TODO: how to set a parameter for this? the configuration depends on the Tor process to have created the control port file, i.e. we must wait before creating the configuration
+		// TODO: configuration parameters for this
 		final long timeout = 120000;
 		final long poll = 2000;
 		long waited = 0;
@@ -90,16 +100,15 @@ public class TorP2P {
 			throw new IllegalArgumentException("Tor bootstrapping timeout expired!");
 		}
 
-		// Read the configuration.
-		config = new Configuration(Constants.configfile, tor.directory(), tor.controlport(), tor.socksport());
+		// Set the control ports.
+		config.setTorConfiguration(tor.directory(), tor.controlport(), tor.socksport());
 		// Create the client with the read configuration.
 		client = new Client(config);
 		// Create and start the manager with the given TTL.
 		manager = new TTLManager(getTTLManagerListener(), config.getTTLPoll());
 		//manager.start();
 		// Create and start the message dispatcher.
-		dispatcher = new MessageDispatcher(getMessageDispatcherListener(), config.getConnectionPoll());
-		dispatcher.start();
+		dispatcher = new MessageDispatcher(getMessageDispatcherListener(), config.getDispatcherThreadsNumber());
 	}
 
 
@@ -203,8 +212,8 @@ public class TorP2P {
 	 *
 	 * @return The manager listener which closes sockets with no TTL left.
 	 */
-	private TTLManager.Listener getTTLManagerListener() {
-		return new TTLManager.Listener() {
+	private ExpireListener getTTLManagerListener() {
+		return new ExpireListener() {
 
 			/**
 			 * Set the listener to disconnect connections with expired TTL.
@@ -222,11 +231,12 @@ public class TorP2P {
 	}
 
 	/**
+	 * Returns a message dispatch listener that will attempt to send the message to its destination.
 	 *
-	 * @return
+	 * @return The manager listener which attempts sending.
 	 */
-	private MessageDispatcher.Listener getMessageDispatcherListener() {
-		return new MessageDispatcher.Listener() {
+	private DispatchListener getMessageDispatcherListener() {
+		return new DispatchListener() {
 
 			/**
 			 * Attempts to send a message via the raw API client. If the connection was not established and the timeout was not reached,

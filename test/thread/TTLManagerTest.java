@@ -8,7 +8,9 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import p2p.Identifier;
+import callback.ExpireListener;
+import api.Identifier;
+import connection.TTLManager;
 import utility.RNG;
 
 
@@ -27,7 +29,7 @@ public class TTLManagerTest {
 	 * @author Simeon Andreev
 	 *
 	 */
-	private class Client implements TTLManager.Listener {
+	private class Client implements ExpireListener {
 
 		/** An atomic boolean used to check whether an expiration timer has been reached. */
 		public AtomicBoolean disconnected = new AtomicBoolean(false);
@@ -108,7 +110,7 @@ public class TTLManagerTest {
 	}
 
 	/**
-	 * Test method for {@link thread.TTLManager#Remove(java.lang.String)}.
+	 * Test method for {@link connection.TTLManager#Remove(java.lang.String)}.
 	 *
 	 * Removes the identifier from the running TTLManager and checks whether an expire notification is still sent.
 	 *
@@ -136,7 +138,7 @@ public class TTLManagerTest {
 	}
 
 	/**
-	 * Test method for {@link thread.TTLManager#set(java.lang.String, int)}.
+	 * Test method for {@link connection.TTLManager#set(java.lang.String, int)}.
 	 *
 	 * Checks whether an expire notification is sent for the random identifier by the TTLManager.
 	 *

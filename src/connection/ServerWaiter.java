@@ -1,4 +1,4 @@
-package thread;
+package connection;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -7,7 +7,8 @@ import java.net.SocketException;
 import java.util.LinkedList;
 import java.util.logging.Level;
 
-import p2p.ReceiveListener;
+import callback.ReceiveListener;
+import thread.Waiter;
 
 
 /**

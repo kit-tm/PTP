@@ -4,8 +4,8 @@ import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import p2p.Constants;
-import p2p.ReceiveListener;
+import utility.Constants;
+import callback.ReceiveListener;
 
 
 /**

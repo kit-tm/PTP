@@ -1,4 +1,4 @@
-package p2p;
+package api;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -7,9 +7,11 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
+import utility.Constants;
+
 
 /**
- * Holds the P2P over Tor configuration. This includes:
+ * Holds the P2P over Tor configuration. This includes: TODO: update
  * 		* directory of the Tor hidden service
  * 		* port of the Tor hidden service
  * 		* Tor control port
@@ -36,7 +38,7 @@ public class Configuration {
 	public static final String HiddenServicePort = "HiddenServicePort";
 	// TODO: eventually support authentication types
 	//public static final String AuthenticationType = "AuthenticationType";
-	public static final String ConnectionPoll = "ConnectionPoll";
+	public static final String DispatcherThreadsNumber = "DispatcherThreads";
 	public static final String SocketConnectTimeout = "SocketConnectTimeout";
 	public static final String SocketTTL = "SocketTTL";
 	public static final String SocketTTLPoll = "TTLPoll";
@@ -45,20 +47,12 @@ public class Configuration {
 
 	/** The logger configuration file. */
 	private final String loggerConfiguration;
-	/** The path of the working directory. */
-	private final String workingDirectory;
-	/** The path of the Tor hidden service directory. */
-	private final String hiddenServiceDirectory;
 	/** The port on which the hidden service should be available. */
 	private final int hiddenServicePort;
-	/** The port number of the Tor control socket. */
-	private final int torControlPort;
-	/** The port number of the Tor SOCKS proxy. */
-	private final int torSOCKSProxyPort;
 	/** The authentication bytes needed by a control connection to Tor. */
 	private final byte[] authenticationBytes;
-	/** The interval (in milliseconds) at which the API wrapper will attempt a connection to a hidden service identifier */
-	private final int connectionPoll;
+	/** The maximum number of message dispatcher threads. */
+	private final int dispatcherThreadsNumber;
 	/** The timeout (in milliseconds) for a socket connection to a hidden service identifier. */
 	private final int socketTimeout;
 	/** The TTL (in milliseconds) for a socket connection to a hidden service identifier. */
@@ -66,18 +60,24 @@ public class Configuration {
 	/** The interval (in milliseconds) at each the TTL of all sockets is checked. */
 	private final int ttlPoll;
 
+	/** The path of the working directory. */
+	private String workingDirectory;
+	/** The path of the Tor hidden service directory. */
+	private String hiddenServiceDirectory;
+	/** The port number of the Tor control socket. */
+	private int torControlPort;
+	/** The port number of the Tor SOCKS proxy. */
+	private int torSOCKSProxyPort;
+
 
 	/**
 	 * Constructor method. Reads the configuration from a file.
 	 *
 	 * @param configurationFilename The path and name of the configuration file.
-	 * @param portFilename The path and name of the Tor control port output file.
-	 * @param controlPort The Tor control port number.
-	 * @param socksPort The Tor SOCKS proxy port number.
 	 * @throws IllegalArgumentException Throws an IllegalArgumentException if unable to parse or find a value.
 	 * @throws IOException Throws an IOException if unable to read or find the input configuration or control port file.
 	 */
-	public Configuration(String configurationFilename, String workingDirectory, int controlPort, int socksPort) throws IllegalArgumentException, IOException {
+	public Configuration(String configurationFilename) throws IllegalArgumentException, IOException {
 		File configuration = new File(configurationFilename);
 
 		if (!configuration.exists())
@@ -112,9 +112,6 @@ public class Configuration {
 
 		buffer.close();
 
-		torControlPort = controlPort;
-		torSOCKSProxyPort = socksPort;
-
 		// Check if the configuration file contains an entry for the logger configuration.
 		if (properties.containsKey(LoggerConfigFile)) {
 			loggerConfiguration = properties.get(LoggerConfigFile);
@@ -133,20 +130,13 @@ public class Configuration {
 
 
 		// Set the configuration parameters.
-
-		this.workingDirectory = workingDirectory;
-		logger.info("Set the working directory to: " + this.workingDirectory);
-
-		hiddenServiceDirectory = workingDirectory + File.separator + Constants.hiddenservicedir;
-		logger.info("Set the hidden servide directory to: " + hiddenServiceDirectory);
-
 		hiddenServicePort = parse(properties, HiddenServicePort);
 		logger.info("Read " + HiddenServicePort + " = " + hiddenServicePort);
 
 		authenticationBytes = new byte[0];
 
-		connectionPoll = parse(properties, ConnectionPoll);
-		logger.info("Read " + ConnectionPoll + " = " + connectionPoll);
+		dispatcherThreadsNumber = parse(properties, DispatcherThreadsNumber);
+		logger.info("Read " + DispatcherThreadsNumber + " = " + dispatcherThreadsNumber);
 
 		socketTimeout = parse(properties, SocketConnectTimeout);
 		logger.info("Read " + SocketConnectTimeout + " = " + socketTimeout);
@@ -185,8 +175,8 @@ public class Configuration {
 		sb.append(torControlPort);
 		sb.append("\n");
 
-		sb.append("\tsocket connection timeout = ");
-		sb.append(connectionPoll);
+		sb.append("\tnumber of dispatcher threads = ");
+		sb.append(dispatcherThreadsNumber);
 		sb.append("\n");
 
 		sb.append("\tsocket connection timeout = ");
@@ -209,6 +199,29 @@ public class Configuration {
 
 		return sb.toString();
 	}
+
+
+	/**
+	 * Sets the Tor control and SOCKS port numbers of the configuration.
+	 *
+	 * @param directory The working directory of the Tor process.
+	 * @param controlPort The Tor control port number.
+	 * @param socksPort The Tor SOCKS port number.
+	 */
+	public void setTorConfiguration(String directory, int controlPort, int socksPort) {
+		torControlPort = controlPort;
+		logger.info("Set the Tor control port to: " + torControlPort);
+
+		torSOCKSProxyPort = socksPort;
+		logger.info("Set the Tor SOCKS port to: " + torSOCKSProxyPort);
+
+		workingDirectory = directory;
+		logger.info("Set the working directory to: " + this.workingDirectory);
+
+		hiddenServiceDirectory = workingDirectory + File.separator + Constants.hiddenservicedir;
+		logger.info("Set the hidden servide directory to: " + hiddenServiceDirectory);
+	}
+
 
 	/**
 	 * Returns the TorP2P working directory as specified.
@@ -254,11 +267,11 @@ public class Configuration {
 	public int getTorSOCKSProxyPort() { return torSOCKSProxyPort; }
 
 	/**
-	 * Returns the interval (in milliseconds) at which the API wrapper will attempt a connection to a hidden service identifier.
+	 * Returns the maximum number of message dispatcher threads.
 	 *
 	 * @return The socket connection timeout.
 	 */
-	public int getConnectionPoll() { return connectionPoll; }
+	public int getDispatcherThreadsNumber() { return dispatcherThreadsNumber; }
 
 	/**
 	 * Returns the socket connection timeout (in milliseconds) when connecting to a hidden service identifier.

@@ -1,11 +1,12 @@
-package thread;
+package connection;
 
 import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.logging.Level;
 
-import p2p.Constants;
+import thread.Waiter;
+import utility.Constants;
 
 
 /**

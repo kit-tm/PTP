@@ -10,7 +10,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import p2p.ReceiveListener;
+import callback.ReceiveListener;
+import connection.ServerWaiter;
 
 
 /**
@@ -73,7 +74,7 @@ public class ServerWaiterTest {
 	}
 
 	/**
-	 * Test method for {@link thread.ServerWaiter#set(p2p.ReceiveListener)}.
+	 * Test method for {@link connection.ServerWaiter#set(callback.ReceiveListener)}.
 	 *
 	 * Attempts to send a message via the socket connected to the ServerWaiter and checks whether the message is propagated to a custom listener.
 	 *
@@ -125,7 +126,7 @@ public class ServerWaiterTest {
 	}
 
 	/**
-	 * Test method for {@link thread.ServerWaiter#stop()}.
+	 * Test method for {@link connection.ServerWaiter#stop()}.
 	 *
 	 * Attempts to stop the ServerWaiter and checks whether the socket connected to the ServerWaiter is closed.
 	 *
@@ -151,7 +152,7 @@ public class ServerWaiterTest {
 	}
 
 	/**
-	 * Test method for {@link thread.ServerWaiter#port()}.
+	 * Test method for {@link connection.ServerWaiter#port()}.
 	 *
 	 * Attempts to open a socket connection on the local port of the ServerWaiter.
 	 *

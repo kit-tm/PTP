@@ -6,11 +6,11 @@ import java.io.InputStreamReader;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import p2p.Identifier;
-import p2p.Message;
-import p2p.ReceiveListener;
-import p2p.SendListener;
-import p2p.TorP2P;
+import api.Identifier;
+import api.Message;
+import api.TorP2P;
+import callback.ReceiveListener;
+import callback.SendListener;
 
 
 /**

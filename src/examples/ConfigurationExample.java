@@ -2,8 +2,8 @@ package examples;
 
 import java.io.IOException;
 
-import p2p.Configuration;
-import p2p.Constants;
+import utility.Constants;
+import api.Configuration;
 
 
 /**
@@ -16,7 +16,8 @@ public class ConfigurationExample {
 
 
 	public static void main(String[] args) throws IllegalArgumentException, IOException {
-		Configuration configuration = new Configuration(Constants.configfile, "./config", 9051, 9050);
+		Configuration configuration = new Configuration(Constants.configfile);
+		configuration.setTorConfiguration("./config", 9051, 9050);
 		System.out.println(configuration.toString());
 	}
 

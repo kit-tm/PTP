@@ -2,7 +2,7 @@ package examples;
 
 import java.io.IOException;
 
-import thread.TorManager;
+import tor.TorManager;
 
 
 /**

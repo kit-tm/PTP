@@ -14,7 +14,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import p2p.Constants;
+import tor.TorManager;
+import utility.Constants;
 
 
 /**
@@ -87,7 +88,7 @@ public class TorManagerTest {
 	}
 
 	/**
-	 * Test method for {@link thread.TorManager#stop()}.
+	 * Test method for {@link tor.TorManager#stop()}.
 	 *
 	 * Checks whether the ready TorManager returns a non-running state after being stopped and deletes its working directory.
 	 *
@@ -117,7 +118,7 @@ public class TorManagerTest {
 	}
 
 	/**
-	 * Test method for {@link thread.TorManager#directory()}.
+	 * Test method for {@link tor.TorManager#directory()}.
 	 *
 	 * Checks whether the working directory indicated by the ready TorManager exists.
 	 *
@@ -130,7 +131,7 @@ public class TorManagerTest {
 	}
 
 	/**
-	 * Test method for {@link thread.TorManager#ready()}.
+	 * Test method for {@link tor.TorManager#ready()}.
 	 *
 	 * Checks whether the ready TorManager returns a ready state and if the TorManager returns a non-ready state.
 	 *
@@ -145,7 +146,7 @@ public class TorManagerTest {
 	}
 
 	/**
-	 * Test method for {@link thread.TorManager#controlport()}.
+	 * Test method for {@link tor.TorManager#controlport()}.
 	 *
 	 * Attempts to connect to the control port of the Tor process started by the ready TorManager.
 	 *
@@ -163,7 +164,7 @@ public class TorManagerTest {
 	}
 
 	/**
-	 * Test method for {@link thread.TorManager#socksport()}.
+	 * Test method for {@link tor.TorManager#socksport()}.
 	 *
 	 * Attempts to use the SOCKS proxy of the Tor process (started by the ready TorManager) to connect to a destination address.
 	 *

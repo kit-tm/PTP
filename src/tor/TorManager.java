@@ -1,4 +1,4 @@
-package thread;
+package tor;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -18,7 +18,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import net.freehaven.tor.control.TorControlConnection;
-import p2p.Constants;
+import thread.Suspendable;
+import utility.Constants;
 
 
 /**

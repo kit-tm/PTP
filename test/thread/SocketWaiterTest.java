@@ -11,7 +11,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import p2p.ReceiveListener;
+import callback.ReceiveListener;
+import connection.SocketWaiter;
 import utility.RNG;
 
 
@@ -178,7 +179,7 @@ public class SocketWaiterTest {
 	}
 
 	/**
-	 * Test method for {@link thread.SocketWaiter#stop()}.
+	 * Test method for {@link connection.SocketWaiter#stop()}.
 	 *
 	 * Attempts to stop the SocketWaiter.
 	 *
@@ -198,7 +199,7 @@ public class SocketWaiterTest {
 	}
 
 	/**
-	 * Test method for {@link thread.Waiter#set(p2p.ReceiveListener)}.
+	 * Test method for {@link thread.Waiter#set(callback.ReceiveListener)}.
 	 *
 	 * Sets the current listener of the SocketWaiter to a custom listener and sends a random message.
 	 *
