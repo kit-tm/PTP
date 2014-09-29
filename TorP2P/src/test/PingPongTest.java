@@ -137,9 +137,10 @@ public class PingPongTest {
 		public Holder() {}
 
 
-		public void send() {
-			if (counter.get() < max)
-				client.send(identifier, message + " " + counter.get());
+		public void send(boolean response) {
+			if (counter.get() < max) {
+				client.send(identifier, message + (response ? " " + counter.get() : ""));
+			}
 			counter.incrementAndGet();
 		}
 
@@ -161,7 +162,7 @@ public class PingPongTest {
 					final String message = new String(bytes);
 					System.out.println("Client received message: " + message);
 					if (holder.message == null) holder.message = message;
-					holder.send();
+					holder.send(true);
 				}
 
 			});
@@ -198,7 +199,7 @@ public class PingPongTest {
 					System.out.println("Enter message to send:");
 					holder.message = br.readLine();
 					System.out.println("Sending first message.");
-					holder.send();
+					holder.send(false);
 					break;
 				} else if (line.equals("no"))
 					break;
