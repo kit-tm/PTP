@@ -131,7 +131,7 @@ public class PingPongTest {
 		public int max;
 
 		public AtomicInteger counter = new AtomicInteger();
-		public String message = "";
+		public String message = null;
 
 
 		public Holder() {}
@@ -160,6 +160,7 @@ public class PingPongTest {
 				public void receive(byte[] bytes) {
 					final String message = new String(bytes);
 					System.out.println("Client received message: " + message);
+					if (holder.message == null) holder.message = message;
 					holder.send();
 				}
 

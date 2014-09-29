@@ -4,6 +4,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
@@ -128,8 +130,8 @@ public class Configuration {
 		hiddenServicePort = parse(properties, HiddenServicePort);
 		logger.info("Read " + HiddenServicePort + " = " + hiddenServicePort);
 
-		authenticationBytes = new byte[0];
-				//Files.readAllBytes(FileSystems.getDefault().getPath("C:\\Programme\\Tor Browser\\Data\\Tor\\control_auth_cookie"));
+		authenticationBytes = //new byte[0];
+				Files.readAllBytes(FileSystems.getDefault().getPath("C:\\Programme\\Tor Browser\\Data\\Tor\\control_auth_cookie"));
 
 		//logger.info("Set " + AuthenticationType + " with bytes = " + authenticationBytes);
 
