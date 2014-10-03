@@ -131,15 +131,16 @@ public class PingPongTest {
 		public int max;
 
 		public AtomicInteger counter = new AtomicInteger();
-		public String message = "";
+		public String message = null;
 
 
 		public Holder() {}
 
 
-		public void send() {
-			if (counter.get() < max)
-				client.send(identifier, message + " " + counter.get());
+		public void send(boolean response) {
+			if (counter.get() < max) {
+				client.send(identifier, message + (response ? " " + counter.get() : ""));
+			}
 			counter.incrementAndGet();
 		}
 
@@ -160,7 +161,8 @@ public class PingPongTest {
 				public void receive(byte[] bytes) {
 					final String message = new String(bytes);
 					System.out.println("Client received message: " + message);
-					holder.send();
+					if (holder.message == null) holder.message = message;
+					holder.send(true);
 				}
 
 			});
@@ -197,7 +199,7 @@ public class PingPongTest {
 					System.out.println("Enter message to send:");
 					holder.message = br.readLine();
 					System.out.println("Sending first message.");
-					holder.send();
+					holder.send(false);
 					break;
 				} else if (line.equals("no"))
 					break;
