@@ -19,22 +19,31 @@ public abstract class Waiter implements Runnable {
 	/** The logger for this class. */
 	protected final Logger logger = Logger.getLogger(Constants.waiterlogger);
 	/** The listener that should be notified of received messages on one of the open sockets. */
-	protected final Listener listener;
+	protected Listener listener = new Listener() {
+
+		@Override
+		public void receive(byte[] message) { /* Default behaviour. Do nothing. */ }
+
+	};
 	/** The thread executing the run method of a deriving class, executing blocking calls. */
 	protected final Thread thread;
 
 
 	/**
 	 * Constructor method, to be used only by deriving classes.
-	 *
-	 * @param listener
 	 */
-	protected Waiter(Listener listener) {
-		this.listener = listener;
+	protected Waiter() {
 		thread = new Thread(this);
 		logger.log(Level.INFO, "Waiter object created.");
 	}
 
+
+	/**
+	 * Sets the current listener that should be notified of messages received by a socket connection.
+	 *
+	 * @param listener The new listener.
+	 */
+	public void set(Listener listener) { this.listener = listener; }
 
 	/**
 	 * Start the waiter, executing the run method on the thread.

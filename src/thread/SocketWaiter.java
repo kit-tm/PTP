@@ -6,7 +6,6 @@ import java.net.SocketException;
 import java.util.logging.Level;
 
 import p2p.Constants;
-import p2p.Listener;
 
 
 /**
@@ -26,10 +25,9 @@ public class SocketWaiter extends Waiter {
 	 * Constructor method.
 	 *
 	 * @param socket The socket which this waiter should attend.
-	 * @param listener The listener that should be notified of received messages on the socket.
 	 */
-	public SocketWaiter(Socket socket, Listener listener) {
-		super(listener);
+	public SocketWaiter(Socket socket) {
+		super();
 		this.socket = socket;
 		logger.log(Level.INFO, "ServerWaiter object created.");
 	}

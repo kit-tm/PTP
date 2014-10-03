@@ -7,6 +7,12 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 
+/**
+ * Tests using the Tor SOCKS proxy to send a message to a hidden service identifier.
+ *
+ * @author Simeon Andreev
+ *
+ */
 public class SocketTest {
 
 

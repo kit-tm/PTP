@@ -5,6 +5,12 @@ import java.util.Arrays;
 import net.freehaven.tor.control.TorControlConnection;
 
 
+/**
+ * Tests the JTorCtl API in the context of creating hidden services.
+ *
+ * @author Simeon Andreev
+ *
+ */
 public class JTorCtlTest {
 
 

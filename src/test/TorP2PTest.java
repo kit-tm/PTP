@@ -8,6 +8,12 @@ import p2p.Configuration;
 import p2p.Listener;
 
 
+/**
+ * Tests the raw API by sending a message to the local identifier.
+ *
+ * @author Simeon Andreev
+ *
+ */
 public class TorP2PTest {
 
 
@@ -15,7 +21,8 @@ public class TorP2PTest {
 		final AtomicBoolean received = new AtomicBoolean(false);
 		final String message = "the Message";
 		Configuration configuration = new Configuration("config/p2p.ini");
-		Client client = new Client(configuration, new Listener() {
+		Client client = new Client(configuration);
+		client.listener(new Listener() {
 
 			@Override
 			public void receive(byte[] bytes) {

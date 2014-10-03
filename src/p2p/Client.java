@@ -19,7 +19,12 @@ import net.freehaven.tor.control.TorControlConnection;
 
 
 /**
- *
+ * The raw Tor2P2 API. It provides:
+ * 		* create a local hidden service identifier (opens a local server)
+ * 		* close any connections to the local identifier and close the local server
+ * 		* open a socket connection to a given identifier
+ * 		* close the socket connection to a given identifier
+ * 		* send message to a given identifier
  *
  * @author Simeon Andreev
  *
@@ -96,13 +101,24 @@ public class Client {
 	 *
 	 * @see Configuration
 	 */
-	public Client(Configuration configuration, Listener listener) throws IOException {
+	public Client(Configuration configuration) throws IOException {
 		this.configuration = configuration;
-		waiter = new ServerWaiter(listener, configuration.getHiddenServicePort());
+		waiter = new ServerWaiter(configuration.getHiddenServicePort());
 		waiter.start();
 		logger.log(Level.INFO, "Client object created.");
 	}
 
+
+	/**
+	 * Sets the current listener that should be notified of messages received by a socket connection.
+	 *
+	 * @param listener The new listener.
+	 *
+	 * @see Waiter
+	 */
+	public void listener(Listener listener) {
+		waiter.set(listener);
+	}
 
 	/**
 	 * Closes the server socket and any open receiving socket connections. Will not close connections open for sending.

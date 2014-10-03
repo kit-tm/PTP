@@ -10,6 +10,12 @@ import p2p.Configuration;
 import p2p.Listener;
 
 
+/**
+ * Ping-Pong test application for the the raw API.
+ *
+ * @author Simeon Andreev
+ *
+ */
 public class PingPongTest {
 
 	// TODO: this needs multiple hidden services support, for which the API needs to change
@@ -154,10 +160,6 @@ public class PingPongTest {
 			duration += System.currentTimeMillis() - start;
 		};
 
-		public double RTT() {
-			return (double) duration / (double) sent;
-		}
-
 	}
 
 
@@ -169,7 +171,8 @@ public class PingPongTest {
 			holder.max = 50;
 
 	        final Configuration configuration = new Configuration("config/p2p.ini");
-			client = new Client(configuration, new Listener() {
+			client = new Client(configuration);
+			client.listener(new Listener() {
 
 				@Override
 				public void receive(byte[] bytes) {
@@ -234,10 +237,10 @@ public class PingPongTest {
 			}
 
 			System.out.println("Displaying running time statistics.");
-			System.out.println("\t To create HS         : " + duration + "ms.");
-			System.out.println("\t Wait until reachable : " + available + "ms.");
+			System.out.println("\t To create HS         : " + duration + " ms.");
+			System.out.println("\t Wait until reachable : " + available + " ms.");
 			if (holder.sent > 0)
-				System.out.println("\t RTT                  : " + holder.RTT() + "ms.");
+				System.out.println("\t RTT                  : " + holder.duration / holder.sent + " ms.");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

@@ -28,12 +28,11 @@ public class ServerWaiter extends Waiter {
 	/**
 	 * Constructor method.
 	 *
-	 * @param listener The listener that should be notified of messages received by a socket connection.
 	 * @param port The port number on which the server socket should be opened.
 	 * @throws IOException Thrown if unable to create a server socket on the specified port.
 	 */
-	public ServerWaiter(Listener listener, int port) throws IOException {
-		super(listener);
+	public ServerWaiter(int port) throws IOException {
+		super();
 		logger.log(Level.INFO, "Serveer starting on: " + port);
 		this.server = new ServerSocket(port);
 		logger.log(Level.INFO, "ServerWaiter object created.");
@@ -52,7 +51,8 @@ public class ServerWaiter extends Waiter {
 				logger.log(Level.INFO, "Server thread waiting on a socket connection.");
 				Socket client = server.accept();
 				logger.log(Level.INFO, "Server thread accepted socket connection: " + client.getInetAddress().toString());
-				SocketWaiter waiter = new SocketWaiter(client, listener);
+				SocketWaiter waiter = new SocketWaiter(client);
+				waiter.set(listener);
 				waiter.start();
 				logger.log(Level.INFO, "Server thread adding a waiter for the new socket.");
 				waiters.add(waiter);
@@ -63,6 +63,15 @@ public class ServerWaiter extends Waiter {
 			logger.log(Level.WARNING, "Server thread received an IOException during a server socket operation: " + e.getMessage());
 		}
 		logger.log(Level.INFO, "Server thread exiting run method.");
+	}
+
+	/**
+	 * @see Waiter
+	 */
+	@Override
+	public void set(Listener listener) {
+		this.listener = listener;
+		for (Waiter waiter : waiters) waiter.set(listener);
 	}
 
 	/**
