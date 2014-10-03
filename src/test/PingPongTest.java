@@ -133,6 +133,10 @@ public class PingPongTest {
 		public AtomicInteger counter = new AtomicInteger();
 		public String message = null;
 
+		public long start;
+		public long duration = 0;
+		public int sent = 0;
+
 
 		public Holder() {}
 
@@ -140,8 +144,18 @@ public class PingPongTest {
 		public void send(boolean response) {
 			if (counter.get() < max) {
 				client.send(identifier, message + (response ? " " + counter.get() : ""));
+				start = System.currentTimeMillis();
+				++sent;
 			}
 			counter.incrementAndGet();
+		}
+
+		public void receive() {
+			duration += System.currentTimeMillis() - start;
+		};
+
+		public double RTT() {
+			return (double) duration / (double) sent;
 		}
 
 	}
@@ -162,11 +176,14 @@ public class PingPongTest {
 					final String message = new String(bytes);
 					System.out.println("Client received message: " + message);
 					if (holder.message == null) holder.message = message;
+					else holder.receive();
 					holder.send(true);
 				}
 
 			});
+			long start = System.currentTimeMillis();
 			final String identifier = client.identifier(true);
+			final long duration = System.currentTimeMillis() - start;
 
 			System.out.println("Created hidden service.");
 			System.out.println("Identifier : " + identifier);
@@ -181,6 +198,7 @@ public class PingPongTest {
 
 			System.out.println("Connecting client.");
 			Client.ConnectResponse connect = Client.ConnectResponse.TIMEOUT;
+			start = System.currentTimeMillis();
 			while (connect == Client.ConnectResponse.TIMEOUT || connect == Client.ConnectResponse.FAIL) {
 				try {
 					connect = client.connect(holder.identifier, holder.port);
@@ -189,6 +207,7 @@ public class PingPongTest {
 					System.out.println("Main thread interrupted.");
 				}
 			}
+			final long available = System.currentTimeMillis() - start;
 
 			System.out.println("Connected.");
 			while (true) {
@@ -213,6 +232,12 @@ public class PingPongTest {
 					System.out.println("Main thread interrupted.");
 				}
 			}
+
+			System.out.println("Displaying running time statistics.");
+			System.out.println("\t To create HS         : " + duration + "ms.");
+			System.out.println("\t Wait until reachable : " + available + "ms.");
+			if (holder.sent > 0)
+				System.out.println("\t RTT                  : " + holder.RTT() + "ms.");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
