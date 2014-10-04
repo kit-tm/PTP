@@ -2,6 +2,8 @@ package p2p;
 
 import java.io.IOException;
 
+import thread.TTLManager;
+
 
 /**
  * Wrapper class for the Tor2P2 raw API. Provides automatic socket and configuration management on top of the raw API.
@@ -29,7 +31,13 @@ public class TorP2P {
 	private final Configuration config;
 	/** TODO: write */
 	private final Client client;
-	// TODO: socket closing thread if no send in a timeout value
+	/** TODO: write */
+	private final TTLManager manager;
+
+
+	// TODO: code comments
+	// TODO: add logging
+
 
 	/**
 	 * TODO: write
@@ -40,6 +48,7 @@ public class TorP2P {
 	public TorP2P() throws IllegalArgumentException, IOException {
 		config = new Configuration("config/p2p.ini");
 		client = new Client(config);
+		manager = new TTLManager(client, 1 * 1000 /* TODO: config parameter for this */);
 	}
 
 
@@ -68,7 +77,6 @@ public class TorP2P {
 	 * @see Client
 	 */
 	public SendResponse send(String message, String identifier, int port, long timeout) {
-		// TODO: write comments
 		Client.ConnectResponse connect = Client.ConnectResponse.TIMEOUT;
 		final long connectStart = System.currentTimeMillis();
 		long remaining = timeout;
@@ -82,15 +90,27 @@ public class TorP2P {
 				// Do nothing on interrupts.
 			}
 		}
-		if (connect == Client.ConnectResponse.SUCCESS) {
-			// TODO: add closing task to socket manager thread for the newly opened socket
-		}
+		if (connect == Client.ConnectResponse.SUCCESS)
+			manager.put(identifier);
 
 		Client.SendResponse response = client.send(identifier, message);
 
-		if (response == Client.SendResponse.SUCCESS) return SendResponse.SUCCESS;
+		if (response == Client.SendResponse.SUCCESS) {
+			manager.set(identifier, 15 * 1000 /* TODO: config parameter for this */);
+			return SendResponse.SUCCESS;
+		}
 
 		return SendResponse.FAIL;
+	}
+
+	/**
+	 * TODO: write
+	 *
+	 * @see Client
+	 */
+	public void exit() {
+		client.exit();
+		manager.stop();
 	}
 
 }
