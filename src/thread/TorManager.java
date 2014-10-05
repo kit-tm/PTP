@@ -17,7 +17,14 @@ import p2p.Constants;
 public class TorManager extends Manager {
 
 	/** The parameters for the Tor execution command. */
-	private final String[] parameters = { Constants.torfile, Constants.torrcoption + " " + Constants.torrcfile };
+	private final String[] parameters = {
+		/** The Tor executable file. */
+		Constants.torfile,
+		/** The Tor configuration file option. */
+		Constants.torrcoption,
+		/** The Tor configuration file. */
+		Constants.torrcfile 
+	};
 	/** The managed Tor process. */
 	private Process process = null;
 	/** The thread reading the output of the Tor process. */
@@ -42,7 +49,7 @@ public class TorManager extends Manager {
 
 		try {
 			logger.log(Level.INFO, "Executing Tor.");
-			logger.log(Level.INFO, "Command: " + parameters[0] + " " + parameters[1]);
+			logger.log(Level.INFO, "Command: " + parameters[0] + " " + parameters[1] + " " + parameters[2]);
 			process = Runtime.getRuntime().exec(parameters);
 			output = new Thread(new Runnable() {
 
@@ -57,7 +64,7 @@ public class TorManager extends Manager {
 						while (condition.get()) {
 							logger.log(Level.INFO, "Output thread waiting on Tor output.");
 							String line = input.readLine();
-							logger.log(Level.INFO, "Output thread read Tor output line: " + line);
+							logger.log(Level.INFO, "Output thread read Tor output line:\n" + line);
 							// If we read null we are done with the process output.
 							if (line == null) break;
 						}
@@ -71,7 +78,7 @@ public class TorManager extends Manager {
 				}
 			});
 
-			thread.start();
+			output.start();
 			int result = 0;
 
 			logger.log(Level.INFO, "Tor manager thread entering waiting loop.");

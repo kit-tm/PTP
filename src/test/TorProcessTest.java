@@ -1,5 +1,8 @@
 package test;
 
+import java.io.IOException;
+
+import p2p.Configuration;
 import thread.TorManager;
 
 
@@ -12,13 +15,15 @@ import thread.TorManager;
 public class TorProcessTest {
 
 
-	public static void main(String[] args) throws InterruptedException {
+	public static void main(String[] args) throws InterruptedException, IllegalArgumentException, IOException {
+		@SuppressWarnings("unused")
+		Configuration c = new Configuration("config/p2p.ini");
 		System.out.println("Creating manager.");
 		TorManager tor = new TorManager();
 		System.out.println("Starting Tor.");
 		tor.start();
 		System.out.println("Sleeping.");
-		Thread.sleep(15 * 1000);
+		Thread.sleep(30 * 1000);
 		System.out.println("Stopping Tor.");
 		tor.stop();
 		System.out.println("Done.");
