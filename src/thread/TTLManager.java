@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map.Entry;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import p2p.Client;
@@ -12,16 +12,16 @@ import p2p.Constants;
 
 
 /**
- * TODO: write
+ * A manager for the open connections. Will automatically close connections with TTL below zero.
  *
  * @author Simeon Andreev
  *
  */
-public class TTLManager implements Runnable {
+public class TTLManager extends Manager {
 
 
 	/**
-	 * TODO: write
+	 * Convenience wrapper class for the integer timeout.
 	 *
 	 * @author Simeon Andreev
 	 *
@@ -37,16 +37,10 @@ public class TTLManager implements Runnable {
 
 	/** The logger for this class. */
 	private final Logger logger = Logger.getLogger(Constants.managerlogger);
-	/** TODO: write */
+	/** The client whos connections should be automatically closed. */
 	private final Client client;
-	/** TODO: write */
+	/** The mapping from identifiers to TTL. */
 	private final HashMap<String, Timeout> map = new HashMap<String, Timeout>();
-	/** TODO: write */
-	private final Thread thread;
-	/** TODO: write */
-	private final AtomicBoolean condition = new AtomicBoolean(false);
-	/** TODO: write */
-	private final AtomicBoolean running = new AtomicBoolean(false);
 	/** TODO: write */
 	private final int step;
 
@@ -60,8 +54,7 @@ public class TTLManager implements Runnable {
 	public TTLManager(Client client, int step) {
 		this.client = client;
 		this.step = step;
-		thread = new Thread(this);
-		thread.start();
+		logger.log(Level.INFO, "TTLManager object created.");
 	}
 
 
@@ -74,7 +67,7 @@ public class TTLManager implements Runnable {
 		while (condition.get()) {
 			try {
 				substract();
-				Thread.sleep(2 * 1000 /* TODO: parameter for this */);
+				Thread.sleep(step);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -87,8 +80,9 @@ public class TTLManager implements Runnable {
 	}
 
 	/**
-	 * TODO: write
+	 * @see Manager
 	 */
+	@Override
 	public void stop() {
 		condition.set(false);
 		clear();

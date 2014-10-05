@@ -34,7 +34,7 @@ public class ServerWaiter extends Waiter {
 	public ServerWaiter(int port) throws IOException {
 		super();
 		logger.log(Level.INFO, "Serveer starting on: " + port);
-		this.server = new ServerSocket(port);
+		server = new ServerSocket(port);
 		logger.log(Level.INFO, "ServerWaiter object created.");
 	}
 

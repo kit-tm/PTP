@@ -50,4 +50,11 @@ public class Constants {
 	/** The java logger config file system property name. */
 	public static final String loggerconfig = "java.util.logging.config.file";
 
+	/** The path to and the name of the Tor executable file. */
+	public static final String torfile = "tor/src/or/tor";
+	/** The path to and the name of the Tor configuration file. */
+	public static final String torrcfile = "config/torrc";
+	/** The Tor executable option for a custom input torrc file. */
+	public static final String torrcoption = "-f";
+
 }
