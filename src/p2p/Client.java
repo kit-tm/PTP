@@ -134,7 +134,7 @@ public class Client {
 			logger.log(Level.INFO, "Stopping server waiter.");
 			waiter.stop();
 		} catch (IOException e) {
-			logger.log(Level.INFO, "Received IOException while closing the server socket: " + e.getMessage());
+			logger.log(Level.WARNING, "Received IOException while closing the server socket: " + e.getMessage());
 			return ExitResponse.FAIL;
 		}
 
@@ -208,7 +208,7 @@ public class Client {
 			socket.getOutputStream().write(message.getBytes());
 		} catch (IOException e) {
 			// IOException when getting socket output stream or sending bytes via the stream.
-			logger.log(Level.INFO, "Received an IOException while sending a message to identifier = " + identifier + ": " + e.getMessage());
+			logger.log(Level.WARNING, "Received an IOException while sending a message to identifier = " + identifier + ": " + e.getMessage());
 			return SendResponse.FAIL;
 		}
 
@@ -254,10 +254,10 @@ public class Client {
 			logger.log(Level.INFO, "Opened socket for identifier: " + identifier);
 		} catch (SocketTimeoutException e) {
 			// Socket connection timeout reached.
-			logger.log(Level.INFO, "Timeout reached for connection to identifier: " + identifier);
+			logger.log(Level.WARNING, "Timeout reached for connection to identifier: " + identifier);
 			response = ConnectResponse.TIMEOUT;
 		} catch (IOException e) {
-			logger.log(Level.INFO, "Received an IOException while connecting the socket to identifier = " + identifier + ": " + e.getMessage());
+			logger.log(Level.WARNING, "Received an IOException while connecting the socket to identifier = " + identifier + ": " + e.getMessage());
 			response = ConnectResponse.FAIL;
 		}
 
@@ -290,11 +290,20 @@ public class Client {
 			sockets.remove(identifier);
 		} catch (IOException e) {
 			// Closing the socket failed due to an IOException.
-			logger.log(Level.INFO, "Received an IOException while closing the socket for identifier = " + identifier + ": " + e.getMessage());
+			logger.log(Level.WARNING, "Received an IOException while closing the socket for identifier = " + identifier + ": " + e.getMessage());
 			return DisconnectResponse.FAIL;
 		}
 
 		return DisconnectResponse.SUCCESS;
+	}
+
+	/**
+	 * Returns the local port on which the local hidden service runs.
+	 *
+	 * @return The port of the local hidden service.
+	 */
+	public int localport() {
+		return configuration.getHiddenServicePort();
 	}
 
 	/**

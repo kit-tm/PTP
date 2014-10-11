@@ -128,8 +128,8 @@ public class Configuration {
 		hiddenServicePort = parse(properties, HiddenServicePort);
 		logger.info("Read " + HiddenServicePort + " = " + hiddenServicePort);
 
-		authenticationBytes = new byte[0];
-				//java.nio.file.Files.readAllBytes(java.nio.file.FileSystems.getDefault().getPath("C:\\Programme\\Tor Browser\\Data\\Tor\\control_auth_cookie"));
+		authenticationBytes = //new byte[0];
+				java.nio.file.Files.readAllBytes(java.nio.file.FileSystems.getDefault().getPath("C:\\Programme\\Tor Browser\\Data\\Tor\\control_auth_cookie"));
 
 		//logger.info("Set " + AuthenticationType + " with bytes = " + authenticationBytes);
 
