@@ -44,6 +44,8 @@ public class TorP2P {
 	 *
 	 * @throws IllegalArgumentException
 	 * @throws IOException
+	 *
+	 * @see Client
 	 */
 	public TorP2P() throws IllegalArgumentException, IOException {
 		config = new Configuration("config/p2p.ini");
@@ -55,14 +57,13 @@ public class TorP2P {
 	/**
 	 * TODO: write
 	 *
-	 * @param fresh
 	 * @return
 	 * @throws IOException
 	 *
 	 * @see Client
 	 */
-	public String identifier(boolean fresh) throws IOException {
-		return client.identifier(fresh);
+	public String GetIdentifier() throws IOException {
+		return client.identifier(true);
 	}
 
 	/**
@@ -76,7 +77,7 @@ public class TorP2P {
 	 *
 	 * @see Client
 	 */
-	public SendResponse send(String message, String identifier, int port, long timeout) {
+	public SendResponse SendMessage(String message, String identifier, int port, long timeout) {
 		Client.ConnectResponse connect = Client.ConnectResponse.TIMEOUT;
 		final long connectStart = System.currentTimeMillis();
 		long remaining = timeout;
@@ -106,9 +107,21 @@ public class TorP2P {
 	/**
 	 * TODO: write
 	 *
+	 * @param listener
+	 *
 	 * @see Client
 	 */
-	public void exit() {
+	public void SetListener(Listener listener) {
+		client.listener(listener);
+	}
+
+	/**
+	 * TODO: write
+	 *
+	 * @see Client
+	 */
+	public void Exit() {
+		// TODO: exit after timeout, save a state whether we exited and act accordingly in the other methods.
 		client.exit();
 		manager.stop();
 	}
