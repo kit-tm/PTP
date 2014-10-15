@@ -33,7 +33,7 @@ public class ServerWaiter extends Waiter {
 	 */
 	public ServerWaiter(int port) throws IOException {
 		super();
-		logger.log(Level.INFO, "Serveer starting on: " + port);
+		logger.log(Level.INFO, "Server requested on port: " + port);
 		server = new ServerSocket(port);
 		logger.log(Level.INFO, "ServerWaiter object created.");
 	}
@@ -89,6 +89,17 @@ public class ServerWaiter extends Waiter {
 		logger.log(Level.INFO, "Closing server socket.");
 		server.close();
 		logger.log(Level.INFO, "Server thread stopped.");
+	}
+
+	/**
+	 * Returns the port number on which the server socket is running.
+	 *
+	 * @return The port number on which the server socket is running.
+	 */
+	public int port() {
+		final int port = server.getLocalPort();
+		logger.log(Level.INFO, "Server running on: " + port);
+		return port;
 	}
 
 }

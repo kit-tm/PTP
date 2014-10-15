@@ -60,6 +60,7 @@ public class Configuration {
 	private final int socketTimeout;
 
 
+	// TODO: this needs to read the client-private Tor instances control port file
 	/**
 	 * Constructor method. Reads the configuration from a file.
 	 *

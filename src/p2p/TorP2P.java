@@ -6,7 +6,10 @@ import thread.TTLManager;
 
 
 /**
- * Wrapper class for the Tor2P2 raw API. Provides automatic socket and configuration management on top of the raw API.
+ * Wrapper class for the Tor2P2 raw API. Provides nn top of the raw API:
+ * 		* automatic socket management
+ * 		* sets configuration parameters
+ * 		* starts a private Tor instance
  *
  * @author Simeon Andreev
  *
@@ -35,6 +38,7 @@ public class TorP2P {
 	private final TTLManager manager;
 
 
+	// TODO: start a private Tor instance, pass the control port file to the configuration, propagate execptions, write java-doc for the exceptions
 	/**
 	 * Constructor method.
 	 *
