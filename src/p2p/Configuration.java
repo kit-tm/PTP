@@ -30,9 +30,11 @@ public class Configuration {
 	/** The Symbol used for commented lines in the configuration file. */
 	private static final String comment = "#";
 	/** Configuration file property names. */
+	// TODO: remove unused names
 	private static final String HiddenServiceDirectory = "HiddenServiceDirectory";
 	private static final String HiddenServicePort = "HiddenServicePort";
-	//private static final String AuthenticationType = "AuthenticationType";	// TODO: eventually support authentication types
+	// TODO: eventually support authentication types
+	//private static final String AuthenticationType = "AuthenticationType";
 	private static final String TorControlPort = "TorControlPort";
 	private static final String TorSocksProxyPort = "TorSocksProxyPort";
 	private static final String SocketConnectTimeout = "SocketConnectTimeout";
@@ -46,14 +48,19 @@ public class Configuration {
 
 	/** The logger configuration file. */
 	private final String loggerConfiguration;
+	// TODO: remove hiddenServiceDirectory member
 	/** The directory where Tor should create a hidden service. */
 	private final String hiddenServiceDirectory;
+	// TODO: remove hiddenServicePort member
 	/** The port on which the hidden service should be available. */
 	private final int hiddenServicePort;
+	// TODO: remove authenticationBytes member
 	/** The bytes needed to authenticate a connection to Tors control socket. */
 	private final byte[] authenticationBytes;
+	// TODO: remove torControlPort member
 	/** The port number of the Tor control socket. */
 	private final int torControlPort;
+	// TODO: remove torSocksProxyPort member
 	/** The port number of the Tor socks proxy. */
 	private final int torSocksProxyPort;
 	/** The timeout for a socket connection to a hidden service identifier. */
@@ -113,6 +120,7 @@ public class Configuration {
 		logger = Logger.getLogger(Constants.configlogger);
 		logger.info("Set the logger properties file to: " + loggerConfiguration);
 
+		// TODO: do not check for removed members
 		// Check if all the needed properties are in the configuration file.
 		check(properties, HiddenServiceDirectory);
 		check(properties, HiddenServicePort);
@@ -142,6 +150,8 @@ public class Configuration {
 
 		socketTimeout = parse(properties, SocketConnectTimeout);
 		logger.info("Read " + SocketConnectTimeout + " = " + socketTimeout);
+
+		// TODO: read the Tor control port from a second parameter
 	}
 
 

@@ -1,8 +1,14 @@
 package thread;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.logging.Level;
 
 import p2p.Constants;
@@ -16,25 +22,30 @@ import p2p.Constants;
  */
 public class TorManager extends Manager {
 
-	/** The parameters for the Tor execution command. */
-	private final String[] parameters = {
-		/** The Tor executable file. */
-		Constants.torfile,
-		/** The Tor configuration file option. */
-		Constants.torrcoption,
-		/** The Tor configuration file. */
-		Constants.torrcfile 
-	};
+	/** The Tor working directory path. */
+	private final Path workingDirectoryPath;
+	/** The Tor control port output file. */
+	private final Path controlPortFile;
 	/** The managed Tor process. */
 	private Process process = null;
 	/** The thread reading the output of the Tor process. */
 	private Thread output = null;
 
+
 	/**
 	 * Constructor method.
+	 *
+	 * @throws IOException Propagates any IOException thrown by the temporary directory creation.
 	 */
-	public TorManager() {
+	public TorManager() throws IOException {
 		super();
+		String workingDirectory = System.getProperty(Constants.userdir);
+		SimpleDateFormat formatter = new SimpleDateFormat(Constants.timestampformat);
+		String timestamp = formatter.format(new Date());
+		// Create temp directory for Tor to run in.
+		workingDirectoryPath = Files.createTempDirectory(Paths.get(workingDirectory), timestamp);
+		controlPortFile = Paths.get(workingDirectoryPath.toString(), Constants.portfile);
+		logger.log(Level.INFO, "Created Tor working directory: " + workingDirectoryPath.toString());
 		logger.log(Level.INFO, "TorManager object created.");
 	}
 
@@ -47,9 +58,39 @@ public class TorManager extends Manager {
 		logger.log(Level.INFO, "Tor manager thread started.");
 		running.set(true);
 
+		// TODO: eventually wait for the process to output the control port or state that it was written to a file, if the file is created asynchronously
 		try {
+
+			/** The parameters for the Tor execution command. */
+			final String[] parameters = {
+				/** The Tor executable file. */
+				Constants.torfile,
+				/** The Tor configuration file option. */
+				Constants.torrcoption,
+				/** The Tor configuration file. */
+				Constants.torrcfile,
+				/** The Tor working directory option. */
+				Constants.datadiroption,
+				/** The Tor working directory path. */
+				workingDirectoryPath.toString(),
+				/** The Tor control port output file option. */
+				Constants.ctlportoutoption,
+				/** The Tor control port output file path. */
+				controlPortFile.toString()
+			};
+
 			logger.log(Level.INFO, "Executing Tor.");
-			logger.log(Level.INFO, "Command: " + parameters[0] + " " + parameters[1] + " " + parameters[2]);
+			logger.log(Level.INFO, "Command: "
+										// The Tor binary.
+										+ parameters[0] + " "
+										// The torrc option and path.
+										+ parameters[1] + " " + parameters[2] + " "
+										// The working directory option and path.
+										+ parameters[3] + " " + parameters[4] + " "
+										// The control port output file option and path.
+										+ parameters[5] + " " + parameters[6]
+			);
+
 			process = Runtime.getRuntime().exec(parameters);
 			output = new Thread(new Runnable() {
 
@@ -117,6 +158,26 @@ public class TorManager extends Manager {
 		logger.log(Level.INFO, "Interrupting output thread.");
 		output.interrupt();
 		logger.log(Level.INFO, "Stopped Tor manager thread.");
+
+		logger.log(Level.INFO, "Deleting Tor working directory.");
+		final File directory = workingDirectoryPath.toFile();
+		for (File file : directory.listFiles()) {
+			logger.log(Level.INFO, "Deleting file: " + file.getName());
+			final boolean fileDeleted = file.delete();
+			if (fileDeleted) logger.log(Level.WARNING, "Was unable to delete a file in the Tor working directory: " + file.getName());
+		}
+		final boolean deletedDirectory = directory.delete();
+		if (!deletedDirectory) logger.log(Level.WARNING, "Was unable to delete the Tor working directory: " + workingDirectoryPath.toString());
+		logger.log(Level.INFO, "Deleting Tor working directory done.");
+	}
+
+	/**
+	 * Returns the Tor control port output file.
+	 *
+	 * @return The Tor control port output file.
+	 */
+	public File portfile() {
+		return controlPortFile.toFile();
 	}
 
 }

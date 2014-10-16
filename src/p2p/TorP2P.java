@@ -151,7 +151,6 @@ public class TorP2P {
 	 * @see Client
 	 */
 	public void Exit() {
-		// TODO: exit after timeout, save a state whether we exited and act accordingly in the other methods.
 		// Close the client.
 		client.exit();
 		// Close the manager.
