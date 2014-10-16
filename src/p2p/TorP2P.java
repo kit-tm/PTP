@@ -3,6 +3,7 @@ package p2p;
 import java.io.IOException;
 
 import thread.TTLManager;
+import thread.TorManager;
 
 
 /**
@@ -32,28 +33,33 @@ public class TorP2P {
 
 	/** The configuration of the client. */
 	private final Configuration config;
+	/** The Tor process manager. */
+	private final TorManager tor;
 	/** The raw API client. */
 	private final Client client;
 	/** The manager that closes sockets when their TTL expires. */
 	private final TTLManager manager;
 
 
-	// TODO: start a private Tor instance, pass the control port file to the configuration, propagate execptions, write java-doc for the exceptions
 	/**
 	 * Constructor method.
 	 *
 	 * @throws IllegalArgumentException
-	 * @throws IOException
+	 * @throws IOException Propagates an IOException thrown by the construction of the raw API, the configuraiton, or the Tor process manager.
 	 *
 	 * @see Client
+	 * @see Configuration
+	 * @see TorManager
 	 */
 	public TorP2P() throws IllegalArgumentException, IOException {
+		// Create the Tor process manager.
+		tor = new TorManager();
 		// Read the configuration.
-		config = new Configuration("config/p2p.ini");
+		config = new Configuration(tor.directory(), Constants.configfile);
 		// Create the client with the read configuration.
 		client = new Client(config);
 		// Create the manager with the given TTL.
-		manager = new TTLManager(client, 1 * 1000 /* TODO: config parameter for this */);
+		manager = new TTLManager(client, config.getTTLPoll());
 	}
 
 
@@ -83,7 +89,7 @@ public class TorP2P {
 	 *
 	 * @see Client
 	 */
-	public SendResponse SendMessage(String message, String identifier, int port, long timeout) {
+	public SendResponse SendMessage(String message, String identifier, long timeout) {
 		Client.ConnectResponse connect = Client.ConnectResponse.TIMEOUT;
 		final long connectStart = System.currentTimeMillis();
 		long remaining = timeout;
@@ -96,9 +102,9 @@ public class TorP2P {
 				// If the timeout is reached return with the corresnponding response.
 				if (remaining < 0) return SendResponse.TIMEOUT;
 				// Attempt a connection to the given identifier.
-				connect = client.connect(identifier, port);
+				connect = client.connect(identifier);
 				// Sleep until the next attempt.
-				Thread.sleep(Math.min(/* TODO: config parameter for this*/5 * 1000, remaining));
+				Thread.sleep(Math.min(config.getConnectionPoll(), remaining));
 			} catch (InterruptedException e) {
 				// Do nothing on interrupts.
 			}
@@ -113,7 +119,7 @@ public class TorP2P {
 
 		// If the message was sent successfully, set the TTL of the socket opened for the identifier.
 		if (response == Client.SendResponse.SUCCESS) {
-			manager.set(identifier, 15 * 1000 /* TODO: config parameter for this */);
+			manager.set(identifier, config.getSocketTTL());
 			return SendResponse.SUCCESS;
 		}
 
@@ -146,15 +152,17 @@ public class TorP2P {
 	}
 
 	/**
-	 * Closes the local socket and any open connections. Stops the socket TTL manager.
+	 * Closes the local socket and any open connections. Stops the socket TTL manager and the Tor process manager.
 	 *
 	 * @see Client
 	 */
 	public void Exit() {
 		// Close the client.
 		client.exit();
-		// Close the manager.
+		// Close the socket TTL manager.
 		manager.stop();
+		// Close the Tor process manager.
+		tor.stop();
 	}
 
 }

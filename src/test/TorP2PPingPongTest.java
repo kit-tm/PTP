@@ -30,8 +30,6 @@ public class TorP2PPingPongTest {
 		private final TorP2P client;
 		/** The destination hidden service identifier, where PONG should be sent. */
 		private final String identifier;
-		/** The destination port, where PONG should be sent. */
-		private final int port;
 		/** The maximum number of PING-PONGs. */
 		private final int max;
 
@@ -56,10 +54,9 @@ public class TorP2PPingPongTest {
 		 * @param port The destination port for the PONGs.
 		 * @param max The maximum number of PING-PONGs.
 		 */
-		public MyListener(TorP2P client, String identifier, int port, int max) {
+		public MyListener(TorP2P client, String identifier, int max) {
 			this.client = client;
 			this.identifier = identifier;
-			this.port = port;
 			this.max = max;
 		}
 
@@ -76,7 +73,7 @@ public class TorP2PPingPongTest {
 				// Set the timer start.
 				start = System.currentTimeMillis();
 				// Send the message.
-				client.SendMessage(message + (response ? " " + counter.get() : ""), identifier, port, 1 * 1000);
+				client.SendMessage(message + (response ? " " + counter.get() : ""), identifier, 1 * 1000);
 				++sent;
 			}
 			// Another PING-PONG initiated, increment counter.
@@ -145,13 +142,10 @@ public class TorP2PPingPongTest {
 		// Ask for the destination hidden service identifier.
         System.out.print("Enter hidden service identifier:");
         final String destination = br.readLine();
-        // Ask for the destination port.
-        System.out.print("Enter hidden service port:");
-       	final int port = Integer.valueOf(br.readLine());
 
        	// Connect to the destination hidden service and port by sending a dummy message.
 		System.out.println("Connecting client.");
-		TorP2P.SendResponse response = client.SendMessage("", destination, port, 120 * 1000);
+		TorP2P.SendResponse response = client.SendMessage("", destination, 120 * 1000);
 		// Check if something broke when sending.
 		if (response != TorP2P.SendResponse.SUCCESS)
 			throw new IOException("Could not send greeting message in the given timeout.");
@@ -161,7 +155,7 @@ public class TorP2PPingPongTest {
 		// The maximum number of PING-PONGs.
 		final int max = 50;
 		// Create the listener and set it.
-		final MyListener listener = new MyListener(client, destination, port, max);
+		final MyListener listener = new MyListener(client, destination, max);
 		client.SetListener(listener);
 
 

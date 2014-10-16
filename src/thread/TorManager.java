@@ -23,9 +23,7 @@ import p2p.Constants;
 public class TorManager extends Manager {
 
 	/** The Tor working directory path. */
-	private final Path workingDirectoryPath;
-	/** The Tor control port output file. */
-	private final Path controlPortFile;
+	private final Path workingDirectory;
 	/** The managed Tor process. */
 	private Process process = null;
 	/** The thread reading the output of the Tor process. */
@@ -39,13 +37,12 @@ public class TorManager extends Manager {
 	 */
 	public TorManager() throws IOException {
 		super();
-		String workingDirectory = System.getProperty(Constants.userdir);
+		String currentDirectory = System.getProperty(Constants.userdir);
 		SimpleDateFormat formatter = new SimpleDateFormat(Constants.timestampformat);
 		String timestamp = formatter.format(new Date());
 		// Create temp directory for Tor to run in.
-		workingDirectoryPath = Files.createTempDirectory(Paths.get(workingDirectory), timestamp);
-		controlPortFile = Paths.get(workingDirectoryPath.toString(), Constants.portfile);
-		logger.log(Level.INFO, "Created Tor working directory: " + workingDirectoryPath.toString());
+		workingDirectory = Files.createTempDirectory(Paths.get(currentDirectory), timestamp);
+		logger.log(Level.INFO, "Created Tor working directory: " + workingDirectory.toString());
 		logger.log(Level.INFO, "TorManager object created.");
 	}
 
@@ -72,11 +69,11 @@ public class TorManager extends Manager {
 				/** The Tor working directory option. */
 				Constants.datadiroption,
 				/** The Tor working directory path. */
-				workingDirectoryPath.toString(),
+				workingDirectory.toString(),
 				/** The Tor control port output file option. */
 				Constants.ctlportoutoption,
 				/** The Tor control port output file path. */
-				controlPortFile.toString()
+				Paths.get(workingDirectory.toString(), Constants.portfile).toString()
 			};
 
 			logger.log(Level.INFO, "Executing Tor.");
@@ -160,24 +157,24 @@ public class TorManager extends Manager {
 		logger.log(Level.INFO, "Stopped Tor manager thread.");
 
 		logger.log(Level.INFO, "Deleting Tor working directory.");
-		final File directory = workingDirectoryPath.toFile();
+		final File directory = workingDirectory.toFile();
 		for (File file : directory.listFiles()) {
 			logger.log(Level.INFO, "Deleting file: " + file.getName());
 			final boolean fileDeleted = file.delete();
 			if (fileDeleted) logger.log(Level.WARNING, "Was unable to delete a file in the Tor working directory: " + file.getName());
 		}
 		final boolean deletedDirectory = directory.delete();
-		if (!deletedDirectory) logger.log(Level.WARNING, "Was unable to delete the Tor working directory: " + workingDirectoryPath.toString());
+		if (!deletedDirectory) logger.log(Level.WARNING, "Was unable to delete the Tor working directory: " + workingDirectory.toString());
 		logger.log(Level.INFO, "Deleting Tor working directory done.");
 	}
 
 	/**
-	 * Returns the Tor control port output file.
+	 * Returns the Tor working directory path.
 	 *
-	 * @return The Tor control port output file.
+	 * @return The Tor working directory path.
 	 */
-	public File portfile() {
-		return controlPortFile.toFile();
+	public Path directory() {
+		return workingDirectory;
 	}
 
 }

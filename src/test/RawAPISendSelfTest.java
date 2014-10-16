@@ -1,10 +1,12 @@
 package test;
 
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import p2p.Client;
 import p2p.Configuration;
+import p2p.Constants;
 import p2p.Listener;
 
 
@@ -20,7 +22,7 @@ public class RawAPISendSelfTest {
 	public static void main(String[] args) throws IllegalArgumentException, IOException {
 		final AtomicBoolean received = new AtomicBoolean(false);
 		final String message = "the Message";
-		Configuration configuration = new Configuration("config/p2p.ini");
+		Configuration configuration = new Configuration(Paths.get("config"), Constants.configfile);
 		Client client = new Client(configuration);
 		client.listener(new Listener() {
 
@@ -41,7 +43,7 @@ public class RawAPISendSelfTest {
 		Client.ConnectResponse connect = Client.ConnectResponse.TIMEOUT;
 		while (connect == Client.ConnectResponse.TIMEOUT || connect == Client.ConnectResponse.FAIL) {
 			try {
-				connect = client.connect(identifier, configuration.getHiddenServicePort());
+				connect = client.connect(identifier);
 				Thread.sleep(5 * 1000);
 			} catch (InterruptedException e) {
 				System.out.println("Main thread interrupted.");

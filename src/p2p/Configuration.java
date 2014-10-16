@@ -4,6 +4,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
@@ -30,14 +32,13 @@ public class Configuration {
 	/** The Symbol used for commented lines in the configuration file. */
 	private static final String comment = "#";
 	/** Configuration file property names. */
-	// TODO: remove unused names
-	private static final String HiddenServiceDirectory = "HiddenServiceDirectory";
 	private static final String HiddenServicePort = "HiddenServicePort";
 	// TODO: eventually support authentication types
 	//private static final String AuthenticationType = "AuthenticationType";
-	private static final String TorControlPort = "TorControlPort";
-	private static final String TorSocksProxyPort = "TorSocksProxyPort";
+	private static final String ConnectionPoll = "ConnectionPoll";
 	private static final String SocketConnectTimeout = "SocketConnectTimeout";
+	private static final String SocketTTL = "SocketTTL";
+	private static final String SocketTTLPoll = "TTLPoll";
 	private static final String LoggerConfigFile = "LoggerConfigFile";
 
 
@@ -48,38 +49,41 @@ public class Configuration {
 
 	/** The logger configuration file. */
 	private final String loggerConfiguration;
-	// TODO: remove hiddenServiceDirectory member
-	/** The directory where Tor should create a hidden service. */
+	/** The path of the Tor hidden service directory. */
 	private final String hiddenServiceDirectory;
-	// TODO: remove hiddenServicePort member
 	/** The port on which the hidden service should be available. */
 	private final int hiddenServicePort;
-	// TODO: remove authenticationBytes member
-	/** The bytes needed to authenticate a connection to Tors control socket. */
-	private final byte[] authenticationBytes;
-	// TODO: remove torControlPort member
 	/** The port number of the Tor control socket. */
 	private final int torControlPort;
-	// TODO: remove torSocksProxyPort member
-	/** The port number of the Tor socks proxy. */
-	private final int torSocksProxyPort;
-	/** The timeout for a socket connection to a hidden service identifier. */
+	/** The authentication bytes needed by a control connection to Tor. */
+	private final byte[] authenticationBytes;
+	/** The interval (in milliseconds) at which the API wrapper will attempt a connection to a hidden service identifier */
+	private final int connectionPoll;
+	/** The timeout (in milliseconds) for a socket connection to a hidden service identifier. */
 	private final int socketTimeout;
+	/** The TTL (in milliseconds) for a socket connection to a hidden service identifier. */
+	private final int socketTTL;
+	/** The interval (in milliseconds) at each the TTL of all sockets is checked. */
+	private final int ttlPoll;
 
 
-	// TODO: this needs to read the client-private Tor instances control port file
 	/**
 	 * Constructor method. Reads the configuration from a file.
 	 *
-	 * @param filename The path and name of the file.
-	 * @throws IllegalArgumentException Thrown if unable to parse or find a value.
-	 * @throws IOException Thrown if unable to read or find the input file.
+	 * @param configurationFilename The path and name of the configuration file.
+	 * @param portFilename The path and name of the Tor control port output file.
+	 * @throws IllegalArgumentException Throws an IllegalArgumentException if unable to parse or find a value.
+	 * @throws IOException Throws an IOException if unable to read or find the input configuration or control port file.
 	 */
-	public Configuration(String filename) throws IllegalArgumentException, IOException {
-		File configuration = new File(filename);
+	public Configuration(Path workingDirectory, String configurationFilename) throws IllegalArgumentException, IOException {
+		File configuration = new File(configurationFilename);
+		File port = Paths.get(workingDirectory.toString(), Constants.portfile).toFile();
 
 		if (!configuration.exists())
-			throw new IllegalArgumentException("Configuration file does not exist: " + filename);
+			throw new IllegalArgumentException("Configuration file does not exist: " + configurationFilename);
+
+		if (!port.exists())
+			throw new IllegalArgumentException("Tor control port output file does not exist: " + port);
 
 		FileReader reader = new FileReader(configuration);
 		BufferedReader buffer = new BufferedReader(reader);
@@ -110,48 +114,62 @@ public class Configuration {
 
 		buffer.close();
 
+		reader = new FileReader(port);
+		buffer = new BufferedReader(reader);
+
+		// Read the control port number from the Tor output file.
+		String line = buffer.readLine();
+
+		buffer.close();
+
+		String[] pair = line.split(Constants.portdelimiter);
+
+		if (pair.length != 2)
+			throw new IllegalArgumentException("Tor control port output file must be in the form: *" + Constants.portdelimiter + "port");
+
+		torControlPort = Integer.valueOf(pair[1]);
+
 		// Check if the configuration file contains an entry for the logger configuration.
 		if (properties.containsKey(LoggerConfigFile)) {
 			loggerConfiguration = properties.get(LoggerConfigFile);
 			System.setProperty(Constants.loggerconfig, loggerConfiguration);
 		} else
 			loggerConfiguration = "";
-		// Create the logger AFTER the configuration file has been set.
+		// Create the logger AFTER its configuration file has been set.
 		logger = Logger.getLogger(Constants.configlogger);
 		logger.info("Set the logger properties file to: " + loggerConfiguration);
 
-		// TODO: do not check for removed members
 		// Check if all the needed properties are in the configuration file.
-		check(properties, HiddenServiceDirectory);
 		check(properties, HiddenServicePort);
 		//check(properties, AuthenticationType);
-		check(properties, TorControlPort);
-		check(properties, TorSocksProxyPort);
 		check(properties, SocketConnectTimeout);
+		check(properties, SocketTTL);
+		check(properties, SocketTTLPoll);
 
 		// Set the configuration parameters.
 
-		hiddenServiceDirectory = properties.get(HiddenServiceDirectory);
-		logger.info("Read " + HiddenServiceDirectory + " = " + hiddenServiceDirectory);
+		hiddenServiceDirectory = Paths.get(workingDirectory.toString(), Constants.hiddenservicedir).toString();
+		logger.info("Set the hidden servide directory to: " + hiddenServiceDirectory);
 
 		hiddenServicePort = parse(properties, HiddenServicePort);
 		logger.info("Read " + HiddenServicePort + " = " + hiddenServicePort);
 
-		authenticationBytes = //new byte[0];
-				java.nio.file.Files.readAllBytes(java.nio.file.FileSystems.getDefault().getPath("C:\\Programme\\Tor Browser\\Data\\Tor\\control_auth_cookie"));
+		authenticationBytes = new byte[0];
+		//		java.nio.file.Files.readAllBytes(java.nio.file.FileSystems.getDefault().getPath("C:\\Programme\\Tor Browser\\Data\\Tor\\control_auth_cookie"));
 
 		//logger.info("Set " + AuthenticationType + " with bytes = " + authenticationBytes);
 
-		torControlPort = parse(properties, TorControlPort);
-		logger.info("Read " + TorControlPort + " = " + torControlPort);
-
-		torSocksProxyPort = parse(properties, TorSocksProxyPort);
-		logger.info("Read " + TorSocksProxyPort + " = " + torSocksProxyPort);
+		connectionPoll = parse(properties, ConnectionPoll);
+		logger.info("Read " + ConnectionPoll + " = " + connectionPoll);
 
 		socketTimeout = parse(properties, SocketConnectTimeout);
 		logger.info("Read " + SocketConnectTimeout + " = " + socketTimeout);
 
-		// TODO: read the Tor control port from a second parameter
+		socketTTL = parse(properties, SocketTTL);
+		logger.info("Read " + SocketTTL + " = " + socketTTL);
+
+		ttlPoll = parse(properties, SocketTTLPoll);
+		logger.info("Read " + SocketTTLPoll + " = " + ttlPoll);
 	}
 
 
@@ -165,7 +183,7 @@ public class Configuration {
 	public String toString() {
 		StringBuilder sb = new StringBuilder("<Configuration>\n");
 
-		sb.append("\thidden service directiry = ");
+		sb.append("\thidden service directory = ");
 		sb.append(hiddenServiceDirectory);
 		sb.append("\n");
 
@@ -173,20 +191,28 @@ public class Configuration {
 		sb.append(hiddenServicePort);
 		sb.append("\n");
 
-		sb.append("\tauthentication bytes = ");
-		sb.append(new String(authenticationBytes));
-		sb.append("\n");
+		//sb.append("\tauthentication bytes = ");
+		//sb.append(new String(authenticationBytes));
+		//sb.append("\n");
 
 		sb.append("\tTor control port number = ");
 		sb.append(torControlPort);
 		sb.append("\n");
 
-		sb.append("\tTor socks proxy port number = ");
-		sb.append(torSocksProxyPort);
+		sb.append("\tsocket connection timeout = ");
+		sb.append(connectionPoll);
 		sb.append("\n");
 
 		sb.append("\tsocket connection timeout = ");
 		sb.append(socketTimeout);
+		sb.append("\n");
+
+		sb.append("\tsocket connection TTL = ");
+		sb.append(socketTTL);
+		sb.append("\n");
+
+		sb.append("\tTTL poll = ");
+		sb.append(ttlPoll);
 		sb.append("\n");
 
 		sb.append("\tlogger configuration file = ");
@@ -197,7 +223,6 @@ public class Configuration {
 
 		return sb.toString();
 	}
-
 
 	/**
 	 * Returns the Tor hidden service directory as specified.
@@ -229,18 +254,32 @@ public class Configuration {
 	public int getTorControlPort() { return torControlPort; }
 
 	/**
-	 * Returns the Tor socks proxy port as specified.
+	 * Returns the interval (in milliseconds) at which the API wrapper will attempt a connection to a hidden service identifier.
 	 *
-	 * @return The Tor socks proxy port.
+	 * @return The socket connection timeout.
 	 */
-	public int getTorSocksProxyPort() { return torSocksProxyPort; }
+	public int getConnectionPoll() { return connectionPoll; }
 
 	/**
-	 * Returns the socket timeout when connecting to a hidden service identifier.
+	 * Returns the socket connection timeout (in milliseconds) when connecting to a hidden service identifier.
 	 *
 	 * @return The socket connection timeout.
 	 */
 	public int getSocketTimeout() { return socketTimeout; }
+
+	/**
+	 * Returns the socket TTL (in milliseconds) of a connection to a hidden service identifier.
+	 *
+	 * @return The socket TTL of a connection to a hidden service identifier.
+	 */
+	public int getSocketTTL() { return socketTTL; }
+
+	/**
+	 * Returns the interval (in milliseconds) at which the TTL of all sockets is checked.
+	 *
+	 * @return The interval at which the TTL of all sockets is checked.
+	 */
+	public int getTTLPoll() { return ttlPoll; }
 
 
 	/**

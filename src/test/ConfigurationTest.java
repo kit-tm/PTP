@@ -1,6 +1,7 @@
 package test;
 
 import java.io.IOException;
+import java.nio.file.Paths;
 
 import p2p.Configuration;
 import p2p.Constants;
@@ -16,7 +17,7 @@ public class ConfigurationTest {
 
 
 	public static void main(String[] args) throws IllegalArgumentException, IOException {
-		Configuration configuration = new Configuration(Constants.configfile);
+		Configuration configuration = new Configuration(Paths.get("config"), Constants.configfile);
 		System.out.println(configuration.toString());
 	}
 

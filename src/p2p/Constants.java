@@ -20,22 +20,22 @@ package p2p;
 public class Constants {
 
 
-	/* Tor constants */
+	/* Tor general constants */
 
 	/** The name of the Tor hostname file. */
 	public static final String filename = "hostname";
 	/** The name of the Tor private key file. */
 	public static final String prkey = "private_key";
-	/** The Tor configuration file keyword for the hidden service directory property. */
+	/** The Tor configuration keyword for the hidden service directory property. */
 	public static final String hsdirkeyword = "HiddenServiceDir";
-	/** The Tor configuration file keyword for the hidden service port property. */
+	/** The Tor configuration keyword for the hidden service port property. */
 	public static final String hsportkeyword = "HiddenServicePort";
-	/** The Tor configuration option for the working directory property. */
-	public static final String datadiroption = "--DataDirectory";
-	/** The Tor configuration option for the working directory property. */
-	public static final String ctlportoutoption = "--ControlPortWriteToFile";
+	/** The Tor configuration keyword for the SOCKs proxy port property. */
+	public static final String torsocksportkeyword = "TorSocksProxyPort";
 	/** The .onion extension of Tor addresses. */
 	public static final String onion = ".onion";
+	/** The port delimiter in the Tor control port output file. */
+	public static final String portdelimiter = ":";
 
 
 	/* Tor executable constants. */
@@ -48,6 +48,10 @@ public class Constants {
 	public static final String torrcoption = "-f";
 	/** The name of the Tor control port output file. */
 	public static final String portfile = "port.conf";
+	/** The Tor configuration option for the working directory property. */
+	public static final String datadiroption = "--DataDirectory";
+	/** The Tor configuration option for the working directory property. */
+	public static final String ctlportoutoption = "--ControlPortWriteToFile";
 
 
 	/* API constants. */
@@ -56,8 +60,12 @@ public class Constants {
 	public static final int maxlength = 1024;
 	/** The path to and the name of the configuration file. */
 	public static final String configfile = "config/p2p.ini";
+	/** The path to and the name of the dummy Tor control port output file. */
+	public static final String dummyportfile = "config/port.conf";
 	/** The timestamp format used as a prefix for the temporary Tor working directory creation. */
 	public static final String timestampformat = "yyMMddHHmmss";
+	/** The name of the hidden service directory. */
+	public static final String hiddenservicedir = "hidden_service";
 
 
 	/* Logger constants */

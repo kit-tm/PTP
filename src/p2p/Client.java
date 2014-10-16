@@ -9,12 +9,15 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import thread.ServerWaiter;
+import net.freehaven.tor.control.ConfigEntry;
 import net.freehaven.tor.control.TorControlConnection;
 
 
@@ -86,6 +89,7 @@ public class Client {
 
 	/** The parameters of this client. */
 	private final Configuration configuration;
+	private final int torSOCKsPort;
 	/** The server socket receiving messages. */
 	private final ServerWaiter waiter;
 	/** The open socket connections to Tor hidden services. */
@@ -106,6 +110,7 @@ public class Client {
 		// Tell the JVM we want any available port.
 		waiter = new ServerWaiter(Constants.anyport);
 		waiter.start();
+		torSOCKsPort = readTorSocksProxyPort();
 		logger.log(Level.INFO, "Client object created.");
 	}
 
@@ -154,13 +159,13 @@ public class Client {
 	public String identifier(boolean fresh) throws IOException {
 		logger.log(Level.INFO, (fresh ? "Fetching a fresh" : "Attempting to reuse (if present) the") + " identifier.");
 
-		File hostname = new File(configuration.getHiddenServiceDirectory() + File.separator + Constants.filename);
+		File hostname = Paths.get(Constants.hiddenservicedir, Constants.filename).toFile();
 
 		// If a fresh identifier is requested, delete the hidden service directory.
 		if (fresh) {
 			logger.log(Level.INFO, "Deleting hostname file.");
 			File hiddenservice = new File(configuration.getHiddenServiceDirectory());
-			File privatekey = new File(configuration.getHiddenServiceDirectory() + File.separator + Constants.prkey);
+			File privatekey = Paths.get(configuration.getHiddenServiceDirectory(), Constants.prkey).toFile();
 
 			boolean success = hostname.delete();
 			logger.log(Level.INFO, "Deleted hostname file: " + (success ? "yes" : "no"));
@@ -227,8 +232,8 @@ public class Client {
 	 * 			ConnectResponse.SUCCESS if a socket connection is now open for the identifier.
 	 * 			ConnectResponse.TIMEOUT if the socket connection timeout was reached upon opening the connection to the identifier.
 	 */
-	public ConnectResponse connect(String identifier, int port) {
-		logger.log(Level.INFO, "Opening a socket for identifier " + identifier + " on port " + port + ".");
+	public ConnectResponse connect(String identifier) {
+		logger.log(Level.INFO, "Opening a socket for identifier " + identifier + " on port " + configuration.getHiddenServicePort() + ".");
 
 		// Check if a socket is already open to the given identifier.
 		if (sockets.containsKey(identifier)) {
@@ -237,12 +242,12 @@ public class Client {
 		}
 
 		// Create a proxy by using the Tor SOCKS proxy.
-		InetSocketAddress midpoint = new InetSocketAddress(Constants.localhost, configuration.getTorSocksProxyPort());
-		logger.log(Level.INFO, "Creating proxy on " + Constants.localhost + ":" + configuration.getTorSocksProxyPort());
+		InetSocketAddress midpoint = new InetSocketAddress(Constants.localhost, torSOCKsPort);
+		logger.log(Level.INFO, "Creating proxy on " + Constants.localhost + ":" + torSOCKsPort);
 		Proxy proxy = new Proxy(Proxy.Type.SOCKS, midpoint);
 		logger.log(Level.INFO, "Creating a socket using the proxy.");
 		Socket socket = new Socket(proxy);
-		InetSocketAddress destination = new InetSocketAddress(identifier, port);
+		InetSocketAddress destination = new InetSocketAddress(identifier, configuration.getHiddenServicePort());
 
 		ConnectResponse response = ConnectResponse.SUCCESS;
 
@@ -310,7 +315,7 @@ public class Client {
 	/**
 	 * Creates a Tor hidden service by connecting to the Tor control port and invoking JTorCtl.
 	 *
-	 * @throws IOException Thrown when the Tor control socket is not reachable, or if the Tor authentication fails.
+	 * @throws IOException Throws an IOException when the Tor control socket is not reachable, or if the Tor authentication fails.
 	 */
 	private void createHiddenService() throws IOException {
 		logger.log(Level.INFO, "Creating hidden service.");
@@ -339,7 +344,7 @@ public class Client {
 	 *
 	 * @param hostname The file from which the Tor hidden service identifier should be read.
 	 * @return The string identifier representing the Tor hidden service identifier.
-	 * @throws IOException Thrown when unable to read the Tor hidden service hostname file.
+	 * @throws IOException Throws an IOException when unable to read the Tor hidden service hostname file.
 	 */
 	private String readIdentifier(File hostname) throws IOException {
 		logger.log(Level.INFO, "Reading identifier from file: " + hostname);
@@ -355,6 +360,41 @@ public class Client {
 
 		logger.log(Level.INFO, "Read identifier: " + identifier);
 		return identifier;
+	}
+
+	/**
+	 * Reads the Tor SOCKs proxy port number from the Tor properties.
+	 *
+	 * @return The Tor SOCKs proxy port number.
+	 * @throws IllegalArgumentException Throws an IllegalArgumentException if reading the SOCKs proxy port fails
+	 * @throws IOException Throws an IOException when the Tor control socket is not reachable, or if the Tor authentication fails.
+	 */
+	private int readTorSocksProxyPort() throws IllegalArgumentException, IOException {
+		logger.log(Level.INFO, "Opening socket on " + Constants.localhost + ":" + configuration.getTorControlPort() + " to control Tor.");
+		// Connect to the Tor control port.
+		Socket s = new Socket(Constants.localhost, configuration.getTorControlPort());
+		logger.log(Level.INFO, "Fetching JTorCtl connection.");
+		TorControlConnection conn = TorControlConnection.getConnection(s);
+		logger.log(Level.INFO, "Authenticating the connection.");
+		// Authenticate the connection.
+		conn.authenticate(configuration.getAuthenticationBytes());
+
+		logger.log(Level.INFO, "Fetching the Tor SOCKs proxy port number.");
+
+		// Get the values of the Tor SOCKs proxy port number property via JTorCtl.
+		List<ConfigEntry> values = conn.getConf(Constants.torsocksportkeyword);
+
+		//
+		if (values.size() != 1) {
+			logger.log(Level.WARNING, "Read wrong number of values for the Tor SOCKs proxy port number property: " + values.size());
+			throw new IOException("Read wrong number of values for the Tor SOCKs proxy port number property.");
+		}
+
+		final int port = Integer.valueOf(values.get(0).value);
+
+		logger.log(Level.INFO, "Read Tor SOCKs proxy port number: " + port);
+
+		return port;
 	}
 
 }

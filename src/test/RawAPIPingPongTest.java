@@ -3,10 +3,12 @@ package test;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Paths;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import p2p.Client;
 import p2p.Configuration;
+import p2p.Constants;
 import p2p.Listener;
 
 
@@ -22,7 +24,6 @@ public class RawAPIPingPongTest {
 
 		public Client client;
 		public String identifier;
-		public int port;
 		public int max;
 
 		public AtomicInteger counter = new AtomicInteger();
@@ -59,7 +60,7 @@ public class RawAPIPingPongTest {
 			final Holder holder = new Holder();
 			holder.max = 50;
 
-	        final Configuration configuration = new Configuration("config/p2p.ini");
+	        final Configuration configuration = new Configuration(Paths.get("config"), Constants.configfile);
 			client = new Client(configuration);
 			client.listener(new Listener() {
 
@@ -84,8 +85,6 @@ public class RawAPIPingPongTest {
 			BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 	        System.out.print("Enter hidden service identifier:");
 	        holder.identifier = br.readLine();
-	        System.out.print("Enter hidden service port:");
-	        holder.port = Integer.valueOf(br.readLine());
 	        holder.client = client;
 
 			System.out.println("Connecting client.");
@@ -93,7 +92,7 @@ public class RawAPIPingPongTest {
 			start = System.currentTimeMillis();
 			while (connect == Client.ConnectResponse.TIMEOUT || connect == Client.ConnectResponse.FAIL) {
 				try {
-					connect = client.connect(holder.identifier, holder.port);
+					connect = client.connect(holder.identifier);
 					Thread.sleep(5 * 1000);
 				} catch (InterruptedException e) {
 					System.out.println("Main thread interrupted.");
