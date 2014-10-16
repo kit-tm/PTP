@@ -27,6 +27,8 @@ public class Constants {
 	public static final String hsdirkeyword = "HiddenServiceDir";
 	/** The Tor configuration file keyword for the hidden service port property. */
 	public static final String hsportkeyword = "HiddenServicePort";
+	/** The port number which tells the JVM to pick any available port for a server socket. */
+	public static final int anyport = 0;
 	/** The localhost address */
 	public static final String localhost = "127.0.0.1";
 	/** The .onion extension of Tor addresses. */

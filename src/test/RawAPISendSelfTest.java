@@ -14,7 +14,7 @@ import p2p.Listener;
  * @author Simeon Andreev
  *
  */
-public class RawAPITest {
+public class RawAPISendSelfTest {
 
 
 	public static void main(String[] args) throws IllegalArgumentException, IOException {

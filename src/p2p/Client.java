@@ -19,7 +19,7 @@ import net.freehaven.tor.control.TorControlConnection;
 
 
 /**
- * The raw Tor2P2 API. It provides:
+ * The raw Tor2P2 API, which requires a running Tor instance. It provides:
  * 		* create a local hidden service identifier (opens a local server)
  * 		* close any connections to the local identifier and close the local server
  * 		* open a socket connection to a given identifier
@@ -97,13 +97,14 @@ public class Client {
 	 *
 	 * @param configuration The parameters of this client.
 	 * @param listener The listener that should receive notifications upon received messages.
-	 * @throws IOException Throws an IOException if unable to open a server socket on the specified port.
+	 * @throws IOException Throws an IOException if unable to open a server socket on any port.
 	 *
 	 * @see Configuration
 	 */
 	public Client(Configuration configuration) throws IOException {
 		this.configuration = configuration;
-		waiter = new ServerWaiter(configuration.getHiddenServicePort());
+		// Tell the JVM we want any available port.
+		waiter = new ServerWaiter(Constants.anyport);
 		waiter.start();
 		logger.log(Level.INFO, "Client object created.");
 	}
@@ -134,7 +135,7 @@ public class Client {
 			logger.log(Level.INFO, "Stopping server waiter.");
 			waiter.stop();
 		} catch (IOException e) {
-			logger.log(Level.INFO, "Received IOException while closing the server socket: " + e.getMessage());
+			logger.log(Level.WARNING, "Received IOException while closing the server socket: " + e.getMessage());
 			return ExitResponse.FAIL;
 		}
 
@@ -208,7 +209,7 @@ public class Client {
 			socket.getOutputStream().write(message.getBytes());
 		} catch (IOException e) {
 			// IOException when getting socket output stream or sending bytes via the stream.
-			logger.log(Level.INFO, "Received an IOException while sending a message to identifier = " + identifier + ": " + e.getMessage());
+			logger.log(Level.WARNING, "Received an IOException while sending a message to identifier = " + identifier + ": " + e.getMessage());
 			return SendResponse.FAIL;
 		}
 
@@ -254,10 +255,10 @@ public class Client {
 			logger.log(Level.INFO, "Opened socket for identifier: " + identifier);
 		} catch (SocketTimeoutException e) {
 			// Socket connection timeout reached.
-			logger.log(Level.INFO, "Timeout reached for connection to identifier: " + identifier);
+			logger.log(Level.WARNING, "Timeout reached for connection to identifier: " + identifier);
 			response = ConnectResponse.TIMEOUT;
 		} catch (IOException e) {
-			logger.log(Level.INFO, "Received an IOException while connecting the socket to identifier = " + identifier + ": " + e.getMessage());
+			logger.log(Level.WARNING, "Received an IOException while connecting the socket to identifier = " + identifier + ": " + e.getMessage());
 			response = ConnectResponse.FAIL;
 		}
 
@@ -290,11 +291,20 @@ public class Client {
 			sockets.remove(identifier);
 		} catch (IOException e) {
 			// Closing the socket failed due to an IOException.
-			logger.log(Level.INFO, "Received an IOException while closing the socket for identifier = " + identifier + ": " + e.getMessage());
+			logger.log(Level.WARNING, "Received an IOException while closing the socket for identifier = " + identifier + ": " + e.getMessage());
 			return DisconnectResponse.FAIL;
 		}
 
 		return DisconnectResponse.SUCCESS;
+	}
+
+	/**
+	 * Returns the local port number on which the local hidden service runs.
+	 *
+	 * @return The port number of the local hidden service.
+	 */
+	public int localport() {
+		return waiter.port();
 	}
 
 	/**
@@ -313,11 +323,10 @@ public class Client {
 		// Authenticate the connection.
 		conn.authenticate(configuration.getAuthenticationBytes());
 
-		// TODO: this needs to change for multiple applications
 		// Set the properties for the hidden service configuration.
 		String[] properties = new String[] {
 			Constants.hsdirkeyword + " " + configuration.getHiddenServiceDirectory(),
-			Constants.hsportkeyword + " " + configuration.getHiddenServicePort() + " " + Constants.localhost + ":" + configuration.getHiddenServicePort()
+			Constants.hsportkeyword + " " + configuration.getHiddenServicePort() + " " + Constants.localhost + ":" + Constants.anyport
 		};
 		logger.log(Level.INFO, "Setting configuration:\n" + properties[0] + "\n" + properties[1]);
 		conn.setConf(Arrays.asList(properties));

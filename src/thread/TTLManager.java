@@ -28,11 +28,10 @@ public class TTLManager extends Manager {
 	 */
 	private static class Timeout {
 
-		/** TODO: write */
+		/** The TTL left of a socket. */
 		public int timer = 0;
 
 	}
-	// TODO: code comments and logging
 
 
 	/** The logger for this class. */
@@ -41,15 +40,15 @@ public class TTLManager extends Manager {
 	private final Client client;
 	/** The mapping from identifiers to TTL. */
 	private final HashMap<String, Timeout> map = new HashMap<String, Timeout>();
-	/** TODO: write */
+	/** The interval in milliseconds at which the socket TTLs are updated. */
 	private final int step;
 
 
 	/**
-	 * TODO: write
+	 * Constructor method.
 	 *
-	 * @param client
-	 * @param step
+	 * @param client The client whos sockets should be managed.
+	 * @param step The interval in milliseconds at which the socket TTLs are updated.
 	 */
 	public TTLManager(Client client, int step) {
 		this.client = client;
@@ -63,20 +62,22 @@ public class TTLManager extends Manager {
 	 */
 	@Override
 	public void run() {
+		logger.log(Level.INFO, "TTLManager entering execution loop.");
 		running.set(true);
 		while (condition.get()) {
 			try {
+				// Update the socket TTLs.
 				substract();
+				// Sleep until the next update.
 				Thread.sleep(step);
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				logger.log(Level.WARNING, "Received IOException while closing a socket: " + e.getMessage());
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				logger.log(Level.INFO, "TTL manager was interrupted while sleeping: " + e.getMessage());
 			}
 		}
 		running.set(false);
+		logger.log(Level.INFO, "TTLManager exiting execution loop.");
 	}
 
 	/**
@@ -84,72 +85,89 @@ public class TTLManager extends Manager {
 	 */
 	@Override
 	public void stop() {
+		logger.log(Level.INFO, "Stopping TTLManager.");
 		condition.set(false);
 		clear();
 
 		while (running.get()) {
 			try {
+				logger.log(Level.INFO, "Waiting on the manager thread.");
 				thread.join();
+				logger.log(Level.INFO, "Manager thread finished.");
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				logger.log(Level.INFO, "TTL manager was interrupted while waiting for the manager thread: " + e.getMessage());
 			}
 		}
+
+		logger.log(Level.INFO, "Stopped TTLManager.");
 	}
 
 	/**
-	 * TODO: write
+	 * Adds the given identifier to the connections map.
 	 *
-	 * @param identifier
+	 * @param identifier The identifier that should be added.
 	 */
 	public synchronized void put(String identifier) {
+		logger.log(Level.INFO, "Adding identifier to map: " + identifier);
 		map.put(identifier, new Timeout());
 	}
 
 	/**
-	 * TODO: write
+	 * Removes the given identifier from the connections map.
 	 *
-	 * @param identifier
+	 * @param identifier The identifier that should be removed.
 	 */
 	public synchronized void remove(String identifier) {
+		logger.log(Level.INFO, "Removing identifier from map: " + identifier);
 		map.remove(identifier);
 	}
 
 	/**
-	 * TODO: write
+	 * Sets the TTL of the socket of a hidden service identifier.
 	 *
-	 * @param identifier
-	 * @param timer
+	 * @param identifier The identifier of the socket.
+	 * @param timer The TTL in milliseconds.
 	 */
 	public synchronized void set(String identifier, int timer) {
+		logger.log(Level.INFO, "Setting timeout (" + timer + "ms) for identifier: " + identifier);
 		if (!map.containsKey(identifier)) return;
 
 		map.get(identifier).timer = timer;
+		logger.log(Level.INFO, "Timeout set.");
 	}
 
 
 	/**
-	 * TODO: write
+	 * Substracts the amount of milliseconds from the TTLs of open sockets.
 	 *
-	 * @throws IOException
+	 * @throws IOException Propagates any IOException the API received while disconnecting a hidden service identifier.
 	 */
 	private synchronized void substract() throws IOException {
+		logger.log(Level.INFO, "Updating socket TTLs: -" + step);
 		LinkedList<String> closed = new LinkedList<String>();
 
+		// Iterate over the identifiers and substract the step from the socket TTLs.
 		for (Entry<String, Timeout> entry : map.entrySet()) {
 			entry.getValue().timer -= step;
+			// Check if the TTL expired after the substraction.
 			if (entry.getValue().timer >= 0) continue;
 
+			logger.log(Level.INFO, "TTL expired for identifier: " + entry.getKey());
+			// Disconnect the socket.
 			client.disconnect(entry.getKey());
+			// Add the identifier to be removed from the map.
 			closed.add(entry.getKey());
 		}
 
+		logger.log(Level.INFO, "Removing closed sockets from map.");
 		for (String identifier : closed)
 			map.remove(identifier);
+
+		logger.log(Level.INFO, "Update finished.");
 	}
 
 	/**
-	 * TODO: write
+	 * Clears the connections map.
 	 */
 	private synchronized void clear() {
 		map.clear();
