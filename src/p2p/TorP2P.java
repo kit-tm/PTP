@@ -56,8 +56,9 @@ public class TorP2P {
 	 * @see TorManager
 	 */
 	public TorP2P() throws IllegalArgumentException, IOException {
-		// Create the Tor process manager.
+		// Create the Tor process manager and start the Tor process.
 		tor = new TorManager();
+		tor.start();
 
 		// Wait until Tors bootstrapping is complete.
 		// TODO: how to set a parameter for this? the configuration depends on the Tor process to have created the control port file, i.e. we must wait before creating the configuration

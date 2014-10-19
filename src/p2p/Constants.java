@@ -31,7 +31,7 @@ public class Constants {
 	/** The Tor configuration keyword for the hidden service port property. */
 	public static final String hsportkeyword = "HiddenServicePort";
 	/** The Tor configuration keyword for the SOCKs proxy port property. */
-	public static final String torsocksportkeyword = "TorSocksProxyPort";
+	public static final String torsocksportkeyword = "SocksPort";
 	/** The .onion extension of Tor addresses. */
 	public static final String onion = ".onion";
 	/** The port delimiter in the Tor control port output file. */
