@@ -82,7 +82,7 @@ public class TorP2P {
 			throw new IllegalArgumentException("Tor bootstrapping timeout expired.");
 
 		// Read the configuration.
-		config = new Configuration(tor.directory(), Constants.configfile);
+		config = new Configuration(Constants.configfile, tor.directory(), tor.controlport(), tor.socksport());
 		// Create the client with the read configuration.
 		client = new Client(config);
 		// Create the manager with the given TTL.

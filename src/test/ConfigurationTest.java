@@ -17,7 +17,7 @@ public class ConfigurationTest {
 
 
 	public static void main(String[] args) throws IllegalArgumentException, IOException {
-		Configuration configuration = new Configuration(Paths.get("config"), Constants.configfile);
+		Configuration configuration = new Configuration(Constants.configfile, Paths.get("config"), 9051, 9050);
 		System.out.println(configuration.toString());
 	}
 

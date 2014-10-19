@@ -11,6 +11,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import p2p.Constants;
 
@@ -23,6 +25,9 @@ import p2p.Constants;
  */
 public class TorManager extends Manager {
 
+	/** A reglar expression, used to find numbers in a string. */
+	private static final String regex = "-?\\d+";
+
 	/** The Tor working directory path. */
 	private final Path workingDirectory;
 	/** The managed Tor process. */
@@ -31,6 +36,10 @@ public class TorManager extends Manager {
 	private Thread output = null;
 	/** Atomic boolean, true iff Tor bootstrapping is complete. */
 	private AtomicBoolean ready = new AtomicBoolean(false);
+	/** The control port number of the Tor process. */
+	private int torControlPort;
+	/** The SOCKS proxy port number of the Tor process. */
+	private int torSOCKSProxyPort;
 
 
 	/**
@@ -107,9 +116,15 @@ public class TorManager extends Manager {
 							logger.log(Level.INFO, "Output thread read Tor output line:\n" + line);
 							// If we read null we are done with the process output.
 							if (line == null) break;
-							// Otherwise, check if we read that the bootstrapping is complete.
-							if (line.contains(Constants.torbootstrapdone))
+							// If not, check if we read that the bootstrapping is complete.
+							if (line.contains(Constants.bootstrapdone))
 								ready.set(true);
+							// If not, check whether the control port is open.
+							else if (line.contains(Constants.controlportopen))
+								torControlPort = readport(line);
+							// If not, check whether the SOCKS proxy port is open.
+							else if (line.contains(Constants.socksportopen))
+								torSOCKSProxyPort = readport(line);
 						}
 
 						logger.log(Level.INFO, "Output thread closing output stream.");
@@ -190,6 +205,51 @@ public class TorManager extends Manager {
 	 */
 	public boolean ready() {
 		return ready.get();
+	}
+
+	/**
+	 * Returns the control port number of the Tor process.
+	 *
+	 * @return The control port number of the Tor process.
+	 * @throws IllegalArgumentException Throws an IllegalArgumentException if the boostrapping of the Tor process is not yet done.
+	 */
+	public int controlport() {
+		if (!ready.get())
+			throw new IllegalArgumentException("Bootstrapping not done!");
+
+		return torControlPort;
+	}
+
+	/**
+	 * Returns the SOCKS proxy port number of the Tor process.
+	 *
+	 * @return The SOCKS proxy port number of the Tor process.
+	 * @throws IllegalArgumentException Throws an IllegalArgumentException if the boostrapping of the Tor process is not yet done.
+	 */
+	public int socksport() {
+		if (!ready.get())
+			throw new IllegalArgumentException("Bootstrapping not done!");
+
+		return torSOCKSProxyPort;
+	}
+
+
+	/**
+	 * Reads a port number from a Tor logging output line.
+	 *
+	 * @param line The Tor logging line.
+	 * @return The port number contained in the logging line.
+	 */
+	private int readport(String line) {
+		Pattern pattern = Pattern.compile(regex);
+		Matcher matcher = pattern.matcher(line);
+
+		if (!matcher.find())
+			throw new IllegalArgumentException("Port number not found in line: " + line);
+
+		String port = matcher.group();
+
+		return Integer.valueOf(port);
 	}
 
 }

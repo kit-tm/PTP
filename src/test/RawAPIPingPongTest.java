@@ -60,7 +60,7 @@ public class RawAPIPingPongTest {
 			final Holder holder = new Holder();
 			holder.max = 50;
 
-	        final Configuration configuration = new Configuration(Paths.get("config"), Constants.configfile);
+	        final Configuration configuration = new Configuration(Constants.configfile, Paths.get("config"), 9051, 9050);
 			client = new Client(configuration);
 			client.listener(new Listener() {
 

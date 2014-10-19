@@ -55,6 +55,8 @@ public class Configuration {
 	private final int hiddenServicePort;
 	/** The port number of the Tor control socket. */
 	private final int torControlPort;
+	/** The port number of the Tor SOCKS proxy. */
+	private final int torSOCKSProxyPort;
 	/** The authentication bytes needed by a control connection to Tor. */
 	private final byte[] authenticationBytes;
 	/** The interval (in milliseconds) at which the API wrapper will attempt a connection to a hidden service identifier */
@@ -72,10 +74,12 @@ public class Configuration {
 	 *
 	 * @param configurationFilename The path and name of the configuration file.
 	 * @param portFilename The path and name of the Tor control port output file.
+	 * @param controlPort The Tor control port number.
+	 * @param socksPort The Tor SOCKS proxy port number.
 	 * @throws IllegalArgumentException Throws an IllegalArgumentException if unable to parse or find a value.
 	 * @throws IOException Throws an IOException if unable to read or find the input configuration or control port file.
 	 */
-	public Configuration(Path workingDirectory, String configurationFilename) throws IllegalArgumentException, IOException {
+	public Configuration(String configurationFilename, Path workingDirectory,int controlPort, int socksPort) throws IllegalArgumentException, IOException {
 		File configuration = new File(configurationFilename);
 		File port = Paths.get(workingDirectory.toString(), Constants.portfile).toFile();
 
@@ -114,7 +118,7 @@ public class Configuration {
 
 		buffer.close();
 
-		reader = new FileReader(port);
+		/*reader = new FileReader(port);
 		buffer = new BufferedReader(reader);
 
 		// Read the control port number from the Tor output file.
@@ -127,7 +131,9 @@ public class Configuration {
 		if (pair.length != 2)
 			throw new IllegalArgumentException("Tor control port output file must be in the form: *" + Constants.portdelimiter + "port");
 
-		torControlPort = Integer.valueOf(pair[1]);
+		torControlPort = Integer.valueOf(pair[1]);*/
+		torControlPort = controlPort;
+		torSOCKSProxyPort = socksPort;
 
 		// Check if the configuration file contains an entry for the logger configuration.
 		if (properties.containsKey(LoggerConfigFile)) {
@@ -252,6 +258,13 @@ public class Configuration {
 	 * @return The Tor control sockert port.
 	 */
 	public int getTorControlPort() { return torControlPort; }
+
+	/**
+	 * Returns the Tor SOCKS proxy port as specified.
+	 *
+	 * @return The Tor control sockert port.
+	 */
+	public int getTorSOCKSProxyPort() { return torSOCKSProxyPort; }
 
 	/**
 	 * Returns the interval (in milliseconds) at which the API wrapper will attempt a connection to a hidden service identifier.

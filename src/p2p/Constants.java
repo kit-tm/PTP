@@ -30,7 +30,7 @@ public class Constants {
 	public static final String hsdirkeyword = "HiddenServiceDir";
 	/** The Tor configuration keyword for the hidden service port property. */
 	public static final String hsportkeyword = "HiddenServicePort";
-	/** The Tor configuration keyword for the SOCKs proxy port property. */
+	/** The Tor configuration keyword for the SOCKS proxy port property. */
 	public static final String torsocksportkeyword = "SocksPort";
 	/** The .onion extension of Tor addresses. */
 	public static final String onion = ".onion";
@@ -53,7 +53,11 @@ public class Constants {
 	/** The Tor configuration option for the working directory property. */
 	public static final String ctlportoutoption = "--ControlPortWriteToFile";
 	/** A part of the Tor executable log message, logged when the bootstrapping is complete. */
-	public static final String torbootstrapdone = "Bootstrapped 100%";
+	public static final String bootstrapdone = "Bootstrapped 100%";
+	/** A part of the Tor executable log message, logged when the Tor control port is open. */
+	public static final String controlportopen = "Socks listener listening on port";
+	/** A part of the Tor executable log message, logged when the Tor SOCKS proxy port is open. */
+	public static final String socksportopen = "Control listener listening on port";
 
 
 	/* API constants. */

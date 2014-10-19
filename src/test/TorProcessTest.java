@@ -19,7 +19,7 @@ public class TorProcessTest {
 
 	public static void main(String[] args) throws InterruptedException, IllegalArgumentException, IOException {
 		@SuppressWarnings("unused")
-		Configuration c = new Configuration(Paths.get("config"), Constants.configfile);
+		Configuration c = new Configuration(Constants.configfile, Paths.get("config"), 9051, 9050);
 		System.out.println("Creating manager.");
 		TorManager tor = new TorManager();
 		System.out.println("Starting Tor.");

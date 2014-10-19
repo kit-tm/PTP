@@ -12,12 +12,10 @@ import java.net.SocketTimeoutException;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import thread.ServerWaiter;
-import net.freehaven.tor.control.ConfigEntry;
 import net.freehaven.tor.control.TorControlConnection;
 
 
@@ -89,7 +87,6 @@ public class Client {
 
 	/** The parameters of this client. */
 	private final Configuration configuration;
-	private final int torSOCKsPort;
 	/** The server socket receiving messages. */
 	private final ServerWaiter waiter;
 	/** The open socket connections to Tor hidden services. */
@@ -100,7 +97,6 @@ public class Client {
 	 * Constructor method.
 	 *
 	 * @param configuration The parameters of this client.
-	 * @param listener The listener that should receive notifications upon received messages.
 	 * @throws IOException Throws an IOException if unable to open a server socket on any port.
 	 *
 	 * @see Configuration
@@ -110,7 +106,6 @@ public class Client {
 		// Tell the JVM we want any available port.
 		waiter = new ServerWaiter(Constants.anyport);
 		waiter.start();
-		torSOCKsPort = readTorSocksProxyPort();
 		logger.log(Level.INFO, "Client object created.");
 	}
 
@@ -242,8 +237,8 @@ public class Client {
 		}
 
 		// Create a proxy by using the Tor SOCKS proxy.
-		InetSocketAddress midpoint = new InetSocketAddress(Constants.localhost, torSOCKsPort);
-		logger.log(Level.INFO, "Creating proxy on " + Constants.localhost + ":" + torSOCKsPort);
+		InetSocketAddress midpoint = new InetSocketAddress(Constants.localhost, configuration.getTorSOCKSProxyPort());
+		logger.log(Level.INFO, "Creating proxy on " + Constants.localhost + ":" + configuration.getTorSOCKSProxyPort());
 		Proxy proxy = new Proxy(Proxy.Type.SOCKS, midpoint);
 		logger.log(Level.INFO, "Creating a socket using the proxy.");
 		Socket socket = new Socket(proxy);
@@ -363,13 +358,13 @@ public class Client {
 	}
 
 	/**
-	 * Reads the Tor SOCKs proxy port number from the Tor properties.
+	 * Reads the Tor SOCKS proxy port number from the Tor properties.
 	 *
-	 * @return The Tor SOCKs proxy port number.
-	 * @throws IllegalArgumentException Throws an IllegalArgumentException if reading the SOCKs proxy port fails
+	 * @return The Tor SOCKS proxy port number.
+	 * @throws IllegalArgumentException Throws an IllegalArgumentException if reading the SOCKS proxy port fails
 	 * @throws IOException Throws an IOException when the Tor control socket is not reachable, or if the Tor authentication fails.
 	 */
-	private int readTorSocksProxyPort() throws IllegalArgumentException, IOException {
+	/*private int readTorSocksProxyPort() throws IllegalArgumentException, IOException {
 		logger.log(Level.INFO, "Opening socket on " + Constants.localhost + ":" + configuration.getTorControlPort() + " to control Tor.");
 		// Connect to the Tor control port.
 		Socket s = new Socket(Constants.localhost, configuration.getTorControlPort());
@@ -379,22 +374,22 @@ public class Client {
 		// Authenticate the connection.
 		conn.authenticate(configuration.getAuthenticationBytes());
 
-		logger.log(Level.INFO, "Fetching the Tor SOCKs proxy port number.");
+		logger.log(Level.INFO, "Fetching the Tor SOCKS proxy port number.");
 
-		// Get the values of the Tor SOCKs proxy port number property via JTorCtl.
+		// Get the values of the Tor SOCKS proxy port number property via JTorCtl.
 		List<ConfigEntry> values = conn.getConf(Constants.torsocksportkeyword);
 
 		//
 		if (values.size() != 1) {
-			logger.log(Level.WARNING, "Read wrong number of values for the Tor SOCKs proxy port number property: " + values.size());
-			throw new IOException("Read wrong number of values for the Tor SOCKs proxy port number property.");
+			logger.log(Level.WARNING, "Read wrong number of values for the Tor SOCKS proxy port number property: " + values.size());
+			throw new IOException("Read wrong number of values for the Tor SOCKS proxy port number property.");
 		}
 
 		final int port = Integer.valueOf(values.get(0).value);
 
-		logger.log(Level.INFO, "Read Tor SOCKs proxy port number: " + port);
+		logger.log(Level.INFO, "Read Tor SOCKS proxy port number: " + port);
 
 		return port;
-	}
+	}*/
 
 }

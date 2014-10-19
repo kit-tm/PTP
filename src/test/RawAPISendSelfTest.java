@@ -22,7 +22,7 @@ public class RawAPISendSelfTest {
 	public static void main(String[] args) throws IllegalArgumentException, IOException {
 		final AtomicBoolean received = new AtomicBoolean(false);
 		final String message = "the Message";
-		Configuration configuration = new Configuration(Paths.get("config"), Constants.configfile);
+		Configuration configuration = new Configuration(Constants.configfile, Paths.get("config"), 9051, 9050);
 		Client client = new Client(configuration);
 		client.listener(new Listener() {
 
