@@ -55,9 +55,9 @@ public class Constants {
 	/** A part of the Tor executable log message, logged when the bootstrapping is complete. */
 	public static final String bootstrapdone = "Bootstrapped 100%";
 	/** A part of the Tor executable log message, logged when the Tor control port is open. */
-	public static final String controlportopen = "Socks listener listening on port";
+	public static final String controlportopen = "Control listener listening on port";
 	/** A part of the Tor executable log message, logged when the Tor SOCKS proxy port is open. */
-	public static final String socksportopen = "Control listener listening on port";
+	public static final String socksportopen = "Socks listener listening on port";
 
 
 	/* API constants. */

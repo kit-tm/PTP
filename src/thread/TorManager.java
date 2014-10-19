@@ -26,7 +26,7 @@ import p2p.Constants;
 public class TorManager extends Manager {
 
 	/** A reglar expression, used to find numbers in a string. */
-	private static final String regex = "-?\\d+";
+	private static final String regex = "[0-9]+";
 
 	/** The Tor working directory path. */
 	private final Path workingDirectory;
@@ -121,10 +121,10 @@ public class TorManager extends Manager {
 								ready.set(true);
 							// If not, check whether the control port is open.
 							else if (line.contains(Constants.controlportopen))
-								torControlPort = readport(line);
+								torControlPort = readport(Constants.controlportopen, line);
 							// If not, check whether the SOCKS proxy port is open.
 							else if (line.contains(Constants.socksportopen))
-								torSOCKSProxyPort = readport(line);
+								torSOCKSProxyPort = readport(Constants.socksportopen, line);
 						}
 
 						logger.log(Level.INFO, "Output thread closing output stream.");
@@ -237,12 +237,17 @@ public class TorManager extends Manager {
 	/**
 	 * Reads a port number from a Tor logging output line.
 	 *
+	 * @param prefix The prefix of where the actual line (without time-stamp and so on) starts.
 	 * @param line The Tor logging line.
 	 * @return The port number contained in the logging line.
 	 */
-	private int readport(String line) {
+	private int readport(String prefix, String line) {
+		// Get the start of the actual output, without the time, date and so on.
+		int position = line.indexOf(prefix);
+		// Get the output substring.
+		String output = line.substring(position);
 		Pattern pattern = Pattern.compile(regex);
-		Matcher matcher = pattern.matcher(line);
+		Matcher matcher = pattern.matcher(output);
 
 		if (!matcher.find())
 			throw new IllegalArgumentException("Port number not found in line: " + line);
