@@ -138,7 +138,6 @@ public class TorP2PPingPongTest {
 			// Output the created hidden service identifier.
 			System.out.println("Created hidden service.");
 			System.out.println("Identifier : " + identifier);
-			System.out.println("Port       : " + client.GetLocalPort());
 
 			// Create a reader for the console input.
 			BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
