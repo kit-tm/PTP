@@ -249,6 +249,7 @@ public class TorManager extends Manager {
 
 		String port = matcher.group();
 
+		logger.log(Level.INFO, "Read port: " + port + " [" + line + "].");
 		return Integer.valueOf(port);
 	}
 
