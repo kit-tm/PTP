@@ -124,7 +124,7 @@ public class Client {
 	/**
 	 * Closes the server socket and any open receiving socket connections. Will not close connections open for sending.
 	 *
-	 * @return  ExitResponse.FAIL    if an IOException occurred while closing the server socket.
+	 * @return  ExitResponse.FAIL    if an IOException occurred while closing the server socket, or when deleting the hidden service directory.
 	 * 			ExitResponse.SUCCESS if the server socket was closed.
 	 */
 	public ExitResponse exit() {
@@ -139,7 +139,15 @@ public class Client {
 			return ExitResponse.FAIL;
 		}
 
-		logger.log(Level.INFO, "Stopped server waiter.");
+		try {
+			// Delete the hidden service directory.
+			deleteHiddenService();
+		} catch (IOException e) {
+			logger.log(Level.WARNING, "Received IOException while deleting the hidden service directory: " + e.getMessage());
+			return ExitResponse.FAIL;
+		}
+
+		logger.log(Level.INFO, "Stopped server waiter and deleted hidden service directory.");
 		return ExitResponse.SUCCESS;
 	}
 
@@ -154,21 +162,11 @@ public class Client {
 	public String identifier(boolean fresh) throws IOException {
 		logger.log(Level.INFO, (fresh ? "Fetching a fresh" : "Attempting to reuse (if present) the") + " identifier.");
 
-		File hostname = Paths.get(configuration.getHiddenServiceDirectory(), Constants.hostname).toFile();
-
 		// If a fresh identifier is requested, delete the hidden service directory.
-		if (fresh) {
-			logger.log(Level.INFO, "Deleting hostname file.");
-			File hiddenservice = new File(configuration.getHiddenServiceDirectory());
-			File privatekey = Paths.get(configuration.getHiddenServiceDirectory(), Constants.prkey).toFile();
+		if (fresh)
+			deleteHiddenService();
 
-			boolean success = hostname.delete();
-			logger.log(Level.INFO, "Deleted hostname file: " + (success ? "yes" : "no"));
-			success = privatekey.delete();
-			logger.log(Level.INFO, "Deleted private key file: " + (success ? "yes" : "no"));
-			success = hiddenservice.delete();
-			logger.log(Level.INFO, "Deleted hidden service directory: " + (success ? "yes" : "no"));
-		}
+		File hostname = Paths.get(configuration.getHiddenServiceDirectory(), Constants.hostname).toFile();
 
 		// If the Tor hostname file does not exist in the Tor hidden service directory, create a hidden service with JTorCtl.
 		if (fresh || !hostname.exists()) {
@@ -307,6 +305,7 @@ public class Client {
 		return waiter.port();
 	}
 
+
 	/**
 	 * Creates a Tor hidden service by connecting to the Tor control port and invoking JTorCtl.
 	 *
@@ -332,6 +331,25 @@ public class Client {
 		conn.setConf(Arrays.asList(properties));
 
 		logger.log(Level.INFO, "Created hidden service.");
+	}
+
+	/**
+	 * Deletes the hidden service directory.
+	 *
+	 * @throws IOException Propagates any IOException that occured during deletion.
+	 */
+	private void deleteHiddenService() throws IOException {
+		logger.log(Level.INFO, "Deleting hidden service directory.");
+		File hostname = Paths.get(configuration.getHiddenServiceDirectory(), Constants.hostname).toFile();
+		File hiddenservice = new File(configuration.getHiddenServiceDirectory());
+		File privatekey = Paths.get(configuration.getHiddenServiceDirectory(), Constants.prkey).toFile();
+
+		boolean success = hostname.delete();
+		logger.log(Level.INFO, "Deleted hostname file: " + (success ? "yes" : "no"));
+		success = privatekey.delete();
+		logger.log(Level.INFO, "Deleted private key file: " + (success ? "yes" : "no"));
+		success = hiddenservice.delete();
+		logger.log(Level.INFO, "Deleted hidden service directory: " + (success ? "yes" : "no"));
 	}
 
 	/**
