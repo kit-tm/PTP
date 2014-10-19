@@ -326,7 +326,7 @@ public class Client {
 		// Set the properties for the hidden service configuration.
 		String[] properties = new String[] {
 			Constants.hsdirkeyword + " " + configuration.getHiddenServiceDirectory(),
-			Constants.hsportkeyword + " " + configuration.getHiddenServicePort() + " " + Constants.localhost + ":" + Constants.anyport
+			Constants.hsportkeyword + " " + configuration.getHiddenServicePort() + " " + Constants.localhost + ":" + waiter.port()
 		};
 		logger.log(Level.INFO, "Setting configuration:\n" + properties[0] + "\n" + properties[1]);
 		conn.setConf(Arrays.asList(properties));
