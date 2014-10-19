@@ -52,6 +52,8 @@ public class Constants {
 	public static final String datadiroption = "--DataDirectory";
 	/** The Tor configuration option for the working directory property. */
 	public static final String ctlportoutoption = "--ControlPortWriteToFile";
+	/** A part of the Tor executable log message, logged when the bootstrapping is complete. */
+	public static final String torbootstrapdone = "Bootstrapped 100%";
 
 
 	/* API constants. */
@@ -73,6 +75,8 @@ public class Constants {
 	/** The java logger config file system property name. */
 	public static final String loggerconfig = "java.util.logging.config.file";
 
+	/** The name of the logger for the TorP2P class. */
+	public static final String torp2plogger = "p2p.TorP2P";
 	/** The name of the logger for the Client class. */
 	public static final String clientlogger = "p2p.Client";
 	/** The name of the logger for the Waiter class. */

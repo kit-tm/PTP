@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
 import p2p.Constants;
@@ -28,6 +29,8 @@ public class TorManager extends Manager {
 	private Process process = null;
 	/** The thread reading the output of the Tor process. */
 	private Thread output = null;
+	/** Atomic boolean, true iff Tor bootstrapping is complete. */
+	private AtomicBoolean ready = new AtomicBoolean(false);
 
 
 	/**
@@ -55,7 +58,6 @@ public class TorManager extends Manager {
 		logger.log(Level.INFO, "Tor manager thread started.");
 		running.set(true);
 
-		// TODO: eventually wait for the process to output the control port or state that it was written to a file, if the file is created asynchronously
 		try {
 
 			/** The parameters for the Tor execution command. */
@@ -105,6 +107,9 @@ public class TorManager extends Manager {
 							logger.log(Level.INFO, "Output thread read Tor output line:\n" + line);
 							// If we read null we are done with the process output.
 							if (line == null) break;
+							// Otherwise, check if we read that the bootstrapping is complete.
+							if (line.contains(Constants.torbootstrapdone))
+								ready.set(true);
 						}
 
 						logger.log(Level.INFO, "Output thread closing output stream.");
@@ -137,6 +142,7 @@ public class TorManager extends Manager {
 			logger.log(Level.WARNING, "Tor manager thread caught an IOException when starting Tor: " + e.getMessage());
 		}
 
+		ready.set(false);
 		running.set(false);
 		logger.log(Level.INFO, "Tor manager thread exiting.");
 	}
@@ -175,6 +181,15 @@ public class TorManager extends Manager {
 	 */
 	public Path directory() {
 		return workingDirectory;
+	}
+
+	/**
+	 * Returns whether Tors bootstrapping is complete.
+	 *
+	 * @return true iff Tor is running and the bootstrapping is complete.
+	 */
+	public boolean ready() {
+		return ready.get();
 	}
 
 }

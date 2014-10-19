@@ -1,6 +1,8 @@
 package p2p;
 
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import thread.TTLManager;
 import thread.TorManager;
@@ -31,6 +33,8 @@ public class TorP2P {
 	}
 
 
+	/** The logger for this class. */
+	protected final Logger logger = Logger.getLogger(Constants.torp2plogger);
 	/** The configuration of the client. */
 	private final Configuration config;
 	/** The Tor process manager. */
@@ -54,6 +58,28 @@ public class TorP2P {
 	public TorP2P() throws IllegalArgumentException, IOException {
 		// Create the Tor process manager.
 		tor = new TorManager();
+
+		// Wait until Tors bootstrapping is complete.
+		// TODO: how to set a parameter for this? the configuration depends on the Tor process to have created the control port file, i.e. we must wait before creating the configuration
+		final long timeout = 120000;
+		final long poll = 2000;
+		long waited = 0;
+
+		logger.log(Level.INFO, "Waiting for Tors bootstrapping to finish.");
+		while (!tor.ready() && waited < timeout) {
+			try {
+				final long start = System.currentTimeMillis();
+				Thread.sleep(poll);
+				waited += System.currentTimeMillis() - start;
+			} catch (InterruptedException e) {
+				logger.log(Level.INFO, "Waiting interrupted.");
+			}
+		}
+
+		// Check if we reached the timeout without a finished boostrapping.
+		if (!tor.ready())
+			throw new IllegalArgumentException("Tor bootstrapping timeout expired.");
+
 		// Read the configuration.
 		config = new Configuration(tor.directory(), Constants.configfile);
 		// Create the client with the read configuration.
