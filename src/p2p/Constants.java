@@ -23,7 +23,7 @@ public class Constants {
 	/* Tor general constants */
 
 	/** The name of the Tor hostname file. */
-	public static final String filename = "hostname";
+	public static final String hostname = "hostname";
 	/** The name of the Tor private key file. */
 	public static final String prkey = "private_key";
 	/** The Tor configuration keyword for the hidden service directory property. */

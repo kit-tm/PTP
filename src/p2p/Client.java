@@ -154,7 +154,7 @@ public class Client {
 	public String identifier(boolean fresh) throws IOException {
 		logger.log(Level.INFO, (fresh ? "Fetching a fresh" : "Attempting to reuse (if present) the") + " identifier.");
 
-		File hostname = Paths.get(Constants.hiddenservicedir, Constants.filename).toFile();
+		File hostname = Paths.get(configuration.getHiddenServiceDirectory(), Constants.hostname).toFile();
 
 		// If a fresh identifier is requested, delete the hidden service directory.
 		if (fresh) {
