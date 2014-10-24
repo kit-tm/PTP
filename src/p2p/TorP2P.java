@@ -125,9 +125,9 @@ public class TorP2P {
 		while (connect == Client.ConnectResponse.TIMEOUT || connect == Client.ConnectResponse.FAIL) {
 			try {
 				// Set the remaining time until the timeout.
-				remaining -= System.currentTimeMillis() - connectStart;
-				// If the timeout is reached return with the corresnponding response.
-				if (remaining < 0) return SendResponse.TIMEOUT;
+				remaining = System.currentTimeMillis() - connectStart;
+				// If the timeout is reached return with the corresponding response.
+				if (System.currentTimeMillis() - connectStart < 0) return SendResponse.TIMEOUT;
 				// Attempt a connection to the given identifier.
 				connect = client.connect(identifier);
 				// Sleep until the next attempt.
