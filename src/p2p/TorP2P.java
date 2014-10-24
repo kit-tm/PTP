@@ -118,20 +118,20 @@ public class TorP2P {
 	 */
 	public SendResponse SendMessage(String message, String identifier, long timeout) {
 		Client.ConnectResponse connect = Client.ConnectResponse.TIMEOUT;
-		final long connectStart = System.currentTimeMillis();
 		long remaining = timeout;
 
 		// Attempt a connection to the given indentifier at an interval, until the given timeout is reached.
 		while (connect == Client.ConnectResponse.TIMEOUT || connect == Client.ConnectResponse.FAIL) {
 			try {
+				final long start = System.currentTimeMillis();
 				// Set the remaining time until the timeout.
-				remaining = System.currentTimeMillis() - connectStart;
 				// If the timeout is reached return with the corresponding response.
-				if (System.currentTimeMillis() - connectStart < 0) return SendResponse.TIMEOUT;
+				if (remaining < 0) return SendResponse.TIMEOUT;
 				// Attempt a connection to the given identifier.
 				connect = client.connect(identifier);
 				// Sleep until the next attempt.
 				Thread.sleep(Math.min(config.getConnectionPoll(), remaining));
+				remaining -= System.currentTimeMillis() - start;
 			} catch (InterruptedException e) {
 				// Do nothing on interrupts.
 			}
