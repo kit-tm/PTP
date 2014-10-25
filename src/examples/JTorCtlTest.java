@@ -1,4 +1,4 @@
-package test;
+package examples;
 
 import java.net.Socket;
 import java.util.Arrays;
