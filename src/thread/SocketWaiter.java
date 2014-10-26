@@ -75,13 +75,23 @@ public class SocketWaiter extends Waiter {
 	 */
 	public void stop() throws IOException {
 		// Stop the waiter only if its running.
-		if (socket.isClosed()) return;
+		if (!socket.isClosed()) {
+			// Close the socket, so that the waiter exits the execution loop.
+			logger.log(Level.INFO, "Closing the socket input stream.");
+			socket.getInputStream().close();
+			logger.log(Level.INFO, "Closing the socket.");
+			socket.close();
+		}
 
-		// Close the socket, so that the waiter exits the execution loop.
-		logger.log(Level.INFO, "Closing the socket input stream.");
-		socket.getInputStream().close();
-		logger.log(Level.INFO, "Closing the socket.");
-		socket.close();
+		// Wait for the thread to exit.
+		logger.log(Level.INFO, "Waiting on socket thread to exit.");
+		while (thread.isAlive()) {
+			try {
+				thread.join();
+			} catch (InterruptedException e) {
+				// Do nothing.
+			}
+		}
 		logger.log(Level.INFO, "Socket thread stopped.");
 	}
 

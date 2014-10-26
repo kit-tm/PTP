@@ -29,7 +29,7 @@ public class ServerWaiter extends Waiter {
 	 * Constructor method.
 	 *
 	 * @param port The port number on which the server socket should be opened.
-	 * @throws IOException Thrown if unable to create a server socket on the specified port.
+	 * @throws IOException Throws an IOException if unable to create a server socket on the specified port.
 	 */
 	public ServerWaiter(int port) throws IOException {
 		super();
@@ -50,12 +50,7 @@ public class ServerWaiter extends Waiter {
 			while (true) {
 				logger.log(Level.INFO, "Server thread waiting on a socket connection.");
 				Socket client = server.accept();
-				logger.log(Level.INFO, "Server thread accepted socket connection: " + client.getInetAddress().toString());
-				SocketWaiter waiter = new SocketWaiter(client);
-				waiter.set(listener);
-				waiter.start();
-				logger.log(Level.INFO, "Server thread adding a waiter for the new socket.");
-				waiters.add(waiter);
+				add(client);
 			}
 		} catch (SocketException e) {
 			logger.log(Level.WARNING, "Server thread received a SocketException during a server socket operation: " + e.getMessage());
@@ -72,13 +67,14 @@ public class ServerWaiter extends Waiter {
 	public void set(Listener listener) {
 		this.listener = listener;
 		for (Waiter waiter : waiters) waiter.set(listener);
+		logger.log(Level.INFO, "ServerWaiter set the new listener.");
 	}
 
 	/**
 	 * @see Waiter
 	 */
 	@Override
-	public void stop() throws IOException {
+	public synchronized void stop() throws IOException {
 		if (server.isClosed()) return;
 
 		logger.log(Level.INFO, "Server thread stopping the socket threads.");
@@ -100,6 +96,24 @@ public class ServerWaiter extends Waiter {
 		final int port = server.getLocalPort();
 		logger.log(Level.INFO, "Server running on: " + port);
 		return port;
+	}
+
+
+	/**
+	 * Creates a SocketWaiter for a socket connection and adds it to the connections list.
+	 *
+	 * @param client The socket connection that should be added to the connections list.
+	 */
+	private synchronized void add(Socket client) {
+		// Do not accept connections if the server is closed.
+		if (server.isClosed()) return;
+
+		logger.log(Level.INFO, "Server thread accepted socket connection: " + client.getInetAddress().toString());
+		SocketWaiter waiter = new SocketWaiter(client);
+		waiter.set(listener);
+		waiter.start();
+		logger.log(Level.INFO, "Server thread adding a waiter for the new socket.");
+		waiters.add(waiter);
 	}
 
 }

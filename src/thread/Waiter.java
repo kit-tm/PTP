@@ -43,7 +43,10 @@ public abstract class Waiter implements Runnable {
 	 *
 	 * @param listener The new listener.
 	 */
-	public void set(Listener listener) { this.listener = listener; }
+	public void set(Listener listener) {
+		this.listener = listener;
+		logger.log(Level.INFO, "Waiter set the new listener.");
+	}
 
 	/**
 	 * Start the waiter, executing the run method on the thread.

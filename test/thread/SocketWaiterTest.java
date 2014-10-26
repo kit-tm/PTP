@@ -32,7 +32,7 @@ public class SocketWaiterTest {
 	 */
 	private static class Receiver implements Listener {
 
-		/** Atomi boolean used to check whether a message was received yet. */
+		/** An atomic boolean used to check whether a message was received yet. */
 		public AtomicBoolean received = new AtomicBoolean(false);
 		/** The received message. */
 		public String message = null;
@@ -132,6 +132,14 @@ public class SocketWaiterTest {
 		// Accept a socket connection to the server socket.
 		thread = new Thread(sender);
 		thread.start();
+
+		// Wait for the server socket thread to enter its execution loop.
+		try {
+			Thread.sleep(50);
+		} catch (InterruptedException e) {
+			// Sleeping was interrupted. Do nothing.
+		}
+
 		// Create the RNG.
 		random = new Random();
 		// Open a socket connection to the server socket.
