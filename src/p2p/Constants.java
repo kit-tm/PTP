@@ -46,8 +46,6 @@ public class Constants {
 	public static final String torrcfile = "config/torrc";
 	/** The Tor executable option for a custom input torrc file. */
 	public static final String torrcoption = "-f";
-	/** The name of the Tor control port output file. */
-	public static final String portfile = "port.conf";
 	/** The Tor configuration option for the working directory property. */
 	public static final String datadiroption = "--DataDirectory";
 	/** The Tor configuration option for the working directory property. */

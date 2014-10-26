@@ -27,19 +27,22 @@ public class Configuration {
 	/** The logger for this class. */
 	protected final Logger logger;
 
+	// Expose constants for testing.
+
 	/** The delimiter used in the configuration file to separate property keys and values. */
-	private static final String delimiter = " ";
+	public static final String delimiter = " ";
 	/** The Symbol used for commented lines in the configuration file. */
-	private static final String comment = "#";
+	public static final String comment = "#";
+
 	/** Configuration file property names. */
-	private static final String HiddenServicePort = "HiddenServicePort";
+	public static final String HiddenServicePort = "HiddenServicePort";
 	// TODO: eventually support authentication types
-	//private static final String AuthenticationType = "AuthenticationType";
-	private static final String ConnectionPoll = "ConnectionPoll";
-	private static final String SocketConnectTimeout = "SocketConnectTimeout";
-	private static final String SocketTTL = "SocketTTL";
-	private static final String SocketTTLPoll = "TTLPoll";
-	private static final String LoggerConfigFile = "LoggerConfigFile";
+	//public static final String AuthenticationType = "AuthenticationType";
+	public static final String ConnectionPoll = "ConnectionPoll";
+	public static final String SocketConnectTimeout = "SocketConnectTimeout";
+	public static final String SocketTTL = "SocketTTL";
+	public static final String SocketTTLPoll = "TTLPoll";
+	public static final String LoggerConfigFile = "LoggerConfigFile";
 
 
 	/** The authentication property value for no authentication. */
@@ -79,15 +82,11 @@ public class Configuration {
 	 * @throws IllegalArgumentException Throws an IllegalArgumentException if unable to parse or find a value.
 	 * @throws IOException Throws an IOException if unable to read or find the input configuration or control port file.
 	 */
-	public Configuration(String configurationFilename, Path workingDirectory,int controlPort, int socksPort) throws IllegalArgumentException, IOException {
+	public Configuration(String configurationFilename, Path workingDirectory, int controlPort, int socksPort) throws IllegalArgumentException, IOException {
 		File configuration = new File(configurationFilename);
-		File port = Paths.get(workingDirectory.toString(), Constants.portfile).toFile();
 
 		if (!configuration.exists())
 			throw new IllegalArgumentException("Configuration file does not exist: " + configurationFilename);
-
-		if (!port.exists())
-			throw new IllegalArgumentException("Tor control port output file does not exist: " + port);
 
 		FileReader reader = new FileReader(configuration);
 		BufferedReader buffer = new BufferedReader(reader);
@@ -315,7 +314,7 @@ public class Configuration {
 	 * @throws IllegalArgumentException Thrown when the value can not be parsed.
 	 */
 	private int parse(HashMap<String, String> map, String key) throws IllegalArgumentException {
-		logger.info("Parsing integer value of the " + key + " property.");
+		logger.info("Parsing integer value of the " + key + " property: " + map.get(key));
 		int value = 0;
 
 		try {

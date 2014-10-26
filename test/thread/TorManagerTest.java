@@ -34,7 +34,7 @@ public class TorManagerTest {
 	/** The TorManager. */
 	private TorManager manager = null;
 
-
+	// TODO: test
 	/**
 	 * @throws IOException Propagates any IOException thrown by the TorManager creation.
 	 *

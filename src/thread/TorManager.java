@@ -81,10 +81,10 @@ public class TorManager extends Manager {
 				Constants.datadiroption,
 				/** The Tor working directory path. */
 				workingDirectory.toString(),
-				/** The Tor control port output file option. */
-				Constants.ctlportoutoption,
-				/** The Tor control port output file path. */
-				Paths.get(workingDirectory.toString(), Constants.portfile).toString()
+				///** The Tor control port output file option. */
+				//Constants.ctlportoutoption,
+				///** The Tor control port output file path. */
+				//Paths.get(workingDirectory.toString(), Constants.portfile).toString()
 			};
 
 			logger.log(Level.INFO, "Executing Tor.");
