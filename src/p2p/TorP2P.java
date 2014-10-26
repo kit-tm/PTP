@@ -86,7 +86,18 @@ public class TorP2P {
 		// Create the client with the read configuration.
 		client = new Client(config);
 		// Create the manager with the given TTL.
-		manager = new TTLManager(client, config.getTTLPoll());
+		manager = new TTLManager(
+			// Set the listener to disconnect connections with expired TTL.
+			new TTLManager.Listener() {
+
+				@Override
+				public void expired(String identifier) throws IOException {
+					client.disconnect(identifier);
+				}
+
+			},
+			config.getTTLPoll()
+		);
 	}
 
 
