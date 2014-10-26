@@ -39,6 +39,7 @@ public class TTLManagerTest {
 		}
 	}
 
+
 	/** The interval (in milliseconds) in which the TTLManager should check TTLs. */
 	private static final int step = 50;
 	/** Minimum random identifier length used in the set test. */
@@ -49,7 +50,6 @@ public class TTLManagerTest {
 	private static final int minimumExpirationTime = 100;
 	/** Maximum random expiration time used in the set test. */
 	private static final int maximumExpirationTime = 200;
-
 
 	/** The RNG used for to generate a random identifier for the test. */
 	private Random random = null;

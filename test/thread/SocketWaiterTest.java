@@ -122,6 +122,7 @@ public class SocketWaiterTest {
 	/** The SocketWaiter for the test. */
 	private SocketWaiter waiter = null;
 
+
 	/**
 	 * @throws IOException Throws an IOException if unable to open a server socket on any port, or if unable to open a socket connection to the server socket.
 	 *
@@ -170,7 +171,7 @@ public class SocketWaiterTest {
 	 */
 	@After
 	public void tearDown() throws IOException {
-		// The thread accepting a socket connection to the server socket should have exitted in the test set up method.
+		// The thread accepting a socket connection to the server socket should have exited in the test set up method.
 		assertTrue(!thread.isAlive());
 
 		// Stop the SocketWaiter.

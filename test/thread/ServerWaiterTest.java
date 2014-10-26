@@ -31,6 +31,7 @@ public class ServerWaiterTest {
 	/** The ServerWaiter for the test. */
 	private ServerWaiter waiter = null;
 
+
 	/**
 	 * @throws IOException Propagates any IOException thrown when creating the ServerWaiter, or throws an IOException when opening a socket connection to the ServerWaiter.
 	 *

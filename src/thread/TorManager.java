@@ -187,6 +187,17 @@ public class TorManager extends Manager {
 		final boolean deletedDirectory = directory.delete();
 		if (!deletedDirectory) logger.log(Level.WARNING, "Was unable to delete the Tor working directory: " + workingDirectory.toString());
 		logger.log(Level.INFO, "Deleting Tor working directory done.");
+
+		// Wait for the process thread to exit.
+		logger.log(Level.INFO, "Waiting for TorManager thread to exit...");
+		while (thread.isAlive()) {
+			try {
+				thread.join();
+			} catch (InterruptedException e) {
+				// Do nothing.
+			}
+		}
+		logger.log(Level.INFO, "TorManager thread exited.");
 	}
 
 	/**
