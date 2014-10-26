@@ -14,7 +14,7 @@ import p2p.Listener;
 
 
 /**
- *
+ * This class offers JUnit testing for the ServerWaiter class.
  *
  * @author Simeon Andreev
  *

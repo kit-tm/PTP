@@ -90,6 +90,9 @@ public class TorP2P {
 			// Set the listener to disconnect connections with expired TTL.
 			new TTLManager.Listener() {
 
+				/**
+				 * @see TTLManager.Listener
+				 */
 				@Override
 				public void expired(String identifier) throws IOException {
 					client.disconnect(identifier);

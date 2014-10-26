@@ -98,23 +98,25 @@ public class SocketWaiterTest {
 	private static final String delimiter = "|";
 	/** A string representation of the object null value. */
 	private static final String nullbytes = "null";
-	/** Minimum random message length for the listener test. */
-	private static final int minimumMessageSize = 10;
-	/** Maximum random message length for the listener test. */
-	private static final int maximumMessageSize = 50;
+	/** Minimum random message length used in the set test. */
+	private static final int minimumMessageLength = 10;
+	/** Maximum random message length used in the set test. */
+	private static final int maximumMessageLength = 50;
 	/** The local host address. */
 	private static final String localhost = "localhost";
 
 	/** The custom listener for the SocketWaiter. */
-	private final Receiver receiver = new Receiver();
+	private Receiver receiver = null;
 	/** The object that will wait for a socket connection to the open server socket and will send a random message on it. */
-	private final Sender sender = new Sender();
+	private Sender sender = null;
 	/** The server socket to which a socket is connected. */
 	private ServerSocket server = null;
 	/** The thread waiting on the socket connection to the open server socket. */
 	private Thread thread = null;
 	/** The RNG for the random messages. */
 	private Random random = null;
+	/** The random message that is used used in the set test. */
+	private String message = null;
 	/** The socket connected to the open server socket, used by the SocketWaiter. */
 	private Socket socket = null;
 	/** The SocketWaiter for the test. */
@@ -127,6 +129,9 @@ public class SocketWaiterTest {
 	 */
 	@Before
 	public void setUp() throws IOException {
+		// Create the receiver and the sender.
+		receiver = new Receiver();
+		sender = new Sender();
 		// Open the server socket on any port.
 		server = new ServerSocket(0);
 		// Accept a socket connection to the server socket.
@@ -142,6 +147,14 @@ public class SocketWaiterTest {
 
 		// Create the RNG.
 		random = new Random();
+
+		// Choose a random message length within the length bounds.
+		final int length = minimumMessageLength + random.nextInt(maximumMessageLength - minimumMessageLength + 1);
+		byte[] buffer = new byte[length];
+		// Choose a random message with the chosen length.
+		random.nextBytes(buffer);
+		message = new String(buffer);
+
 		// Open a socket connection to the server socket.
 		socket = new Socket(localhost, server.getLocalPort());
 		// Create a SocketWaiter with the open socket connection.
@@ -199,12 +212,6 @@ public class SocketWaiterTest {
 	 */
 	@Test
 	public void testSet() {
-		// Choose a random message size within the size bounds.
-		final int size = minimumMessageSize + random.nextInt(maximumMessageSize - minimumMessageSize + 1);
-		byte[] buffer = new byte[size];
-		// Choose a random message with the chosen size.
-		random.nextBytes(buffer);
-		final String message = new String(buffer);
 		// Set the current listener of the SocketWaiter to the custom listener.
 		waiter.set(receiver);
 
