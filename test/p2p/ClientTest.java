@@ -55,17 +55,6 @@ public class ClientTest {
 		// Start the TorManager.
 		manager.start();
 
-		// Read the configuration.
-		try {
-			configuration = new Configuration(Constants.configfile, Paths.get(""), manager.controlport(), manager.socksport());
-		} catch (IllegalArgumentException e) {
-			// If the configuration fail is broken, the test is invalid.
-			assertTrue(false);
-		} catch (IOException e) {
-			// If a failure occured while reading the configuration fail, the test is invalid.
-			assertTrue(false);
-		}
-
 		// Wait (no more than 3 minutes) until the TorManager is done with the Tor bootstrapping.
 		final long start = System.currentTimeMillis();
 		while (!manager.ready() && System.currentTimeMillis() - start < 180 * 1000) {
@@ -74,6 +63,20 @@ public class ClientTest {
 			} catch (InterruptedException e) {
 				// Sleeping was interrupted. Do nothing.
 			}
+		}
+		
+		if (!manager.ready())
+			assertTrue(false);
+		
+		// Read the configuration.
+		try {
+			configuration = new Configuration(Constants.configfile, Paths.get(""), manager.controlport(), manager.socksport());
+		} catch (IllegalArgumentException e) {
+			// If the configuration file is broken, the test is invalid.
+			assertTrue(false);
+		} catch (IOException e) {
+			// If a failure occured while reading the configuration fail, the test is invalid.
+			assertTrue(false);
 		}
 	}
 
@@ -157,6 +160,9 @@ public class ClientTest {
 			}
 		}
 
+		if (!received.get())
+			fail("Message not received.");
+		
 		// Disconnect the API from the created identifier.
 		Client.DisconnectResponse disconnectResponse = client.disconnect(identifier);
 		if (disconnectResponse != Client.DisconnectResponse.SUCCESS)
