@@ -2,12 +2,13 @@ package thread;
 
 import static org.junit.Assert.*;
 
-import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import utility.RNG;
 
 
 /**
@@ -51,8 +52,6 @@ public class TTLManagerTest {
 	/** Maximum random expiration time used in the set test. */
 	private static final int maximumExpirationTime = 200;
 
-	/** The RNG used for to generate a random identifier for the test. */
-	private Random random = null;
 	/** The identifier used in the set test. */
 	private String identifier = null;
 	/** The expiration time used in the set test. */
@@ -70,17 +69,14 @@ public class TTLManagerTest {
 	 */
 	@Before
 	public void setUp() {
-		// Create the RNG.
-		random = new Random();
+		// Create a RNG.
+		RNG random = new RNG();
 
-		// Create the random identifier. Choose random length within the length bounds and choose random bytes.
-		final int length = minimumIdentifierLength + random.nextInt(maximumIdentifierLength - minimumIdentifierLength + 1);
-		byte[] buffer = new byte[length];
-		random.nextBytes(buffer);
-		identifier = new String(buffer);
+		// Create the random identifier within the given length bounds.
+		identifier = random.string(minimumIdentifierLength, maximumIdentifierLength);
 
-		// Set the expiration timer. Choose a random number in the expiration time bounds.
-		expiration = minimumExpirationTime + random.nextInt(maximumExpirationTime - minimumExpirationTime + 1);
+		// Set the expiration timer. Choose a random number within the expiration time bounds.
+		expiration = random.integer(minimumExpirationTime, maximumExpirationTime);
 
 		// Create the TTLManager listener.
 		client = new Client();

@@ -30,8 +30,6 @@ public class ConfigurationTest {
 	/** The suffix used for the temporary file in which the configuration properties are written. */
 	private static final String suffix = "junit";
 
-	/** The RNG used to generate the random property values. */
-	private Random random = null;
 	/** The input file for the configuration. */
 	private File file = null;
 	/** The configuration used for the test. */
@@ -56,7 +54,7 @@ public class ConfigurationTest {
 	@Before
 	public void setUp() throws IOException {
 		// Create the RNG.
-		random = new Random();
+		Random random = new Random();
 		file = File.createTempFile(prefix, suffix);
 
 		// Set the hidden service directory.

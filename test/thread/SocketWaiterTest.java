@@ -5,7 +5,6 @@ import static org.junit.Assert.*;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.After;
@@ -13,6 +12,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import p2p.Listener;
+import utility.RNG;
 
 
 /**
@@ -113,8 +113,6 @@ public class SocketWaiterTest {
 	private ServerSocket server = null;
 	/** The thread waiting on the socket connection to the open server socket. */
 	private Thread thread = null;
-	/** The RNG for the random messages. */
-	private Random random = null;
 	/** The random message that is used used in the set test. */
 	private String message = null;
 	/** The socket connected to the open server socket, used by the SocketWaiter. */
@@ -147,14 +145,9 @@ public class SocketWaiterTest {
 		}
 
 		// Create the RNG.
-		random = new Random();
-
-		// Choose a random message length within the length bounds.
-		final int length = minimumMessageLength + random.nextInt(maximumMessageLength - minimumMessageLength + 1);
-		byte[] buffer = new byte[length];
-		// Choose a random message with the chosen length.
-		random.nextBytes(buffer);
-		message = new String(buffer);
+		RNG random = new RNG();
+		// Choose a random message with bounded length.
+		message = random.string(minimumMessageLength, maximumMessageLength);
 
 		// Open a socket connection to the server socket.
 		socket = new Socket(localhost, server.getLocalPort());
