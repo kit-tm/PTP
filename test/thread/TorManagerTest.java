@@ -27,7 +27,7 @@ public class TorManagerTest {
 	/** The destination address when testing the SOCKS proxy of the ready TorManagers Tor process. */
 	private static final String destination = "google.com";
 	/** The destination port when testing the SOCKS proxy of the ready TorManagers Tor process. */
-	private static final int port = 8080;
+	private static final int port = 80;
 
 	/** The ready TorManager. */
 	private TorManager readyManager = null;

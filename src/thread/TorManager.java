@@ -67,6 +67,11 @@ public class TorManager extends Manager {
 		logger.log(Level.INFO, "Tor manager thread started.");
 		running.set(true);
 
+		// Check if the working directory still exists, if not make it.
+		File directory = workingDirectory.toFile();
+		if (!directory.exists())
+			directory.mkdir();
+		
 		try {
 
 			/** The parameters for the Tor execution command. */
@@ -94,9 +99,9 @@ public class TorManager extends Manager {
 										// The torrc option and path.
 										+ parameters[1] + " " + parameters[2] + " "
 										// The working directory option and path.
-										+ parameters[3] + " " + parameters[4] + " "
+										+ parameters[3] + " " + parameters[4]// + " "
 										// The control port output file option and path.
-										+ parameters[5] + " " + parameters[6]
+										//+ parameters[5] + " " + parameters[6]
 			);
 
 			process = Runtime.getRuntime().exec(parameters);
@@ -170,19 +175,22 @@ public class TorManager extends Manager {
 		logger.log(Level.INFO, "Stopping Tor manager thread.");
 		condition.set(false);
 		logger.log(Level.INFO, "Destroying Tor process.");
-		process.destroy();
+		if (process != null) process.destroy();
 		logger.log(Level.INFO, "Interrupting Tor manager thread.");
 		thread.interrupt();
 		logger.log(Level.INFO, "Interrupting output thread.");
-		output.interrupt();
+		if (output != null) output.interrupt();
 		logger.log(Level.INFO, "Stopped Tor manager thread.");
 
 		logger.log(Level.INFO, "Deleting Tor working directory.");
 		final File directory = workingDirectory.toFile();
-		for (File file : directory.listFiles()) {
-			logger.log(Level.INFO, "Deleting file: " + file.getName());
-			final boolean fileDeleted = file.delete();
-			if (fileDeleted) logger.log(Level.WARNING, "Was unable to delete a file in the Tor working directory: " + file.getName());
+		// Check if the directory still exists. It will not if this TorManager has already been stopped.
+		if (directory.exists()) {
+			for (File file : directory.listFiles()) {
+				logger.log(Level.INFO, "Deleting file: " + file.getName());
+				final boolean fileDeleted = file.delete();
+				if (fileDeleted) logger.log(Level.WARNING, "Was unable to delete a file in the Tor working directory: " + file.getName());
+			}
 		}
 		final boolean deletedDirectory = directory.delete();
 		if (!deletedDirectory) logger.log(Level.WARNING, "Was unable to delete the Tor working directory: " + workingDirectory.toString());
