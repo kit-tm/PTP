@@ -151,7 +151,7 @@ public class TorP2PTest {
 				final String m = new String(bytes);
 				if (!m.equals(message))
 					fail("First API object received message does not match sent message: " + m + " != " + message);
-				client1.SendMessage(identifier2, m, 5 * 1000);
+				client1.SendMessage(m, identifier2, 5 * 1000);
 			}
 
 		});
@@ -163,7 +163,7 @@ public class TorP2PTest {
 				final String m = new String(bytes);
 				if (!m.equals(message))
 					fail("First API object received message does not match sent message: " + m + " != " + message);
-				client2.SendMessage(identifier1, m, 5 * 1000);
+				client2.SendMessage(m, identifier1, 5 * 1000);
 			}
 
 		});
