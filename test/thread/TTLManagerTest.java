@@ -8,6 +8,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import p2p.Identifier;
 import utility.RNG;
 
 
@@ -35,7 +36,7 @@ public class TTLManagerTest {
 		 * @see TTLManager.Listener
 		 */
 		@Override
-		public void expired(String identifier) {
+		public void expired(Identifier identifier) {
 			disconnected.set(true);
 		}
 	}
@@ -53,7 +54,7 @@ public class TTLManagerTest {
 	private static final int maximumExpirationTime = 200;
 
 	/** The identifier used in the set test. */
-	private String identifier = null;
+	private Identifier identifier = null;
 	/** The expiration time used in the set test. */
 	private int expiration = -1;
 	/** The TTLManager listener used to check whether the TTLManager expire notifications are correct. */
@@ -73,7 +74,8 @@ public class TTLManagerTest {
 		RNG random = new RNG();
 
 		// Create the random identifier within the given length bounds.
-		identifier = random.string(minimumIdentifierLength, maximumIdentifierLength);
+		String randomString = random.string(minimumIdentifierLength, maximumIdentifierLength);
+		identifier = new Identifier(randomString);
 
 		// Set the expiration timer. Choose a random number within the expiration time bounds.
 		expiration = random.integer(minimumExpirationTime, maximumExpirationTime);

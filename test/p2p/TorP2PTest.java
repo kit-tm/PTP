@@ -87,7 +87,7 @@ public class TorP2PTest {
 		});
 
 		// Create the hidden service identifier.
-		String identifier = null;
+		Identifier identifier = null;
 		try {
 			identifier = client1.GetIdentifier();
 		} catch (IOException e) {
@@ -127,8 +127,8 @@ public class TorP2PTest {
 
         // Get the hidden service identifiers of the two API wrapper objects.
 
-		String i1 = null;
-		String i2 = null;
+		Identifier i1 = null;
+		Identifier i2 = null;
 		try {
 			i1 = client1.GetIdentifier();
 			i2 = client2.GetIdentifier();
@@ -136,8 +136,8 @@ public class TorP2PTest {
 			fail("Caught an IOException while creating the identifiers: " + e.getMessage());
 		}
 		// The listeners need final values.
-		final String identifier1 = i1;
-		final String identifier2 = i2;
+		final Identifier identifier1 = i1;
+		final Identifier identifier2 = i2;
 
 		// An atomic counter used to check the number of received messages.
 		final AtomicInteger counter = new AtomicInteger(0);

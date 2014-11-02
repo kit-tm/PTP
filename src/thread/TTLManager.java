@@ -8,6 +8,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import p2p.Constants;
+import p2p.Identifier;
 
 
 /**
@@ -33,7 +34,7 @@ public class TTLManager extends Manager {
 		 * @param identifier The hidden service identifier whos connections TTL expired.
 		 * @throws IOException Propagates any IOException the API received while disconnecting a hidden service identifier.
 		 */
-		public void expired(String identifier) throws IOException;
+		public void expired(Identifier identifier) throws IOException;
 
 	}
 
@@ -57,7 +58,7 @@ public class TTLManager extends Manager {
 	/** The client whos connections should be automatically closed. */
 	private final Listener listener;
 	/** The mapping from identifiers to TTL. */
-	private final HashMap<String, Timeout> map = new HashMap<String, Timeout>();
+	private final HashMap<Identifier, Timeout> map = new HashMap<Identifier, Timeout>();
 	/** The interval in milliseconds at which the socket TTLs are updated. */
 	private final int step;
 
@@ -125,8 +126,8 @@ public class TTLManager extends Manager {
 	 *
 	 * @param identifier The identifier that should be added.
 	 */
-	public synchronized void put(String identifier) {
-		logger.log(Level.INFO, "Adding identifier to map: " + identifier);
+	public synchronized void put(Identifier identifier) {
+		logger.log(Level.INFO, "Adding identifier to map: " + identifier.toString());
 		map.put(identifier, new Timeout());
 	}
 
@@ -135,7 +136,7 @@ public class TTLManager extends Manager {
 	 *
 	 * @param identifier The identifier that should be removed.
 	 */
-	public synchronized void remove(String identifier) {
+	public synchronized void remove(Identifier identifier) {
 		logger.log(Level.INFO, "Removing identifier from map: " + identifier);
 		map.remove(identifier);
 	}
@@ -146,7 +147,7 @@ public class TTLManager extends Manager {
 	 * @param identifier The identifier of the socket.
 	 * @param timer The TTL in milliseconds.
 	 */
-	public synchronized void set(String identifier, int timer) {
+	public synchronized void set(Identifier identifier, int timer) {
 		logger.log(Level.INFO, "Setting timeout (" + timer + "ms) for identifier: " + identifier);
 		if (!map.containsKey(identifier)) return;
 
@@ -162,10 +163,10 @@ public class TTLManager extends Manager {
 	 */
 	private synchronized void substract() throws IOException {
 		logger.log(Level.INFO, "Updating socket TTLs: -" + step);
-		LinkedList<String> closed = new LinkedList<String>();
+		LinkedList<Identifier> closed = new LinkedList<Identifier>();
 
 		// Iterate over the identifiers and substract the step from the socket TTLs.
-		for (Entry<String, Timeout> entry : map.entrySet()) {
+		for (Entry<Identifier, Timeout> entry : map.entrySet()) {
 			entry.getValue().timer -= step;
 			// Check if the TTL expired after the substraction.
 			if (entry.getValue().timer >= 0) continue;
@@ -178,7 +179,7 @@ public class TTLManager extends Manager {
 		}
 
 		logger.log(Level.INFO, "Removing closed sockets from map.");
-		for (String identifier : closed)
+		for (Identifier identifier : closed)
 			map.remove(identifier);
 
 		logger.log(Level.INFO, "Update finished.");

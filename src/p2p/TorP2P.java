@@ -94,8 +94,8 @@ public class TorP2P {
 				 * @see TTLManager.Listener
 				 */
 				@Override
-				public void expired(String identifier) throws IOException {
-					client.disconnect(identifier);
+				public void expired(Identifier identifier) throws IOException {
+					client.disconnect(identifier.getTorAddress());
 				}
 
 			},
@@ -112,9 +112,9 @@ public class TorP2P {
 	 *
 	 * @see Client
 	 */
-	public String GetIdentifier() throws IOException {
+	public Identifier GetIdentifier() throws IOException {
 		// Create a fresh hidden service identifier.
-		return client.identifier(true);
+		return new Identifier(client.identifier(true));
 	}
 
 	/**
@@ -130,7 +130,7 @@ public class TorP2P {
 	 *
 	 * @see Client
 	 */
-	public SendResponse SendMessage(String message, String identifier, long timeout) {
+	public SendResponse SendMessage(String message, Identifier identifier, long timeout) {
 		Client.ConnectResponse connect = Client.ConnectResponse.TIMEOUT;
 		long remaining = timeout;
 
@@ -142,7 +142,7 @@ public class TorP2P {
 				// If the timeout is reached return with the corresponding response.
 				if (remaining < 0) return SendResponse.TIMEOUT;
 				// Attempt a connection to the given identifier.
-				connect = client.connect(identifier);
+				connect = client.connect(identifier.getTorAddress());
 				// Sleep until the next attempt.
 				Thread.sleep(Math.min(config.getConnectionPoll(), remaining));
 				remaining -= System.currentTimeMillis() - start;
@@ -156,7 +156,7 @@ public class TorP2P {
 			manager.put(identifier);
 
 		// Connection is successful
-		Client.SendResponse response = client.send(identifier, message);
+		Client.SendResponse response = client.send(identifier.getTorAddress(), message);
 
 		// If the message was sent successfully, set the TTL of the socket opened for the identifier.
 		if (response == Client.SendResponse.SUCCESS) {

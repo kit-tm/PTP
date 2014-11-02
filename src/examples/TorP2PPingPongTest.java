@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import p2p.Identifier;
 import p2p.Listener;
 import p2p.TorP2P;
 
@@ -29,7 +30,7 @@ public class TorP2PPingPongTest {
 		/** Handle of the client, needed to PONG upon PING. */
 		private final TorP2P client;
 		/** The destination hidden service identifier, where PONG should be sent. */
-		private final String identifier;
+		private final Identifier identifier;
 		/** The maximum number of PING-PONGs. */
 		private final int max;
 
@@ -54,7 +55,7 @@ public class TorP2PPingPongTest {
 		 * @param port The destination port for the PONGs.
 		 * @param max The maximum number of PING-PONGs.
 		 */
-		public MyListener(TorP2P client, String identifier, int max) {
+		public MyListener(TorP2P client, Identifier identifier, int max) {
 			this.client = client;
 			this.identifier = identifier;
 			this.max = max;
@@ -132,7 +133,7 @@ public class TorP2PPingPongTest {
 
 	        // Set the timer start for the hidden service creation measurement.
 			long start = System.currentTimeMillis();
-			final String identifier = client.GetIdentifier();
+			final Identifier identifier = client.GetIdentifier();
 			final long duration = System.currentTimeMillis() - start;
 
 			// Output the created hidden service identifier.
@@ -143,7 +144,8 @@ public class TorP2PPingPongTest {
 			BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 			// Ask for the destination hidden service identifier.
 	        System.out.print("Enter hidden service identifier:");
-	        final String destination = br.readLine();
+	        final String destinationAddress = br.readLine();
+	        final Identifier destination = new Identifier(destinationAddress);
 
 	       	// Connect to the destination hidden service and port by sending a dummy message.
 			System.out.println("Connecting client.");
