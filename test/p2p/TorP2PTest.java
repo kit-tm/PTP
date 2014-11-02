@@ -3,6 +3,7 @@ package p2p;
 import static org.junit.Assert.*;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.After;
@@ -69,7 +70,49 @@ public class TorP2PTest {
 	 */
 	@Test
 	public void testSelfSend() {
-		fail("Not yet implemented");
+		// An atomic boolean used to check whether the sent message was received yet.
+		final AtomicBoolean received = new AtomicBoolean(false);
+
+		// Set the listener.
+		client1.SetListener(new Listener() {
+
+			@Override
+			public void receive(byte[] bytes) {
+				System.out.println("Received message: " + new String(bytes));
+				if (!new String(bytes).equals(message))
+					fail("Received message does not match sent message: " + message + " != " + new String(bytes));
+				received.set(true);
+			}
+
+		});
+
+		// Create the hidden service identifier.
+		String identifier = null;
+		try {
+			identifier = client1.GetIdentifier();
+		} catch (IOException e) {
+			fail("Caught an IOException while creating the hidden service identifier: " + e.getMessage());
+		}
+
+		// Send the message.
+		TorP2P.SendResponse sendResponse = client1.SendMessage(message, identifier, 180 * 1000);
+		if (sendResponse != TorP2P.SendResponse.SUCCESS)
+			fail("Sending the message via the client to the created identifier was not successful.");
+
+		// Wait (no more than 3 minutes) until the message was received.
+		final long start = System.currentTimeMillis();
+		while (!received.get()) {
+			try {
+				Thread.sleep(5 * 1000);
+				if (System.currentTimeMillis() - start > 180 * 1000)
+					fail("Connecting to the created identifier took too long.");
+			} catch (InterruptedException e) {
+				// Waiting was interrupted. Do nothing.
+			}
+		}
+
+		if (!received.get())
+			fail("Message not received.");
 	}
 
 	/**
