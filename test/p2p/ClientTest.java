@@ -3,7 +3,6 @@ package p2p;
 import static org.junit.Assert.*;
 
 import java.io.IOException;
-import java.nio.file.Paths;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -66,7 +65,7 @@ public class ClientTest {
 
 		// Wait (no more than 3 minutes) until the two TorManagers are done with their respective Tor bootstrapping.
 		final long start = System.currentTimeMillis();
-		while (!manager1.ready() && !manager2.ready() && System.currentTimeMillis() - start < 180 * 1000) {
+		while ((!manager1.ready() || !manager2.ready()) && System.currentTimeMillis() - start < 180 * 1000) {
 			try {
 				Thread.sleep(250);
 			} catch (InterruptedException e) {
@@ -79,8 +78,8 @@ public class ClientTest {
 
 		// Read the configurations.
 		try {
-			configuration1 = new Configuration(Constants.configfile, Paths.get(""), manager1.controlport(), manager1.socksport());
-			configuration2 = new Configuration(Constants.configfile, Paths.get(""), manager2.controlport(), manager2.socksport());
+			configuration1 = new Configuration(Constants.configfile, manager1.directory(), manager1.controlport(), manager1.socksport());
+			configuration2 = new Configuration(Constants.configfile, manager2.directory(), manager2.controlport(), manager2.socksport());
 		} catch (IllegalArgumentException e) {
 			// If the configuration file is broken, the test is invalid.
 			assertTrue(false);
@@ -247,6 +246,7 @@ public class ClientTest {
 
 			@Override
 			public void receive(byte[] bytes) {
+				counter.incrementAndGet();
 				final String m = new String(bytes);
 				if (!m.equals(message))
 					fail("First API object received message does not match sent message: " + m + " != " + message);
@@ -266,8 +266,10 @@ public class ClientTest {
 
 		});
 		// Initiate the ping-pong.
-		client1.send(identifier2, message);
-
+		Client.SendResponse sendResponse = client1.send(identifier2, message);
+		if (sendResponse != Client.SendResponse.SUCCESS)
+			fail("Sending first message failed.");
+		
 		// Wait (no more than 3 minutes) until the maximum number of received messages is reached.
 		start = System.currentTimeMillis();
 		while (counter.get() < max && System.currentTimeMillis() - start < 180 * 1000) {
@@ -280,6 +282,14 @@ public class ClientTest {
 
 		if (counter.get() < max)
 			fail("Maximum number of received messages not reached.");
+		
+		Client.DisconnectResponse disconnectResponse1 = client1.disconnect(identifier2);
+		if (disconnectResponse1 != Client.DisconnectResponse.SUCCESS)
+			fail("Disconnecting first API object failed.");
+		
+		Client.DisconnectResponse disconnectResponse2 = client2.disconnect(identifier1);
+		if (disconnectResponse2 != Client.DisconnectResponse.SUCCESS)
+			fail("Disconnecting second API object failed.");
 	}
 
 }
