@@ -10,6 +10,7 @@ import java.io.InputStreamReader;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
+import java.nio.channels.OverlappingFileLockException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -113,7 +114,17 @@ public class TorManager extends Manager {
 				logger.log(Level.INFO, "Tor manager acquiring lock on Tor manager lock file.");
 				RandomAccessFile raf = new RandomAccessFile(lockFile, Constants.readwriterights);
 				FileChannel channel = raf.getChannel();
-				FileLock lock = channel.lock();
+				FileLock lock = null;
+
+				// JVM throws an exception on simultaneous lock attempts. Loop until the lock attempt is no longer simultaneous.
+				while (true) {
+					try {
+						lock = channel.lock();
+						break;
+					} catch (OverlappingFileLockException e) {
+						// Concurrent lock attempt occured. Try again.
+					}
+				}
 
 				logger.log(Level.INFO, "Tor manager has the lock on the Tor manager lock file.");
 
