@@ -13,7 +13,7 @@ import p2p.Constants;
  * @author Simeon Andreev
  *
  */
-public class ConfigurationTest {
+public class ConfigurationExample {
 
 
 	public static void main(String[] args) throws IllegalArgumentException, IOException {

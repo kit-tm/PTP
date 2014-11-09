@@ -86,9 +86,6 @@ public class TorManagerTest {
 		// Check whether the ready TorManager is still running.
 		if (readyManager.running())
 			fail("Ready TorManager is still returning a running state after being stopped.");
-		// Check whether the working directory of the ready TorManager still exists.
-		if (readyManager.directory().toFile().exists())
-			fail("Ready TorManager directory still exists after being stopped.");
 	}
 
 	/**

@@ -13,12 +13,12 @@ import p2p.Listener;
 
 
 /**
- * Ping-Pong test application for the raw API.
+ * Ping-Pong example application for the raw API.
  *
  * @author Simeon Andreev
  *
  */
-public class RawAPIPingPongTest {
+public class RawAPIPingPongExample {
 
 	private static class Holder {
 

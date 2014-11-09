@@ -6,12 +6,12 @@ import net.freehaven.tor.control.TorControlConnection;
 
 
 /**
- * Tests the JTorCtl API in the context of creating hidden services.
+ * Uses the JTorCtl API in the context of creating hidden services.
  *
  * @author Simeon Andreev
  *
  */
-public class JTorCtlTest {
+public class JTorCtlExample {
 
 
 	public static void main(String[] args) {

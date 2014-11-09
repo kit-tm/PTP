@@ -70,6 +70,14 @@ public class Constants {
 	public static final String timestampformat = "yyMMddHHmmss";
 	/** The name of the hidden service directory. */
 	public static final String hiddenservicedir = "hidden_service";
+	/** The name of the TorP2P home environment variable. */
+	public static final String torp2phomeenvvar = "TORP2P_HOME";
+	/** The name of the TorP2P Tor manager ports file. */
+	public static final String tormanagerrunningfile = "TorP2PTorManagerRunning";
+	/** The name of the TorP2P Tor manager ports file. */
+	public static final String tormanagerportsfile = "TorP2PTorManagerPorts";
+	/** The name of the TorP2P Tor manager lock file. */
+	public static final String tormanagerlockfile = "TorP2PTorManagerLock";
 
 
 	/* Logger constants */
@@ -97,5 +105,9 @@ public class Constants {
 	public static final String localhost = "127.0.0.1";
 	/** The working directory Java system property keyword. */
 	public static final String userdir = "user.dir";
+	/** File read+write rights. */
+	public static final String readwriterights = "rw";
+	/** Newline symbol. */
+	public static final String newline = "\n";
 
 }

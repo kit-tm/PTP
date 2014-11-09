@@ -11,12 +11,12 @@ import p2p.TorP2P;
 
 
 /**
- * Ping-Pong test application for the TorP2P API.
+ * Ping-Pong example application for the TorP2P API.
  *
  * @author Simeon Andreev
  *
  */
-public class TorP2PPingPongTest {
+public class TorP2PPingPongExample {
 
 
 	/**

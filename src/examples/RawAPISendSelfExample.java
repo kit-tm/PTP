@@ -11,12 +11,12 @@ import p2p.Listener;
 
 
 /**
- * Tests the raw API by sending a message to the local identifier.
+ * An test application of the raw API, sends a message to the local identifier.
  *
  * @author Simeon Andreev
  *
  */
-public class RawAPISendSelfTest {
+public class RawAPISendSelfExample {
 
 
 	public static void main(String[] args) throws IllegalArgumentException, IOException {

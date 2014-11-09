@@ -1,31 +1,26 @@
 package examples;
 
 import java.io.IOException;
-import java.nio.file.Paths;
 
-import p2p.Configuration;
-import p2p.Constants;
 import thread.TorManager;
 
 
 /**
- * Tests the APIs personal Tor process execution.
+ * Test for the APIs personal Tor process execution.
  *
  * @author Simeon Andreev
  *
  */
-public class TorProcessTest {
+public class TorProcessExample {
 
 
 	public static void main(String[] args) throws InterruptedException, IllegalArgumentException, IOException {
-		@SuppressWarnings("unused")
-		Configuration c = new Configuration(Constants.configfile, Paths.get("config"), 9051, 9050);
 		System.out.println("Creating manager.");
 		TorManager tor = new TorManager();
 		System.out.println("Starting Tor.");
 		tor.start();
 		System.out.println("Sleeping.");
-		//Thread.sleep(30 * 1000);
+		Thread.sleep(30 * 1000);
 		System.out.println("Stopping Tor.");
 		tor.stop();
 		System.out.println("Done.");
