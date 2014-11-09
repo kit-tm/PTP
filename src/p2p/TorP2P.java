@@ -143,6 +143,8 @@ public class TorP2P {
 				if (remaining < 0) return SendResponse.TIMEOUT;
 				// Attempt a connection to the given identifier.
 				connect = client.connect(identifier.getTorAddress());
+				// Check if the connection was successful, not need to wait if so.
+				if (connect == Client.ConnectResponse.OPEN || connect == Client.ConnectResponse.SUCCESS) break;
 				// Sleep until the next attempt.
 				Thread.sleep(Math.min(config.getConnectionPoll(), remaining));
 				remaining -= System.currentTimeMillis() - start;
