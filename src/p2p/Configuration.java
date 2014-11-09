@@ -45,11 +45,6 @@ public class Configuration {
 	public static final String LoggerConfigFile = "LoggerConfigFile";
 
 
-	/** The authentication property value for no authentication. */
-	//private static final String noauthentication = "none";
-	/** The authentication property value for cookie authentication. */
-	//private static final String cookieauthentication = "none";
-
 	/** The logger configuration file. */
 	private final String loggerConfiguration;
 	/** The path of the working directory. */
@@ -119,20 +114,6 @@ public class Configuration {
 
 		buffer.close();
 
-		/*reader = new FileReader(port);
-		buffer = new BufferedReader(reader);
-
-		// Read the control port number from the Tor output file.
-		String line = buffer.readLine();
-
-		buffer.close();
-
-		String[] pair = line.split(Constants.portdelimiter);
-
-		if (pair.length != 2)
-			throw new IllegalArgumentException("Tor control port output file must be in the form: *" + Constants.portdelimiter + "port");
-
-		torControlPort = Integer.valueOf(pair[1]);*/
 		torControlPort = controlPort;
 		torSOCKSProxyPort = socksPort;
 
@@ -148,7 +129,6 @@ public class Configuration {
 
 		// Check if all the needed properties are in the configuration file.
 		check(properties, HiddenServicePort);
-		//check(properties, AuthenticationType);
 		check(properties, SocketConnectTimeout);
 		check(properties, SocketTTL);
 		check(properties, SocketTTLPoll);
@@ -166,9 +146,6 @@ public class Configuration {
 		logger.info("Read " + HiddenServicePort + " = " + hiddenServicePort);
 
 		authenticationBytes = new byte[0];
-		//		java.nio.file.Files.readAllBytes(java.nio.file.FileSystems.getDefault().getPath("C:\\Programme\\Tor Browser\\Data\\Tor\\control_auth_cookie"));
-
-		//logger.info("Set " + AuthenticationType + " with bytes = " + authenticationBytes);
 
 		connectionPoll = parse(properties, ConnectionPoll);
 		logger.info("Read " + ConnectionPoll + " = " + connectionPoll);
@@ -205,10 +182,6 @@ public class Configuration {
 		sb.append("\thidden service port number = ");
 		sb.append(hiddenServicePort);
 		sb.append("\n");
-
-		//sb.append("\tauthentication bytes = ");
-		//sb.append(new String(authenticationBytes));
-		//sb.append("\n");
 
 		sb.append("\tTor control port number = ");
 		sb.append(torControlPort);

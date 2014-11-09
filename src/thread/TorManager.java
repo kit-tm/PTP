@@ -8,6 +8,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.RandomAccessFile;
+import java.net.Socket;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
@@ -18,6 +19,7 @@ import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import net.freehaven.tor.control.TorControlConnection;
 import p2p.Constants;
 
 
@@ -34,8 +36,6 @@ public class TorManager extends Manager {
 
 	/** The Tor working directory path. */
 	private final Path workingDirectory;
-	/** The Tor manager ports file. */
-	private final File runningFile;
 	/** The Tor manager running file. */
 	private final File portsFile;
 	/** The Tor manager lock file. */
@@ -80,17 +80,14 @@ public class TorManager extends Manager {
 			// Lock file does not exist and was not created.
 			throw new IOException("Unable to create missing TorP2P Tor manager lock file.");
 
-		// Get handles of the auxiliary files.
-		runningFile = Paths.get(workingDirectory.toString(), Constants.tormanagerrunningfile).toFile();
+		// Get a handle on the Tor manager ports file.
 		portsFile = Paths.get(workingDirectory.toString(), Constants.tormanagerportsfile).toFile();
 
-		// The Tor manager auxiliary files should always be deleted on exit.
-		runningFile.deleteOnExit();
+		// The Tor manager ports file should be deleted on exit.
 		portsFile.deleteOnExit();
 
 		logger.log(Level.INFO, "Read Tor working directory: " + workingDirectory.toString());
 		logger.log(Level.INFO, "Created Tor manager lock file: " + lockFile.getAbsolutePath());
-		logger.log(Level.INFO, "Tor manager running file is: " + runningFile.getAbsolutePath());
 		logger.log(Level.INFO, "Tor manager ports file is: " + portsFile.getAbsolutePath());
 		logger.log(Level.INFO, "TorManager object created.");
 	}
@@ -116,35 +113,40 @@ public class TorManager extends Manager {
 				FileChannel channel = raf.getChannel();
 				FileLock lock = null;
 
-				// JVM throws an exception on simultaneous lock attempts. Loop until the lock attempt is no longer simultaneous.
-				while (true) {
-					try {
-						lock = channel.lock();
-						break;
-					} catch (OverlappingFileLockException e) {
-						// Concurrent lock attempt occured. Try again.
+				// Check if the Tor manager lock file is locked.
+				try {
+					// If not, lock it and run Tor.
+					lock = channel.tryLock();
+					logger.log(Level.INFO, "Tor manager has the lock on the Tor manager lock file.");
+
+					if (portsFile.exists()) {
+						try {
+							logger.log(Level.WARNING, "Tor manager ports file exists without a lock on the Tor manager lock file.");
+							readports();
+							logger.log(Level.WARNING, "Read control port: " + torControlPort);
+							Socket s = new Socket(Constants.localhost, torControlPort);
+							logger.log(Level.WARNING, "Tor manager attempting to shutdown ghost Tor process.");
+							TorControlConnection conn = TorControlConnection.getConnection(s);
+							conn.authenticate(new byte[0]);
+							conn.shutdownTor(Constants.shutdownsignal);
+							logger.log(Level.WARNING, "Tor manager sent shutdown signal.");
+						} catch (IOException e) {
+							logger.log(Level.WARNING, "Tor manager caught an IOException while checking/closing ghost Tor process: " + e.getMessage());
+						} catch (NumberFormatException e) {
+							logger.log(Level.WARNING, "Tor manager caught a NumberFormatException while checking/closing ghost Tor process: " + e.getMessage());
+						}
 					}
-				}
 
-				logger.log(Level.INFO, "Tor manager has the lock on the Tor manager lock file.");
-
-				final boolean running = runningFile.exists();
-				logger.log(Level.INFO, "Tor manager checked if Tor is running: " + (running ? "yes" : "no"));
-				final boolean created = !running && runningFile.createNewFile();
-				logger.log(Level.INFO, "Tor manager created Tor manager running file: " + (created ? "yes" : "no"));
-
-				// Release the lock.
-				logger.log(Level.INFO, "Tor manager releasing the lock on the Tor manager lock file.");
-				lock.release();
-
-				// Check if a Tor process is already running, if so its Tor manager created the Tor manager running file.
-				if (running)
-					waittor();
-				// Otherwise run Tor with this Tor manager.
-				else if (created)
+					// Run the Tor process.
 					runtor();
-				else
-					logger.log(Level.WARNING, "Tor manager was unable to create the Tor manager running file!");
+
+					// Release the lock.
+					logger.log(Level.INFO, "Tor manager releasing the lock on the Tor manager lock file.");
+					lock.release();
+				// Otherwise, wait for the Tor manager ports file to appear and read it.
+				} catch (OverlappingFileLockException e) {
+					waittor();
+				}
 
 				// Close the lock file.
 				channel.close();
@@ -191,9 +193,7 @@ public class TorManager extends Manager {
 		portsFile.delete();
 		logger.log(Level.INFO, "Deleted Tor manager ports file.");
 
-		// Delete the Tor manager running file.
-		runningFile.delete();
-		logger.log(Level.INFO, "Deleted Tor manager running file.");
+		logger.log(Level.INFO, "Deleted Tor PID file.");
 	}
 
 	/**
@@ -269,18 +269,8 @@ public class TorManager extends Manager {
 
 				logger.log(Level.INFO, "Tor manager ports thread reading ports file.");
 				try {
-					BufferedReader reader = new BufferedReader(new FileReader(portsFile));
-
-					String controlPortLine = reader.readLine();
-					String socksPortLine = reader.readLine();
-
-					torControlPort = Integer.valueOf(controlPortLine).intValue();
-					torSOCKSProxyPort = Integer.valueOf(socksPortLine).intValue();
-
-					reader.close();
-
-					logger.log(Level.INFO, "Ports thread read Tor control port from file: " + torControlPort);
-					logger.log(Level.INFO, "Ports thread r read Tor SOCKS port from file: " + torSOCKSProxyPort);
+					// Read the control and SOCKS ports from the Tor ports file.
+					readports();
 
 					ready.set(true);
 					logger.log(Level.INFO, "Tor manager ready.");
@@ -332,6 +322,15 @@ public class TorManager extends Manager {
 			);
 
 			process = Runtime.getRuntime().exec(parameters);
+
+			// Handle unclean exits.
+			Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+
+				@Override
+				public void run() { process.destroy(); }
+
+			}));
+
 			error = new Thread(new Runnable() {
 
 				@Override
@@ -431,9 +430,30 @@ public class TorManager extends Manager {
 			logger.log(Level.WARNING, "Tor manager thread caught an IOException when starting Tor: " + e.getMessage());
 		}
 
+		// Set the status atomic booleans.
 		ready.set(false);
 		running.set(false);
 		logger.log(Level.INFO, "Tor manager Tor process exited.");
+	}
+
+	/**
+	 * Reads the Tor control and SOCKS ports from the Tor manager ports file.
+	 *
+	 * @throws IOException Propagates any IOException thrown when reading the Tor manager ports file.
+	 */
+	private void readports() throws IOException {
+		BufferedReader reader = new BufferedReader(new FileReader(portsFile));
+
+		String controlPortLine = reader.readLine();
+		String socksPortLine = reader.readLine();
+
+		torControlPort = Integer.valueOf(controlPortLine).intValue();
+		torSOCKSProxyPort = Integer.valueOf(socksPortLine).intValue();
+
+		reader.close();
+
+		logger.log(Level.INFO, "Ports thread read Tor control port from file: " + torControlPort);
+		logger.log(Level.INFO, "Ports thread r read Tor SOCKS port from file: " + torSOCKSProxyPort);
 	}
 
 	/**

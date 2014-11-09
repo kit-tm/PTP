@@ -56,6 +56,8 @@ public class Constants {
 	public static final String controlportopen = "Control listener listening on port";
 	/** A part of the Tor executable log message, logged when the Tor SOCKS proxy port is open. */
 	public static final String socksportopen = "Socks listener listening on port";
+	/** The shutdown signal used when shutting down Tor with JTorCtl. */
+	public static final String shutdownsignal = "SHUTDOWN";
 
 
 	/* API constants. */
@@ -74,8 +76,6 @@ public class Constants {
 	public static final String hiddenserviceprefix = "hs";
 	/** The name of the TorP2P home environment variable. */
 	public static final String torp2phomeenvvar = "TORP2P_HOME";
-	/** The name of the TorP2P Tor manager ports file. */
-	public static final String tormanagerrunningfile = "TorP2PTorManagerRunning";
 	/** The name of the TorP2P Tor manager ports file. */
 	public static final String tormanagerportsfile = "TorP2PTorManagerPorts";
 	/** The name of the TorP2P Tor manager lock file. */
