@@ -5,13 +5,16 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.RandomAccessFile;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -87,11 +90,14 @@ public class Client {
 
 	/** The parameters of this client. */
 	private final Configuration configuration;
+	/** The raw API lock file. */
+	private final File lockFile;
 	/** The server socket receiving messages. */
 	private final ServerWaiter waiter;
 	/** The open socket connections to Tor hidden services. */
 	private final HashMap<String, Socket> sockets = new HashMap<String, Socket>();
-
+	/** The hidden service sub-directory of this client. */
+	private String directory = null;
 
 	/**
 	 * Constructor method.
@@ -106,6 +112,17 @@ public class Client {
 		// Tell the JVM we want any available port.
 		waiter = new ServerWaiter(Constants.anyport);
 		waiter.start();
+
+		// Check if the hidden service directory exists, if not create it.
+		File directory = new File(configuration.getHiddenServiceDirectory());
+		if (!directory.exists() && !directory.mkdirs())
+			throw new IOException("Could not create hidden service directory!");
+
+		// Check if the lock file exists, if not create it.
+		lockFile = Paths.get(configuration.getWorkingDirectory(), Constants.rawapilockfile).toFile();
+		if (!lockFile.exists() && !lockFile.createNewFile())
+			throw new IOException("Could not create raw API lock file!");
+
 		logger.log(Level.INFO, "Client object created.");
 	}
 
@@ -162,20 +179,55 @@ public class Client {
 	public String identifier(boolean fresh) throws IOException {
 		logger.log(Level.INFO, (fresh ? "Fetching a fresh" : "Attempting to reuse (if present) the") + " identifier.");
 
-		// If a fresh identifier is requested, delete the hidden service directory.
-		if (fresh)
-			deleteHiddenService();
+		RandomAccessFile raf = null;
+		FileChannel channel = null;
+		FileLock lock = null;
 
-		File hostname = Paths.get(configuration.getHiddenServiceDirectory(), Constants.hostname).toFile();
+		try {
+			// Block until a lock on the raw API lock file is available.
+			logger.log(Level.INFO, "Client acquiring lock on raw API lock file.");
+			raf = new RandomAccessFile(lockFile, Constants.readwriterights);
+			channel = raf.getChannel();
+			lock = channel.lock();
 
-		// If the Tor hostname file does not exist in the Tor hidden service directory, create a hidden service with JTorCtl.
-		if (fresh || !hostname.exists()) {
-			logger.log(Level.INFO, "Creating hidden service.");
-			createHiddenService();
+			logger.log(Level.INFO, "Client acquired the lock on raw API lock file.");
+			// If a fresh identifier is requested, delete the current hidden service directory.
+			if (fresh)
+				deleteHiddenService();
+
+			final boolean none = directory == null;
+
+			// If no hidden service was created so far, create a sub-directory for the new hidden service.
+			if (none) {
+				directory = Constants.hiddenserviceprefix + waiter.port();
+				logger.log(Level.INFO, "Creating hidden service sub-directory: " + directory);
+
+				File dir = Paths.get(configuration.getHiddenServiceDirectory(), directory).toFile();
+				if (!dir.exists() && !dir.mkdir())
+					throw new IOException("Unable to create the hidden service directory!");
+			}
+
+			// If the Tor hostname file does not exist in the Tor hidden service directory, create a hidden service with JTorCtl.
+			if (fresh || none) {
+				logger.log(Level.INFO, "Creating hidden service.");
+				createHiddenService();
+			}
+
+			File hostname = Paths.get(configuration.getHiddenServiceDirectory(), directory, Constants.hostname).toFile();
+
+			// Read the content of the Tor hidden service hostname file.
+			return readIdentifier(hostname);
+		} finally {
+			// Release the lock, if acquired.
+			logger.log(Level.INFO, "Client releasing the lock on the raw API lock file.");
+
+			if (lock != null) {
+				lock.release();
+				// Close the lock file.
+				channel.close();
+				raf.close();
+			}
 		}
-
-		// Read the content of the Tor hidden service hostname file.
-		return readIdentifier(hostname);
 	}
 
 
@@ -249,7 +301,7 @@ public class Client {
 			logger.log(Level.INFO, "Binding destination address to the socket.");
 			socket.connect(destination, configuration.getSocketTimeout());
 			logger.log(Level.INFO, "Adding socket to open sockets.");
-			sockets.put(identifier,  socket);
+			sockets.put(identifier, socket);
 			logger.log(Level.INFO, "Opened socket for identifier: " + identifier);
 		} catch (SocketTimeoutException e) {
 			// Socket connection timeout reached.
@@ -307,7 +359,7 @@ public class Client {
 
 
 	/**
-	 * Creates a Tor hidden service by connecting to the Tor control port and invoking JTorCtl.
+	 * Creates a Tor hidden service by connecting to the Tor control port and invoking JTorCtl. The directory of the hidden service must already be present.
 	 *
 	 * @throws IOException Throws an IOException when the Tor control socket is not reachable, or if the Tor authentication fails.
 	 */
@@ -323,12 +375,29 @@ public class Client {
 		conn.authenticate(configuration.getAuthenticationBytes());
 
 		// Set the properties for the hidden service configuration.
-		String[] properties = new String[] {
-			Constants.hsdirkeyword + " " + configuration.getHiddenServiceDirectory(),
-			Constants.hsportkeyword + " " + configuration.getHiddenServicePort() + " " + Constants.localhost + ":" + waiter.port()
-		};
-		logger.log(Level.INFO, "Setting configuration:\n" + properties[0] + "\n" + properties[1]);
-		conn.setConf(Arrays.asList(properties));
+		LinkedList<String> properties = new LinkedList<String>();
+		File hiddenServiceDirectory = new File(configuration.getHiddenServiceDirectory());
+
+		// Read the hidden service directories in the hidden service root directory, and add them to the new hidden service configuration.
+		for (File hiddenService : hiddenServiceDirectory.listFiles()) {
+			// Skip over any files in the directory.
+			if (!hiddenService.isDirectory()) continue;
+
+			// Skip over any directories without the hidden service prefix.
+			String name = hiddenService.getName();
+			if (!name.startsWith(Constants.hiddenserviceprefix));
+
+			// Parse the port number from the directory name.
+			String portString = name.substring(Constants.hiddenserviceprefix.length(), name.length());
+			int port = Integer.valueOf(portString).intValue();
+
+			// Add the hidden service property to the configuration properties so far.
+			properties.add(Constants.hsdirkeyword + " " + hiddenService.getAbsolutePath());
+			properties.add(Constants.hsportkeyword + " " + configuration.getHiddenServicePort() + " " + Constants.localhost + ":" + port);
+		}
+
+		logger.log(Level.INFO, "Setting configuration:" + Constants.newline + properties.toString());
+		conn.setConf(properties);
 
 		logger.log(Level.INFO, "Created hidden service.");
 	}
@@ -339,17 +408,23 @@ public class Client {
 	 * @throws IOException Propagates any IOException that occured during deletion.
 	 */
 	private void deleteHiddenService() throws IOException {
-		logger.log(Level.INFO, "Deleting hidden service directory.");
-		File hostname = Paths.get(configuration.getHiddenServiceDirectory(), Constants.hostname).toFile();
-		File hiddenservice = new File(configuration.getHiddenServiceDirectory());
-		File privatekey = Paths.get(configuration.getHiddenServiceDirectory(), Constants.prkey).toFile();
+		// If the hidden service was not created, there is nothing to delete.
+		if (directory == null) return;
 
-		boolean success = hostname.delete();
-		logger.log(Level.INFO, "Deleted hostname file: " + (success ? "yes" : "no"));
-		success = privatekey.delete();
-		logger.log(Level.INFO, "Deleted private key file: " + (success ? "yes" : "no"));
-		success = hiddenservice.delete();
-		logger.log(Level.INFO, "Deleted hidden service directory: " + (success ? "yes" : "no"));
+		logger.log(Level.INFO, "Deleting hidden service directory.");
+		File hostname = Paths.get(configuration.getHiddenServiceDirectory(), directory, Constants.hostname).toFile();
+		File hiddenservice = Paths.get(configuration.getHiddenServiceDirectory(), directory).toFile();
+		File privatekey = Paths.get(configuration.getHiddenServiceDirectory(), directory, Constants.prkey).toFile();
+
+		boolean hostnameDeleted = hostname.delete();
+		logger.log(Level.INFO, "Deleted hostname file: " + (hostnameDeleted ? "yes" : "no"));
+		boolean prkeyDeleted = privatekey.delete();
+		logger.log(Level.INFO, "Deleted private key file: " + (prkeyDeleted ? "yes" : "no"));
+		boolean directoryDeleted = hiddenservice.delete();
+		logger.log(Level.INFO, "Deleted hidden service directory: " + (directoryDeleted ? "yes" : "no"));
+
+		if (!directoryDeleted || !hostnameDeleted || !prkeyDeleted)
+			throw new IOException("Client failed to delete hidden service directory: " + hiddenservice.getAbsolutePath());
 	}
 
 	/**
@@ -374,40 +449,5 @@ public class Client {
 		logger.log(Level.INFO, "Read identifier: " + identifier);
 		return identifier;
 	}
-
-	/**
-	 * Reads the Tor SOCKS proxy port number from the Tor properties.
-	 *
-	 * @return The Tor SOCKS proxy port number.
-	 * @throws IllegalArgumentException Throws an IllegalArgumentException if reading the SOCKS proxy port fails
-	 * @throws IOException Throws an IOException when the Tor control socket is not reachable, or if the Tor authentication fails.
-	 */
-	/*private int readTorSocksProxyPort() throws IllegalArgumentException, IOException {
-		logger.log(Level.INFO, "Opening socket on " + Constants.localhost + ":" + configuration.getTorControlPort() + " to control Tor.");
-		// Connect to the Tor control port.
-		Socket s = new Socket(Constants.localhost, configuration.getTorControlPort());
-		logger.log(Level.INFO, "Fetching JTorCtl connection.");
-		TorControlConnection conn = TorControlConnection.getConnection(s);
-		logger.log(Level.INFO, "Authenticating the connection.");
-		// Authenticate the connection.
-		conn.authenticate(configuration.getAuthenticationBytes());
-
-		logger.log(Level.INFO, "Fetching the Tor SOCKS proxy port number.");
-
-		// Get the values of the Tor SOCKS proxy port number property via JTorCtl.
-		List<ConfigEntry> values = conn.getConf(Constants.torsocksportkeyword);
-
-		//
-		if (values.size() != 1) {
-			logger.log(Level.WARNING, "Read wrong number of values for the Tor SOCKS proxy port number property: " + values.size());
-			throw new IOException("Read wrong number of values for the Tor SOCKS proxy port number property.");
-		}
-
-		final int port = Integer.valueOf(values.get(0).value);
-
-		logger.log(Level.INFO, "Read Tor SOCKS proxy port number: " + port);
-
-		return port;
-	}*/
 
 }

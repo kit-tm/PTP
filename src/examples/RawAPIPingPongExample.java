@@ -10,6 +10,7 @@ import p2p.Client;
 import p2p.Configuration;
 import p2p.Constants;
 import p2p.Listener;
+import thread.TorManager;
 
 
 /**
@@ -55,12 +56,26 @@ public class RawAPIPingPongExample {
 
 	public static void main(String[] args) throws IllegalArgumentException, IOException {
 		Client client = null;
+		TorManager manager = null;
 
 		try {
 			final Holder holder = new Holder();
 			holder.max = 50;
 
-	        final Configuration configuration = new Configuration(Constants.configfile, Paths.get("config"), 9051, 9050);
+			manager = new TorManager();
+			// Start the TorManagers.
+			manager.start();
+
+			// Wait (no more than 3 minutes) until the two TorManagers are done with their respective Tor bootstrapping.
+			while ((!manager.ready())) {
+				try {
+					Thread.sleep(1 * 1000);
+				} catch (InterruptedException e) {
+					// Sleeping was interrupted. Do nothing.
+				}
+			}
+
+			final Configuration configuration = new Configuration(Constants.configfile, Paths.get("config"), manager.controlport(), manager.socksport());
 			client = new Client(configuration);
 			client.listener(new Listener() {
 
@@ -133,8 +148,8 @@ public class RawAPIPingPongExample {
 			e.printStackTrace();
 		}
 		System.out.println("Exiting client.");
-		if (client != null)
-			client.exit();
+		if (client != null) client.exit();
+		if (manager != null) manager.stop();
 	}
 
 }

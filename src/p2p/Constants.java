@@ -68,8 +68,10 @@ public class Constants {
 	public static final String dummyportfile = "config/port.conf";
 	/** The timestamp format used as a prefix for the temporary Tor working directory creation. */
 	public static final String timestampformat = "yyMMddHHmmss";
-	/** The name of the hidden service directory. */
-	public static final String hiddenservicedir = "hidden_service";
+	/** The name of the hidden service root directory. */
+	public static final String hiddenservicedir = "hidden_services";
+	/** The prefix of the hidden service directories. */
+	public static final String hiddenserviceprefix = "hs";
 	/** The name of the TorP2P home environment variable. */
 	public static final String torp2phomeenvvar = "TORP2P_HOME";
 	/** The name of the TorP2P Tor manager ports file. */
@@ -78,6 +80,8 @@ public class Constants {
 	public static final String tormanagerportsfile = "TorP2PTorManagerPorts";
 	/** The name of the TorP2P Tor manager lock file. */
 	public static final String tormanagerlockfile = "TorP2PTorManagerLock";
+	/** The name of the raw API lock file. */
+	public static final String rawapilockfile = "TorP2PRawAPILock";
 
 
 	/* Logger constants */

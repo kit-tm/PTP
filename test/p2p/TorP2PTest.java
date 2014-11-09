@@ -174,7 +174,7 @@ public class TorP2PTest {
 			fail("Sending initial ping-pong message failed.");
 
 		final long start = System.currentTimeMillis();
-		while (counter.get() < max && System.currentTimeMillis() - start < 180 * 1000) {
+		while (counter.get() < max && System.currentTimeMillis() - start < 300 * 1000) {
 			try {
 				Thread.sleep(5 * 1000);
 			} catch (InterruptedException e) {

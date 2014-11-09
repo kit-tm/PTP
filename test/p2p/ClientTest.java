@@ -269,10 +269,10 @@ public class ClientTest {
 		Client.SendResponse sendResponse = client1.send(identifier2, message);
 		if (sendResponse != Client.SendResponse.SUCCESS)
 			fail("Sending first message failed.");
-		
+
 		// Wait (no more than 3 minutes) until the maximum number of received messages is reached.
 		start = System.currentTimeMillis();
-		while (counter.get() < max && System.currentTimeMillis() - start < 180 * 1000) {
+		while (counter.get() < max && System.currentTimeMillis() - start < 300 * 1000) {
 			try {
 				Thread.sleep(5 * 1000);
 			} catch (InterruptedException e) {
@@ -282,11 +282,11 @@ public class ClientTest {
 
 		if (counter.get() < max)
 			fail("Maximum number of received messages not reached.");
-		
+
 		Client.DisconnectResponse disconnectResponse1 = client1.disconnect(identifier2);
 		if (disconnectResponse1 != Client.DisconnectResponse.SUCCESS)
 			fail("Disconnecting first API object failed.");
-		
+
 		Client.DisconnectResponse disconnectResponse2 = client2.disconnect(identifier1);
 		if (disconnectResponse2 != Client.DisconnectResponse.SUCCESS)
 			fail("Disconnecting second API object failed.");

@@ -75,8 +75,9 @@ public class TorManager extends Manager {
 
 		// Check if the lock file exists, if not create it.
 		lockFile = Paths.get(workingDirectory.toString(), Constants.tormanagerlockfile).toFile();
-		if (!lockFile.exists())
-			lockFile.createNewFile();
+		if (!lockFile.exists() && !lockFile.createNewFile())
+			// Lock file does not exist and was not created.
+			throw new IOException("Unable to create missing TorP2P Tor manager lock file.");
 
 		// Get handles of the auxiliary files.
 		runningFile = Paths.get(workingDirectory.toString(), Constants.tormanagerrunningfile).toFile();

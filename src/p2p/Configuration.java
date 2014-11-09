@@ -52,6 +52,8 @@ public class Configuration {
 
 	/** The logger configuration file. */
 	private final String loggerConfiguration;
+	/** The path of the working directory. */
+	private final String workingDirectory;
 	/** The path of the Tor hidden service directory. */
 	private final String hiddenServiceDirectory;
 	/** The port on which the hidden service should be available. */
@@ -151,7 +153,11 @@ public class Configuration {
 		check(properties, SocketTTL);
 		check(properties, SocketTTLPoll);
 
+
 		// Set the configuration parameters.
+
+		this.workingDirectory = workingDirectory.toString();
+		logger.info("Set the working directory to: " + this.workingDirectory);
 
 		hiddenServiceDirectory = Paths.get(workingDirectory.toString(), Constants.hiddenservicedir).toString();
 		logger.info("Set the hidden servide directory to: " + hiddenServiceDirectory);
@@ -187,6 +193,10 @@ public class Configuration {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder("<Configuration>\n");
+
+		sb.append("\tworking directory = ");
+		sb.append(workingDirectory);
+		sb.append("\n");
 
 		sb.append("\thidden service directory = ");
 		sb.append(hiddenServiceDirectory);
@@ -228,6 +238,13 @@ public class Configuration {
 
 		return sb.toString();
 	}
+
+	/**
+	 * Returns the TorP2P working directory as specified.
+	 *
+	 * @return The TorP2P working directory.
+	 */
+	public String getWorkingDirectory() { return workingDirectory; }
 
 	/**
 	 * Returns the Tor hidden service directory as specified.

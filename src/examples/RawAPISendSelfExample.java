@@ -8,6 +8,7 @@ import p2p.Client;
 import p2p.Configuration;
 import p2p.Constants;
 import p2p.Listener;
+import thread.TorManager;
 
 
 /**
@@ -22,7 +23,21 @@ public class RawAPISendSelfExample {
 	public static void main(String[] args) throws IllegalArgumentException, IOException {
 		final AtomicBoolean received = new AtomicBoolean(false);
 		final String message = "the Message";
-		Configuration configuration = new Configuration(Constants.configfile, Paths.get("config"), 9051, 9050);
+
+		TorManager manager = new TorManager();
+		// Start the TorManagers.
+		manager.start();
+
+		// Wait (no more than 3 minutes) until the two TorManagers are done with their respective Tor bootstrapping.
+		while ((!manager.ready())) {
+			try {
+				Thread.sleep(1 * 1000);
+			} catch (InterruptedException e) {
+				// Sleeping was interrupted. Do nothing.
+			}
+		}
+
+		final Configuration configuration = new Configuration(Constants.configfile, Paths.get("config"), manager.controlport(), manager.socksport());
 		Client client = new Client(configuration);
 		client.listener(new Listener() {
 
@@ -65,6 +80,7 @@ public class RawAPISendSelfExample {
 		client.disconnect(identifier);
 		System.out.println("Exiting.");
 		client.exit();
+		manager.stop();
 	}
 
 }
