@@ -77,7 +77,7 @@ public class Constants {
 	/** The name of the TorP2P home environment variable. */
 	public static final String torp2phomeenvvar = "TORP2P_HOME";
 	/** The path of the default TorP2P home directory. */
-	public static final String torp2phomedefault = "./torp2pdata";
+	public static final String torp2phomedefault = "./torp2p-data";
 	/** The name of the TorP2P Tor manager ports file. */
 	public static final String tormanagerportsfile = "TorP2PTorManagerPorts";
 	/** The name of the TorP2P Tor manager lock file. */
