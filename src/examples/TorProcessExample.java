@@ -20,7 +20,7 @@ public class TorProcessExample {
 		System.out.println("Starting Tor.");
 		tor.start();
 		System.out.println("Sleeping.");
-		Thread.sleep(30 * 1000);
+		Thread.sleep(10 * 1000);
 		System.out.println("Stopping Tor.");
 		tor.stop();
 		System.out.println("Done.");

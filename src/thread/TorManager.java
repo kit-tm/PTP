@@ -115,48 +115,48 @@ public class TorManager extends Manager {
 				FileChannel channel = raf.getChannel();
 				FileLock lock = null;
 
-				// Check if the Tor manager lock file is locked.
+				// Lock the Tor manager lock file.
 				try {
-					// If not, lock it and run Tor.
 					lock = channel.tryLock();
 					if (lock == null)
 						throw new OverlappingFileLockException();
 
 					logger.log(Level.INFO, "Tor manager has the lock on the Tor manager lock file.");
+					boolean noTor = raf.length() == 0 || raf.readInt() <= 0;
+					logger.log(Level.INFO, "Tor manager checked if Tor process is running: " + (noTor ? "not running" : "running"));
 
-					if (portsFile.exists()) {
-						try {
-							logger.log(Level.WARNING, "Tor manager ports file exists without a lock on the Tor manager lock file.");
-							readports();
-							logger.log(Level.WARNING, "Read control port: " + torControlPort);
-							Socket s = new Socket(Constants.localhost, torControlPort);
-							logger.log(Level.WARNING, "Tor manager attempting to shutdown ghost Tor process.");
-							TorControlConnection conn = TorControlConnection.getConnection(s);
-							conn.authenticate(new byte[0]);
-							conn.shutdownTor(Constants.shutdownsignal);
-							logger.log(Level.WARNING, "Tor manager sent shutdown signal.");
-						} catch (IOException e) {
-							logger.log(Level.WARNING, "Tor manager caught an IOException while checking/closing ghost Tor process: " + e.getMessage());
-						} catch (NumberFormatException e) {
-							logger.log(Level.WARNING, "Tor manager caught a NumberFormatException while checking/closing ghost Tor process: " + e.getMessage());
-						}
+					// If the lock file is empty, or its content is the number 0, no Tor process is running.
+					if (noTor) {
+						// Run the Tor process.
+						runtor();
+						// Set the number of APIs using Tor to one.
+						raf.seek(0);
+						raf.writeInt(1);
+					// Otherwise, increment the counter in the lock file. Indicates that another API is using the Tor process.
+					} else {
+						raf.seek(0);
+						final int numberOfAPIs = raf.readInt();
+						raf.seek(0);
+						raf.writeInt(numberOfAPIs + 1);
 					}
 
-					// Run the Tor process.
-					runtor();
-
+				} catch (OverlappingFileLockException e) {
+					logger.log(Level.INFO, "Tor manager caught an OverlappingFileLockException while locking file, backing off.");
+				} finally {
 					// Release the lock.
 					logger.log(Level.INFO, "Tor manager releasing the lock on the Tor manager lock file.");
-					lock.release();
-				// Otherwise, wait for the Tor manager ports file to appear and read it.
-				} catch (OverlappingFileLockException e) {
-					waittor();
-				} finally {
+					if (lock != null)
+						lock.release();
+
 					// Close the lock file.
 					channel.close();
 					raf.close();
 				}
+
+				// Wait for the Tor manager ports file to appear and read it.
+				waittor();
 			} catch (IOException e) {
+				e.printStackTrace();
 				logger.log(Level.WARNING, "Tor manager caught an IOException during Tor process initialization: " + e.getMessage());
 			}
 		}
@@ -171,34 +171,21 @@ public class TorManager extends Manager {
 	public void stop() {
 		logger.log(Level.INFO, "Stopping Tor manager thread.");
 		condition.set(false);
-		logger.log(Level.INFO, "Destroying Tor process.");
-		if (process != null) process.destroy();
 		logger.log(Level.INFO, "Interrupting Tor manager thread.");
 		thread.interrupt();
-		logger.log(Level.INFO, "Interrupting output thread.");
+		logger.log(Level.INFO, "Closing output thread.");
 		if (output != null) output.interrupt();
-		logger.log(Level.INFO, "Interrupting error thread.");
+		logger.log(Level.INFO, "Closing error thread.");
 		if (error != null) error.interrupt();
 		logger.log(Level.INFO, "Interrupting ports thread.");
 		if (ports != null) ports.interrupt();
 		logger.log(Level.INFO, "Stopped Tor manager thread.");
 
-		// Wait for the process thread to exit.
-		logger.log(Level.INFO, "Waiting for TorManager thread to exit...");
-		while (thread.isAlive()) {
-			try {
-				thread.join();
-			} catch (InterruptedException e) {
-				// Do nothing.
-			}
-		}
-		logger.log(Level.INFO, "Tor manager thread exited.");
+		// Stop Tor, if no other API is using the process.
+		if (running.get())
+			stoptor();
 
-		// Delete the Tor manager ports file.
-		portsFile.delete();
-		logger.log(Level.INFO, "Deleted Tor manager ports file.");
-
-		logger.log(Level.INFO, "Deleted Tor PID file.");
+		running.set(false);
 	}
 
 	/**
@@ -245,6 +232,112 @@ public class TorManager extends Manager {
 		return torSOCKSProxyPort;
 	}
 
+	public boolean torrunning() {
+		boolean torRunning = false;
+
+		logger.log(Level.INFO, "Tor manager checking if Tor is running.");
+		File directory = workingDirectory.toFile();
+		if (running.get() && directory.exists()) {
+			// Check if another TorManager is currently running a Tor process.
+			try {
+				// Block until a lock on the Tor manager lock file is available.
+				logger.log(Level.INFO, "Tor manager acquiring lock on Tor manager lock file.");
+				RandomAccessFile raf = new RandomAccessFile(lockFile, Constants.readwriterights);
+				FileChannel channel = raf.getChannel();
+				FileLock lock = null;
+
+				// Lock the Tor manager lock file.
+				try {
+					lock = channel.tryLock();
+					if (lock == null)
+						throw new OverlappingFileLockException();
+
+					logger.log(Level.INFO, "Tor manager has the lock on the Tor manager lock file.");
+
+					torRunning = raf.length() == Integer.BYTES && raf.readInt() > 0;
+					// If the lock file is empty, or its content is the number 0, no Tor process is running.
+				} catch (OverlappingFileLockException e) {
+					logger.log(Level.INFO, "Tor manager caught an OverlappingFileLockException while locking file, backing off.");
+				} finally {
+					// Release the lock.
+					logger.log(Level.INFO, "Tor manager releasing the lock on the Tor manager lock file.");
+					if (lock != null)
+						lock.release();
+
+					// Close the lock file.
+					channel.close();
+					raf.close();
+				}
+			} catch (IOException e) {
+				logger.log(Level.WARNING, "Tor manager caught an IOException during Tor process initialization: " + e.getMessage());
+			}
+		}
+
+		return torRunning;
+	}
+
+
+	/**
+	 * Stops the API Tor process, if no other API is using the process.
+	 */
+	private void stoptor() {
+		logger.log(Level.INFO, "Tor manager closing Tor process.");
+		try {
+			logger.log(Level.INFO, "Tor manager acquiring lock on Tor manager lock file.");
+			RandomAccessFile raf = new RandomAccessFile(lockFile, Constants.readwriterights);
+			FileChannel channel = raf.getChannel();
+			FileLock lock = null;
+
+			// Lock the Tor manager lock file.
+			try {
+				lock = channel.tryLock();
+				if (lock == null)
+					throw new OverlappingFileLockException();
+
+				logger.log(Level.INFO, "Tor manager has the lock on the Tor manager lock file.");
+
+				// If the lock file does not contain a single integer, something is wrong.
+				if (raf.length() != Integer.BYTES)
+					throw new IOException("Tor manager lock file is broken!");
+
+				final int numberOfAPIs = raf.readInt();
+				logger.log(Level.INFO, "Tor manager read the number of APIs from the Tor manager lock file: " + numberOfAPIs);
+
+				raf.seek(0);
+				raf.writeInt(Math.max(0, numberOfAPIs - 1));
+
+				// Check if this is the only API using the Tor process, if so stop the Tor process.
+				if (numberOfAPIs == 1) {
+					logger.log(Level.INFO, "Tor manager stopping Tor process.");
+					logger.log(Level.INFO, "Using control port: " + torControlPort);
+					Socket s = new Socket(Constants.localhost, torControlPort);
+					logger.log(Level.INFO, "Tor manager attempting to shutdown Tor process.");
+					TorControlConnection conn = TorControlConnection.getConnection(s);
+					conn.authenticate(new byte[0]);
+					conn.shutdownTor(Constants.shutdownsignal);
+					logger.log(Level.INFO, "Tor manager sent shutdown signal.");
+					// Delete the Tor manager ports file.
+					portsFile.delete();
+					logger.log(Level.INFO, "Deleted Tor manager ports file.");
+				}
+			} catch (OverlappingFileLockException e) {
+				logger.log(Level.INFO, "Tor manager caught an OverlappingFileLockException while locking file, backing off.");
+			} finally {
+				// Release the lock.
+				logger.log(Level.INFO, "Tor manager releasing the lock on the Tor manager lock file.");
+				if (lock != null)
+					lock.release();
+
+				// Close the lock file.
+				channel.close();
+				raf.close();
+			}
+		} catch (IOException e) {
+			logger.log(Level.WARNING, "Tor manager caught an IOException while closing Tor process: " + e.getMessage());
+		} catch (NumberFormatException e) {
+			logger.log(Level.WARNING, "Tor manager caught a NumberFormatException while closing Tor process: " + e.getMessage());
+		}
+	}
 
 	/**
 	 * Starts a thread which waits for the Tor ports file to appear, then reads the control/SOCKS ports from the file.
@@ -328,14 +421,6 @@ public class TorManager extends Manager {
 
 			process = Runtime.getRuntime().exec(parameters);
 
-			// Handle unclean exits.
-			Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
-
-				@Override
-				public void run() { process.destroy(); }
-
-			}));
-
 			error = new Thread(new Runnable() {
 
 				@Override
@@ -343,20 +428,25 @@ public class TorManager extends Manager {
 					try {
 						logger.log(Level.INFO, "Error reading thread started.");
 						logger.log(Level.INFO, "Fetching the process stdin stream.");
-						final BufferedReader input = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+						BufferedReader errorOut = new BufferedReader(new InputStreamReader(process.getErrorStream()));
 
 						logger.log(Level.INFO, "Error thread entering reading loop.");
 						while (condition.get()) {
-							logger.log(Level.INFO, "Error thread waiting on Tor output.");
-							String line = input.readLine();
-							logger.log(Level.INFO, "Error thread read Tor output line:\n" + line);
-							// If we read null we are done with the process output.
-							if (line == null) break;
+							if (errorOut.ready()) {
+								String line = errorOut.readLine();
+								logger.log(Level.INFO, "Error thread read Tor output line:\n" + line);
+								// If we read null we are done with the process output.
+								if (line == null) break;
+							} else {
+								try {
+									Thread.sleep(10 * 1000);
+								} catch (InterruptedException e) {
+									// Waiting was interrupted. Do nothing.
+								}
+							}
 						}
 
-						logger.log(Level.INFO, "Error thread closing output stream.");
-						input.close();
-						logger.log(Level.INFO, "Error thread closed output stream.");
+						errorOut.close();
 					} catch (IOException e) {
 						logger.log(Level.WARNING, "Error thread caught an IOException: " + e.getMessage());
 					}
@@ -370,42 +460,54 @@ public class TorManager extends Manager {
 					try {
 						logger.log(Level.INFO, "Output reading thread started.");
 						logger.log(Level.INFO, "Fetching the process stdout stream.");
-						final BufferedReader input = new BufferedReader(new InputStreamReader(process.getInputStream()));
+						BufferedReader standardOut = new BufferedReader(new InputStreamReader(process.getInputStream()));
+						boolean portsRead = false;
 
 						logger.log(Level.INFO, "Output thread entering reading loop.");
 						while (condition.get()) {
-							logger.log(Level.INFO, "Output thread waiting on Tor output.");
-							String line = input.readLine();
-							logger.log(Level.INFO, "Output thread read Tor output line:\n" + line);
-							// If we read null we are done with the process output.
-							if (line == null) break;
-							// If not, check if we read that the bootstrapping is complete.
-							if (line.contains(Constants.bootstrapdone)) {
-								logger.log(Level.INFO, "Output thread Tor ports to Tor manager ports file.");
-								BufferedWriter writer = new BufferedWriter(new FileWriter(portsFile));
+							if (standardOut.ready()) {
+								String line = standardOut.readLine();
+								logger.log(Level.INFO, "Output thread read Tor output line:\n" + line);
+								// If we read null we are done with the process output.
+								if (line == null) break;
+								// If not, check if we read that the bootstrapping is complete.
+								if (line.contains(Constants.bootstrapdone)) {
+									logger.log(Level.INFO, "Output thread Tor ports to Tor manager ports file.");
+									BufferedWriter writer = new BufferedWriter(new FileWriter(portsFile));
 
-								writer.write(torControlPort + Constants.newline);
-								writer.write(torSOCKSProxyPort + Constants.newline);
+									writer.write(torControlPort + Constants.newline);
+									writer.write(torSOCKSProxyPort + Constants.newline);
 
-								logger.log(Level.INFO, "Output thread writing wrote: " + torControlPort);
-								logger.log(Level.INFO, "Output thread writing wrote: " + torSOCKSProxyPort);
+									logger.log(Level.INFO, "Output thread writing wrote: " + torControlPort);
+									logger.log(Level.INFO, "Output thread writing wrote: " + torSOCKSProxyPort);
 
-								writer.close();
-								logger.log(Level.INFO, "Output thread wrote Tor manager ports file.");
+									writer.close();
+									logger.log(Level.INFO, "Output thread wrote Tor manager ports file.");
 
-								ready.set(true);
-								logger.log(Level.INFO, "Tor manager ready.");
-							// If not, check whether the control port is open.
-							} else if (line.contains(Constants.controlportopen))
-								torControlPort = readport(Constants.controlportopen, line);
-							// If not, check whether the SOCKS proxy port is open.
-							else if (line.contains(Constants.socksportopen))
-								torSOCKSProxyPort = readport(Constants.socksportopen, line);
+									ready.set(true);
+									logger.log(Level.INFO, "Tor manager ready.");
+
+									portsRead = true;
+								// If not, check whether the control port is open.
+								} else if (line.contains(Constants.controlportopen))
+									torControlPort = readport(Constants.controlportopen, line);
+								// If not, check whether the SOCKS proxy port is open.
+								else if (line.contains(Constants.socksportopen))
+									torSOCKSProxyPort = readport(Constants.socksportopen, line);
+							} else {
+								try {
+									// If the Tor process ports are not read, sleep less. Otherwise sleep for a longer interval.
+									if (portsRead)
+										Thread.sleep(5 * 1000);
+									else
+										Thread.sleep(1 * 1000);
+								} catch (InterruptedException e) {
+									// Waiting was interrupted. Do nothing.
+								}
+							}
 						}
 
-						logger.log(Level.INFO, "Output thread closing output stream.");
-						input.close();
-						logger.log(Level.INFO, "Output thread closed output stream.");
+						standardOut.close();
 					} catch (IOException e) {
 						logger.log(Level.WARNING, "Output thread caught an IOException: " + e.getMessage());
 					}
@@ -415,30 +517,9 @@ public class TorManager extends Manager {
 			// Start the log output reading thread.
 			output.start();
 			error.start();
-			int result = 0;
-
-			logger.log(Level.INFO, "Tor manager thread entering waiting loop.");
-			while (condition.get()) {
-				try {
-					logger.log(Level.INFO, "Tor manager thread waiting on Tor process to finish.");
-					result = process.waitFor();
-					logger.log(Level.INFO, "Tor manager thread waiting on output thread to finish.");
-					thread.join();
-				} catch (InterruptedException e) {
-					logger.log(Level.INFO, "Tor manager thread was interrupted during wait.");
-				}
-			}
-
-			if (result != 0)
-				logger.log(Level.WARNING, "Starting Tor process failed with status: " + result);
 		} catch (IOException e) {
 			logger.log(Level.WARNING, "Tor manager thread caught an IOException when starting Tor: " + e.getMessage());
 		}
-
-		// Set the status atomic booleans.
-		ready.set(false);
-		running.set(false);
-		logger.log(Level.INFO, "Tor manager Tor process exited.");
 	}
 
 	/**

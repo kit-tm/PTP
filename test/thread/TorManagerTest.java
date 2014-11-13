@@ -85,7 +85,9 @@ public class TorManagerTest {
 		readyManager.stop();
 		// Check whether the ready TorManager is still running.
 		if (readyManager.running())
-			fail("Ready TorManager is still returning a running state after being stopped.");
+			fail("Ready TorManager is returning a running state after being stopped.");
+		if (readyManager.torrunning())
+			fail("Ready TorManager is returning a running Tor process state after being stopped.");
 	}
 
 	/**
