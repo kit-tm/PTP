@@ -89,7 +89,7 @@ public class TorManager extends Manager {
 		portsFile.deleteOnExit();
 
 		logger.log(Level.INFO, "Read Tor working directory: " + workingDirectory.toString());
-		logger.log(Level.INFO, "Created Tor manager lock file: " + lockFile.getAbsolutePath());
+		logger.log(Level.INFO, "Tor manager lock file is: " + lockFile.getAbsolutePath());
 		logger.log(Level.INFO, "Tor manager ports file is: " + portsFile.getAbsolutePath());
 		logger.log(Level.INFO, "TorManager object created.");
 	}
@@ -119,6 +119,9 @@ public class TorManager extends Manager {
 				try {
 					// If not, lock it and run Tor.
 					lock = channel.tryLock();
+					if (lock == null)
+						throw new OverlappingFileLockException();
+
 					logger.log(Level.INFO, "Tor manager has the lock on the Tor manager lock file.");
 
 					if (portsFile.exists()) {
@@ -148,11 +151,11 @@ public class TorManager extends Manager {
 				// Otherwise, wait for the Tor manager ports file to appear and read it.
 				} catch (OverlappingFileLockException e) {
 					waittor();
+				} finally {
+					// Close the lock file.
+					channel.close();
+					raf.close();
 				}
-
-				// Close the lock file.
-				channel.close();
-				raf.close();
 			} catch (IOException e) {
 				logger.log(Level.WARNING, "Tor manager caught an IOException during Tor process initialization: " + e.getMessage());
 			}
