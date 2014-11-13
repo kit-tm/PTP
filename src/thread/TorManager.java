@@ -64,8 +64,10 @@ public class TorManager extends Manager {
 	public TorManager() throws IOException {
 		super();
 
-		// Read the TorP2P home directory from the system environment variables.
+		// Read the TorP2P home directory from the system environment variable.
+		// or use default if not set.
 		String torp2phome = System.getenv(Constants.torp2phomeenvvar);
+		if(torp2phome == null) torp2phome = Constants.torp2phomedefault;
 		workingDirectory = Paths.get(torp2phome);
 
 		// Check if the home directory exists, if not try to create it.
