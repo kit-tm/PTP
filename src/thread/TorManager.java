@@ -125,6 +125,22 @@ public class TorManager extends Manager {
 				boolean noTor = raf.length() == 0 || raf.readInt() <= 0;
 				logger.log(Level.INFO, "Tor manager checked if Tor process is running: " + (noTor ? "not running" : "running"));
 
+				// Check if the counter in the Tor lock file is > 0 while no Tor process is running.
+				if (!noTor && portsFile.exists()) {
+					logger.log(Level.INFO, "Tor manager checking if the file lock counter is broken.");
+					readports();
+					// Attempt a JTorCtl connection to the Tor process. If Tor is not running the connection will not succeed.
+					try {
+						logger.log(Level.INFO, "Tor manager attempting to connect to the Tor process.");
+						Socket s = new Socket(Constants.localhost, torControlPort);
+						TorControlConnection conn = TorControlConnection.getConnection(s);
+						conn.authenticate(new byte[0]);
+					} catch (IOException e) {
+						logger.log(Level.INFO, "Tor manager could not connect to the Tor process, the file lock counter is broken.");
+						noTor = true;
+					}
+				}
+
 				// If the lock file is empty, or its content is the number 0, no Tor process is running.
 				if (noTor) {
 					// Run the Tor process.
