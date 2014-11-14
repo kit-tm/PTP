@@ -85,9 +85,6 @@ public class TorManager extends Manager {
 		// Get a handle on the Tor manager ports file.
 		portsFile = Paths.get(workingDirectory.toString(), Constants.tormanagerportsfile).toFile();
 
-		// The Tor manager ports file should be deleted on exit.
-		portsFile.deleteOnExit();
-
 		logger.log(Level.INFO, "Read Tor working directory: " + workingDirectory.toString());
 		logger.log(Level.INFO, "Tor manager lock file is: " + lockFile.getAbsolutePath());
 		logger.log(Level.INFO, "Tor manager ports file is: " + portsFile.getAbsolutePath());
@@ -116,42 +113,42 @@ public class TorManager extends Manager {
 				FileLock lock = null;
 
 				// Lock the Tor manager lock file.
-				try {
-					lock = channel.tryLock();
-					if (lock == null)
-						throw new OverlappingFileLockException();
-
-					logger.log(Level.INFO, "Tor manager has the lock on the Tor manager lock file.");
-					boolean noTor = raf.length() == 0 || raf.readInt() <= 0;
-					logger.log(Level.INFO, "Tor manager checked if Tor process is running: " + (noTor ? "not running" : "running"));
-
-					// If the lock file is empty, or its content is the number 0, no Tor process is running.
-					if (noTor) {
-						// Run the Tor process.
-						runtor();
-						// Set the number of APIs using Tor to one.
-						raf.seek(0);
-						raf.writeInt(1);
-					// Otherwise, increment the counter in the lock file. Indicates that another API is using the Tor process.
-					} else {
-						raf.seek(0);
-						final int numberOfAPIs = raf.readInt();
-						raf.seek(0);
-						raf.writeInt(numberOfAPIs + 1);
+				while (lock == null) {
+					try {
+						lock = channel.lock();
+					} catch (OverlappingFileLockException e) {
+						// Concurrent access. Try again.
 					}
-
-				} catch (OverlappingFileLockException e) {
-					logger.log(Level.INFO, "Tor manager caught an OverlappingFileLockException while locking file, backing off.");
-				} finally {
-					// Release the lock.
-					logger.log(Level.INFO, "Tor manager releasing the lock on the Tor manager lock file.");
-					if (lock != null)
-						lock.release();
-
-					// Close the lock file.
-					channel.close();
-					raf.close();
 				}
+
+				logger.log(Level.INFO, "Tor manager has the lock on the Tor manager lock file.");
+				boolean noTor = raf.length() == 0 || raf.readInt() <= 0;
+				logger.log(Level.INFO, "Tor manager checked if Tor process is running: " + (noTor ? "not running" : "running"));
+
+				// If the lock file is empty, or its content is the number 0, no Tor process is running.
+				if (noTor) {
+					// Run the Tor process.
+					runtor();
+					// Set the number of APIs using Tor to one.
+					raf.seek(0);
+					raf.writeInt(1);
+					logger.log(Level.INFO, "Tor manager set lock file counter to: " + 1);
+				// Otherwise, increment the counter in the lock file. Indicates that another API is using the Tor process.
+				} else {
+					raf.seek(0);
+					final int numberOfAPIs = raf.readInt();
+					raf.seek(0);
+					raf.writeInt(numberOfAPIs + 1);
+					logger.log(Level.INFO, "Tor manager set lock file counter to: " + (numberOfAPIs + 1));
+				}
+
+				// Release the lock.
+				logger.log(Level.INFO, "Tor manager releasing the lock on the Tor manager lock file.");
+				lock.release();
+
+				// Close the lock file.
+				channel.close();
+				raf.close();
 
 				// Wait for the Tor manager ports file to appear and read it.
 				waittor();
@@ -237,7 +234,7 @@ public class TorManager extends Manager {
 
 		logger.log(Level.INFO, "Tor manager checking if Tor is running.");
 		File directory = workingDirectory.toFile();
-		if (running.get() && directory.exists()) {
+		if (directory.exists()) {
 			// Check if another TorManager is currently running a Tor process.
 			try {
 				// Block until a lock on the Tor manager lock file is available.
@@ -247,27 +244,26 @@ public class TorManager extends Manager {
 				FileLock lock = null;
 
 				// Lock the Tor manager lock file.
-				try {
-					lock = channel.tryLock();
-					if (lock == null)
-						throw new OverlappingFileLockException();
-
-					logger.log(Level.INFO, "Tor manager has the lock on the Tor manager lock file.");
-
-					torRunning = raf.length() == Integer.BYTES && raf.readInt() > 0;
-					// If the lock file is empty, or its content is the number 0, no Tor process is running.
-				} catch (OverlappingFileLockException e) {
-					logger.log(Level.INFO, "Tor manager caught an OverlappingFileLockException while locking file, backing off.");
-				} finally {
-					// Release the lock.
-					logger.log(Level.INFO, "Tor manager releasing the lock on the Tor manager lock file.");
-					if (lock != null)
-						lock.release();
-
-					// Close the lock file.
-					channel.close();
-					raf.close();
+				while (lock == null) {
+					try {
+						lock = channel.lock();
+					} catch (OverlappingFileLockException e) {
+						// Concurrent access. Try again.
+					}
 				}
+
+				logger.log(Level.INFO, "Tor manager has the lock on the Tor manager lock file.");
+
+				// If the lock file is empty, or its content is the number 0, no Tor process is running.
+				torRunning = raf.length() == Integer.BYTES && raf.readInt() > 0;
+
+				// Release the lock.
+				logger.log(Level.INFO, "Tor manager releasing the lock on the Tor manager lock file.");
+				lock.release();
+
+				// Close the lock file.
+				channel.close();
+				raf.close();
 			} catch (IOException e) {
 				logger.log(Level.WARNING, "Tor manager caught an IOException during Tor process initialization: " + e.getMessage());
 			}
@@ -289,16 +285,20 @@ public class TorManager extends Manager {
 			FileLock lock = null;
 
 			// Lock the Tor manager lock file.
-			try {
-				lock = channel.tryLock();
-				if (lock == null)
-					throw new OverlappingFileLockException();
+			while (lock == null) {
+				try {
+					lock = channel.lock();
+				} catch (OverlappingFileLockException e) {
+					// Concurrent access. Try again.
+				}
+			}
 
-				logger.log(Level.INFO, "Tor manager has the lock on the Tor manager lock file.");
+			logger.log(Level.INFO, "Tor manager has the lock on the Tor manager lock file.");
 
-				// If the lock file does not contain a single integer, something is wrong.
-				if (raf.length() != Integer.BYTES)
-					throw new IOException("Tor manager lock file is broken!");
+			final long length = raf.length();
+
+			// If the lock file does not contain a single integer, something is wrong.
+			if (length == Integer.BYTES) {
 
 				final int numberOfAPIs = raf.readInt();
 				logger.log(Level.INFO, "Tor manager read the number of APIs from the Tor manager lock file: " + numberOfAPIs);
@@ -320,18 +320,16 @@ public class TorManager extends Manager {
 					portsFile.delete();
 					logger.log(Level.INFO, "Deleted Tor manager ports file.");
 				}
-			} catch (OverlappingFileLockException e) {
-				logger.log(Level.INFO, "Tor manager caught an OverlappingFileLockException while locking file, backing off.");
-			} finally {
-				// Release the lock.
-				logger.log(Level.INFO, "Tor manager releasing the lock on the Tor manager lock file.");
-				if (lock != null)
-					lock.release();
+			} else
+				logger.log(Level.WARNING, "Tor manager file lock is broken!");
 
-				// Close the lock file.
-				channel.close();
-				raf.close();
-			}
+			// Release the lock.
+			logger.log(Level.INFO, "Tor manager releasing the lock on the Tor manager lock file.");
+			lock.release();
+
+			// Close the lock file.
+			channel.close();
+			raf.close();
 		} catch (IOException e) {
 			logger.log(Level.WARNING, "Tor manager caught an IOException while closing Tor process: " + e.getMessage());
 		} catch (NumberFormatException e) {
@@ -484,10 +482,10 @@ public class TorManager extends Manager {
 									writer.close();
 									logger.log(Level.INFO, "Output thread wrote Tor manager ports file.");
 
+									portsRead = true;
+
 									ready.set(true);
 									logger.log(Level.INFO, "Tor manager ready.");
-
-									portsRead = true;
 								// If not, check whether the control port is open.
 								} else if (line.contains(Constants.controlportopen))
 									torControlPort = readport(Constants.controlportopen, line);

@@ -13,6 +13,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import p2p.Constants;
+
 
 /**
  * This class offers JUnit testing for the TorManager class.
@@ -29,6 +31,8 @@ public class TorManagerTest {
 	/** The destination port when testing the SOCKS proxy of the ready TorManagers Tor process. */
 	private static final int port = 80;
 
+	/** The concurrent TorManager. */
+	private TorManager concurrentManager = null;
 	/** The ready TorManager. */
 	private TorManager readyManager = null;
 	/** The TorManager. */
@@ -42,17 +46,24 @@ public class TorManagerTest {
 	 */
 	@Before
 	public void setUp() throws IOException {
+		// Set the logger format.
+		System.setProperty(Constants.loggerconfig, "config/logger.ini");
+
+		// Create the concurrent TorManager.
+		concurrentManager = new TorManager();
 		// Create the ready TorManager.
 		readyManager = new TorManager();
 		// Create the TorManager.
 		manager = new TorManager();
 
+		// Start the concurrent TorManager.
+		concurrentManager.start();
 		// Start the ready TorManager.
 		readyManager.start();
 
 		// Wait (no more than 3 minutes) until the ready TorManager is done with the Tor bootstrapping.
 		final long start = System.currentTimeMillis();
-		while (!readyManager.ready() && System.currentTimeMillis() - start < 180 * 1000) {
+		while ((!readyManager.ready() || !concurrentManager.ready()) && System.currentTimeMillis() - start < 180 * 1000) {
 			try {
 				Thread.sleep(250);
 			} catch (InterruptedException e) {
@@ -66,6 +77,8 @@ public class TorManagerTest {
 	 */
 	@After
 	public void tearDown() {
+		// Stop the concurrent TorManager.
+		concurrentManager.stop();
 		// Stop the ready TorManager.
 		readyManager.stop();
 		// Stop the TorManager.
@@ -81,6 +94,18 @@ public class TorManagerTest {
 	 */
 	@Test
 	public void testStop() {
+		// Stop the concurrent TorManager.
+		concurrentManager.stop();
+		// Check whether the concurrent TorManager is still running.
+		if (concurrentManager.running())
+			fail("Concurrent TorManager is returning a running state after being stopped.");
+		if (!concurrentManager.torrunning())
+			fail("Concurrent TorManager is returning a stopped Tor process state after being stopped.");
+		// Check whether the ready TorManager is still running.
+		if (!readyManager.running())
+			fail("Ready TorManager is returning a stopped state before being stopped.");
+		if (!readyManager.torrunning())
+			fail("Ready TorManager is returning a stopped Tor process state after being stopped.");
 		// Stop the ready TorManager.
 		readyManager.stop();
 		// Check whether the ready TorManager is still running.
