@@ -166,6 +166,15 @@ public class TorManager extends Manager {
 				channel.close();
 				raf.close();
 
+				// If the application is terminated nicely, check if the Tor process needs to be stopped.
+				Runtime.getRuntime().addShutdownHook(new Thread() {
+
+					public void run() {
+						stoptor();
+					}
+
+				});
+
 				// Wait for the Tor manager ports file to appear and read it.
 				waittor();
 			} catch (IOException e) {
@@ -293,7 +302,7 @@ public class TorManager extends Manager {
 	 * Stops the API Tor process, if no other API is using the process.
 	 */
 	private void stoptor() {
-		logger.log(Level.INFO, "Tor manager closing Tor process.");
+		logger.log(Level.INFO, "Tor manager checking if Tor process should be closed.");
 		try {
 			logger.log(Level.INFO, "Tor manager acquiring lock on Tor manager lock file.");
 			RandomAccessFile raf = new RandomAccessFile(lockFile, Constants.readwriterights);
