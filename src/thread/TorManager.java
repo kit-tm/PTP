@@ -89,6 +89,15 @@ public class TorManager extends Manager {
 		logger.log(Level.INFO, "Tor manager lock file is: " + lockFile.getAbsolutePath());
 		logger.log(Level.INFO, "Tor manager ports file is: " + portsFile.getAbsolutePath());
 		logger.log(Level.INFO, "TorManager object created.");
+
+		// If the application is terminated nicely, check if the Tor process needs to be stopped.
+		Runtime.getRuntime().addShutdownHook(new Thread() {
+
+			public void run() {
+				stoptor();
+			}
+
+		});
 	}
 
 
@@ -166,15 +175,6 @@ public class TorManager extends Manager {
 				channel.close();
 				raf.close();
 
-				// If the application is terminated nicely, check if the Tor process needs to be stopped.
-				Runtime.getRuntime().addShutdownHook(new Thread() {
-
-					public void run() {
-						stoptor();
-					}
-
-				});
-
 				// Wait for the Tor manager ports file to appear and read it.
 				waittor();
 			} catch (IOException e) {
@@ -204,8 +204,7 @@ public class TorManager extends Manager {
 		logger.log(Level.INFO, "Stopped Tor manager thread.");
 
 		// Stop Tor, if no other API is using the process.
-		if (running.get())
-			stoptor();
+		stoptor();
 
 		running.set(false);
 	}
@@ -302,6 +301,9 @@ public class TorManager extends Manager {
 	 * Stops the API Tor process, if no other API is using the process.
 	 */
 	private void stoptor() {
+		// Check if the Tor manager is still running.
+		if (!running.get()) return;
+
 		logger.log(Level.INFO, "Tor manager checking if Tor process should be closed.");
 		try {
 			logger.log(Level.INFO, "Tor manager acquiring lock on Tor manager lock file.");
