@@ -279,7 +279,7 @@ public class TorManager extends Manager {
 				logger.log(Level.INFO, "Tor manager has the lock on the Tor manager lock file.");
 
 				// If the lock file is empty, or its content is the number 0, no Tor process is running.
-				torRunning = raf.length() == Integer.BYTES && raf.readInt() > 0;
+				torRunning = raf.length() == Integer.SIZE/8 && raf.readInt() > 0;
 
 				// Release the lock.
 				logger.log(Level.INFO, "Tor manager releasing the lock on the Tor manager lock file.");
@@ -325,7 +325,7 @@ public class TorManager extends Manager {
 			final long length = raf.length();
 
 			// If the lock file does not contain a single integer, something is wrong.
-			if (length == Integer.BYTES) {
+			if (length == Integer.SIZE/8) {
 
 				final int numberOfAPIs = raf.readInt();
 				logger.log(Level.INFO, "Tor manager read the number of APIs from the Tor manager lock file: " + numberOfAPIs);
