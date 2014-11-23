@@ -58,7 +58,7 @@ public class ConfigurationTest {
 		file = File.createTempFile(prefix, suffix);
 
 		// Set the hidden service directory.
-		hiddenServiceDirectory = Paths.get("", Constants.hiddenservicedir).toString();
+		hiddenServiceDirectory = Paths.get("").toString() + File.separator + Constants.hiddenservicedir;
 		// Set the authentication bytes.
 		authenticationBytes = new byte[]{};
 
@@ -91,7 +91,7 @@ public class ConfigurationTest {
 		output.close();
 
 		// Create the configuration.
-		configuration = new Configuration(file.getCanonicalPath(), Paths.get(""), torControlPort, torSOCKSProxyPort);
+		configuration = new Configuration(file.getCanonicalPath(), Paths.get("").toString(), torControlPort, torSOCKSProxyPort);
 	}
 
 	/**
@@ -113,6 +113,7 @@ public class ConfigurationTest {
 	 */
 	@Test
 	public void testGetHiddenServiceDirectory() {
+		System.out.println(configuration.getHiddenServiceDirectory());
 		if (!hiddenServiceDirectory.equals(configuration.getHiddenServiceDirectory()))
 			fail("Hidden service directory property does not match: " + hiddenServiceDirectory + " != " + configuration.getHiddenServiceDirectory());
 	}

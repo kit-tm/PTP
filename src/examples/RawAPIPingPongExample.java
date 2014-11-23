@@ -3,7 +3,6 @@ package examples;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.file.Paths;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import p2p.Client;
@@ -75,7 +74,7 @@ public class RawAPIPingPongExample {
 				}
 			}
 
-			final Configuration configuration = new Configuration(Constants.configfile, Paths.get("config"), manager.controlport(), manager.socksport());
+			final Configuration configuration = new Configuration(Constants.configfile, "./config", manager.controlport(), manager.socksport());
 			client = new Client(configuration);
 			client.listener(new Listener() {
 

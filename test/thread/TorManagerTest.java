@@ -2,6 +2,7 @@ package thread;
 
 import static org.junit.Assert.*;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
@@ -124,7 +125,7 @@ public class TorManagerTest {
 	 */
 	@Test
 	public void testDirectory() {
-		if (!readyManager.directory().toFile().exists())
+		if (!new File(readyManager.directory()).exists())
 			fail("Ready TorManager directory does not exist.");
 	}
 

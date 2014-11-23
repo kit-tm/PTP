@@ -12,8 +12,6 @@ import java.net.Socket;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
@@ -35,7 +33,7 @@ public class TorManager extends Manager {
 	private static final String regex = "[0-9]+";
 
 	/** The Tor working directory path. */
-	private final Path workingDirectory;
+	private final String workingDirectory;
 	/** The Tor manager running file. */
 	private final File portsFile;
 	/** The Tor manager lock file. */
@@ -68,22 +66,22 @@ public class TorManager extends Manager {
 		// or use default if not set.
 		String torp2phome = System.getenv(Constants.torp2phomeenvvar);
 		if(torp2phome == null) torp2phome = Constants.torp2phomedefault;
-		workingDirectory = Paths.get(torp2phome);
+		workingDirectory = torp2phome;
 
 		// Check if the home directory exists, if not try to create it.
-		File directory = workingDirectory.toFile();
+		File directory = new File(workingDirectory);
 		if (!directory.exists() && !directory.mkdirs())
 			// Home directory does not exist and was not created.
 			throw new IOException("Unable to create missing TorP2P home directory.");
 
 		// Check if the lock file exists, if not create it.
-		lockFile = Paths.get(workingDirectory.toString(), Constants.tormanagerlockfile).toFile();
+		lockFile = new File(workingDirectory + File.separator + Constants.tormanagerlockfile);
 		if (!lockFile.exists() && !lockFile.createNewFile())
 			// Lock file does not exist and was not created.
 			throw new IOException("Unable to create missing TorP2P Tor manager lock file.");
 
 		// Get a handle on the Tor manager ports file.
-		portsFile = Paths.get(workingDirectory.toString(), Constants.tormanagerportsfile).toFile();
+		portsFile = new File(workingDirectory + File.separator + Constants.tormanagerportsfile);
 
 		logger.log(Level.INFO, "Read Tor working directory: " + workingDirectory.toString());
 		logger.log(Level.INFO, "Tor manager lock file is: " + lockFile.getAbsolutePath());
@@ -110,7 +108,7 @@ public class TorManager extends Manager {
 		running.set(true);
 
 		// Check if the working directory still exists, if not do nothing.
-		File directory = workingDirectory.toFile();
+		File directory = new File(workingDirectory);
 		if (directory.exists()) {
 			logger.log(Level.INFO, "Tor manager working directory exists.");
 			// Check if another TorManager is currently running a Tor process.
@@ -214,7 +212,7 @@ public class TorManager extends Manager {
 	 *
 	 * @return The Tor working directory path.
 	 */
-	public Path directory() {
+	public String directory() {
 		return workingDirectory;
 	}
 
@@ -257,7 +255,7 @@ public class TorManager extends Manager {
 		boolean torRunning = false;
 
 		logger.log(Level.INFO, "Tor manager checking if Tor is running.");
-		File directory = workingDirectory.toFile();
+		File directory = new File(workingDirectory);
 		if (directory.exists()) {
 			// Check if another TorManager is currently running a Tor process.
 			try {

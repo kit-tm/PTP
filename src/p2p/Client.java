@@ -12,7 +12,6 @@ import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.logging.Level;
@@ -119,7 +118,7 @@ public class Client {
 			throw new IOException("Could not create hidden service directory!");
 
 		// Check if the lock file exists, if not create it.
-		lockFile = Paths.get(configuration.getWorkingDirectory(), Constants.rawapilockfile).toFile();
+		lockFile = new File(configuration.getWorkingDirectory() + File.separator + Constants.rawapilockfile);
 		if (!lockFile.exists() && !lockFile.createNewFile())
 			throw new IOException("Could not create raw API lock file!");
 
@@ -202,7 +201,7 @@ public class Client {
 				directory = Constants.hiddenserviceprefix + waiter.port();
 				logger.log(Level.INFO, "Creating hidden service sub-directory: " + directory);
 
-				File dir = Paths.get(configuration.getHiddenServiceDirectory(), directory).toFile();
+				File dir = new File(configuration.getHiddenServiceDirectory() + File.separator + directory);
 				if (!dir.exists() && !dir.mkdir())
 					throw new IOException("Unable to create the hidden service directory!");
 			}
@@ -213,7 +212,7 @@ public class Client {
 				createHiddenService();
 			}
 
-			File hostname = Paths.get(configuration.getHiddenServiceDirectory(), directory, Constants.hostname).toFile();
+			File hostname = new File(configuration.getHiddenServiceDirectory() + File.separator + directory + File.separator + Constants.hostname);
 
 			// Read the content of the Tor hidden service hostname file.
 			return readIdentifier(hostname);
@@ -412,9 +411,9 @@ public class Client {
 		if (directory == null) return;
 
 		logger.log(Level.INFO, "Deleting hidden service directory.");
-		File hostname = Paths.get(configuration.getHiddenServiceDirectory(), directory, Constants.hostname).toFile();
-		File hiddenservice = Paths.get(configuration.getHiddenServiceDirectory(), directory).toFile();
-		File privatekey = Paths.get(configuration.getHiddenServiceDirectory(), directory, Constants.prkey).toFile();
+		File hostname = new File(configuration.getHiddenServiceDirectory() + File.separator + directory + File.separator + Constants.hostname);
+		File hiddenservice = new File(configuration.getHiddenServiceDirectory() + File.separator + directory);
+		File privatekey = new File(configuration.getHiddenServiceDirectory() + File.separator + directory + File.separator + Constants.prkey);
 
 		boolean hostnameDeleted = hostname.delete();
 		logger.log(Level.INFO, "Deleted hostname file: " + (hostnameDeleted ? "yes" : "no"));

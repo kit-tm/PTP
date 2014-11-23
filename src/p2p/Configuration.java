@@ -4,8 +4,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
@@ -79,7 +77,7 @@ public class Configuration {
 	 * @throws IllegalArgumentException Throws an IllegalArgumentException if unable to parse or find a value.
 	 * @throws IOException Throws an IOException if unable to read or find the input configuration or control port file.
 	 */
-	public Configuration(String configurationFilename, Path workingDirectory, int controlPort, int socksPort) throws IllegalArgumentException, IOException {
+	public Configuration(String configurationFilename, String workingDirectory, int controlPort, int socksPort) throws IllegalArgumentException, IOException {
 		File configuration = new File(configurationFilename);
 
 		if (!configuration.exists())
@@ -137,10 +135,10 @@ public class Configuration {
 
 		// Set the configuration parameters.
 
-		this.workingDirectory = workingDirectory.toString();
+		this.workingDirectory = workingDirectory;
 		logger.info("Set the working directory to: " + this.workingDirectory);
 
-		hiddenServiceDirectory = Paths.get(workingDirectory.toString(), Constants.hiddenservicedir).toString();
+		hiddenServiceDirectory = workingDirectory + File.separator + Constants.hiddenservicedir;
 		logger.info("Set the hidden servide directory to: " + hiddenServiceDirectory);
 
 		hiddenServicePort = parse(properties, HiddenServicePort);
