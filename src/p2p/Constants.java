@@ -41,9 +41,9 @@ public class Constants {
 	/* Tor executable constants. */
 
 	/** The name of the Tor executable file, which should be on the PATH system variable. */
-	public static final String torfile = "tor";
+	public static String torfile = "tor";
 	/** The path to and the name of the Tor configuration file. */
-	public static final String torrcfile = "config/torrc";
+	public static String torrcfile = "config/torrc";
 	/** The Tor executable option for a custom input torrc file. */
 	public static final String torrcoption = "-f";
 	/** The Tor configuration option for the working directory property. */
@@ -65,9 +65,7 @@ public class Constants {
 	/** The maximum length of a message that can be received on the local socket. */
 	public static final int maxlength = 1024;
 	/** The path to and the name of the configuration file. */
-	public static final String configfile = "config/p2p.ini";
-	/** The path to and the name of the dummy Tor control port output file. */
-	public static final String dummyportfile = "config/port.conf";
+	public static String configfile = "config/p2p.ini";
 	/** The timestamp format used as a prefix for the temporary Tor working directory creation. */
 	public static final String timestampformat = "yyMMddHHmmss";
 	/** The name of the hidden service root directory. */
@@ -75,9 +73,9 @@ public class Constants {
 	/** The prefix of the hidden service directories. */
 	public static final String hiddenserviceprefix = "hs";
 	/** The name of the TorP2P home environment variable. */
-	public static final String torp2phomeenvvar = "TORP2P_HOME";
+	public static final String torp2phome = "TORP2P_HOME";
 	/** The path of the default TorP2P home directory. */
-	public static final String torp2phomedefault = "./torp2p-data";
+	public static String torp2phomedefault = "./torp2p-data";
 	/** The name of the TorP2P Tor manager ports file. */
 	public static final String tormanagerportsfile = "TorP2PTorManagerPorts";
 	/** The name of the TorP2P Tor manager lock file. */

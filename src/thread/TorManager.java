@@ -62,10 +62,9 @@ public class TorManager extends Manager {
 	public TorManager() throws IOException {
 		super();
 
-		// Read the TorP2P home directory from the system environment variable.
-		// or use default if not set.
-		String torp2phome = System.getenv(Constants.torp2phomeenvvar);
-		if(torp2phome == null) torp2phome = Constants.torp2phomedefault;
+		// Read the TorP2P home directory from the system environment variable/passed property at runtime. Or use default if neither is set.
+		String torp2phome = System.getenv(Constants.torp2phome);
+		if (torp2phome == null) torp2phome = Constants.torp2phomedefault;
 		workingDirectory = torp2phome;
 
 		// Check if the home directory exists, if not try to create it.
@@ -151,11 +150,16 @@ public class TorManager extends Manager {
 				// If the lock file is empty, or its content is the number 0, no Tor process is running.
 				if (noTor) {
 					// Run the Tor process.
-					runtor();
-					// Set the number of APIs using Tor to one.
-					raf.seek(0);
-					raf.writeInt(1);
-					logger.log(Level.INFO, "Tor manager set lock file counter to: " + 1);
+					final boolean success = runtor();
+					// Check if the Tor process failed to start.
+					if (!success)
+						running.set(false);
+					// If not, set the number of APIs using Tor to one.
+					else {
+						raf.seek(0);
+						raf.writeInt(1);
+						logger.log(Level.INFO, "Tor manager set lock file counter to: " + 1);
+					}
 				// Otherwise, increment the counter in the lock file. Indicates that another API is using the Tor process.
 				} else {
 					raf.seek(0);
@@ -179,9 +183,23 @@ public class TorManager extends Manager {
 				e.printStackTrace();
 				logger.log(Level.WARNING, "Tor manager caught an IOException during Tor process initialization: " + e.getMessage());
 			}
-		}
+		} else
+			running.set(false);
 
 		logger.log(Level.INFO, "Tor manager thread exiting.");
+	}
+
+
+	/**
+	 * @see Manager
+	 */
+	public void start() {
+		running.set(true);
+		condition.set(true);
+		logger.log(Level.INFO, "Starting waiter thread.");
+		// Execute the run method of the deriving class.
+		thread.start();
+		logger.log(Level.INFO, "Waiter thread started.");
 	}
 
 	/**
@@ -413,8 +431,10 @@ public class TorManager extends Manager {
 
 	/**
 	 * Starts a Tor process and creates a separate thread to read the Tor logging output.
+	 *
+	 * @return true, if the Tor process was started, false if an IOException occured.
 	 */
-	private void runtor() {
+	private boolean runtor() {
 		logger.log(Level.INFO, "Tor manager starting Tor process.");
 
 		try {
@@ -542,7 +562,10 @@ public class TorManager extends Manager {
 			error.start();
 		} catch (IOException e) {
 			logger.log(Level.WARNING, "Tor manager thread caught an IOException when starting Tor: " + e.getMessage());
+			return false;
 		}
+
+		return true;
 	}
 
 	/**

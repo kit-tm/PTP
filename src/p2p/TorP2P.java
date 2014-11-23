@@ -67,7 +67,7 @@ public class TorP2P {
 		long waited = 0;
 
 		logger.log(Level.INFO, "Waiting for Tors bootstrapping to finish.");
-		while (!tor.ready() && waited < timeout) {
+		while (!tor.ready() && tor.running() && waited < timeout) {
 			try {
 				final long start = System.currentTimeMillis();
 				Thread.sleep(poll);
@@ -77,9 +77,13 @@ public class TorP2P {
 			}
 		}
 
+		// Check if Tor is not running.
+		if (!tor.running())
+			throw new IllegalArgumentException("Starting Tor failed!");
+
 		// Check if we reached the timeout without a finished boostrapping.
 		if (!tor.ready())
-			throw new IllegalArgumentException("Tor bootstrapping timeout expired.");
+			throw new IllegalArgumentException("Tor bootstrapping timeout expired!");
 
 		// Read the configuration.
 		config = new Configuration(Constants.configfile, tor.directory(), tor.controlport(), tor.socksport());

@@ -119,7 +119,6 @@ public class Configuration {
 		if (properties.containsKey(LoggerConfigFile)) {
 			loggerConfiguration = properties.get(LoggerConfigFile);
 			System.setProperty(Constants.loggerconfig, loggerConfiguration);
-			System.out.println("here");
 		} else
 			loggerConfiguration = "";
 		// Create the logger AFTER its configuration file has been set.
