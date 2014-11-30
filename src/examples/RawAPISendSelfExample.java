@@ -53,7 +53,7 @@ public class RawAPISendSelfExample {
 		});
 		final String identifier = client.identifier(true);
 
-		System.out.println("Connecting to the indentifier.");
+		System.out.println("Connecting to the indentifier: " + identifier);
 		Client.ConnectResponse connect = Client.ConnectResponse.TIMEOUT;
 		while (connect == Client.ConnectResponse.TIMEOUT || connect == Client.ConnectResponse.FAIL) {
 			try {

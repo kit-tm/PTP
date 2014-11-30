@@ -47,7 +47,7 @@ public class Constants {
 	/** The Tor executable option for a custom input torrc file. */
 	public static final String torrcoption = "-f";
 	/** The Tor configuration option for the working directory property. */
-	public static final String datadiroption = "--DataDirectory";
+	public static String datadiroption = "--DataDirectory";
 	/** The Tor configuration option for the working directory property. */
 	public static final String ctlportoutoption = "--ControlPortWriteToFile";
 	/** A part of the Tor executable log message, logged when the bootstrapping is complete. */

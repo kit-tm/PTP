@@ -52,6 +52,10 @@ public class TorManager extends Manager {
 	private int torControlPort;
 	/** The SOCKS proxy port number of the Tor process. */
 	private int torSOCKSProxyPort;
+	/** Used to check whether the Tor control port is known. */
+	private boolean controlPortRead = false;
+	/** Used to check whether the Tor SOCKS port is known. */
+	private boolean socksPortRead = false;
 
 
 	/**
@@ -312,6 +316,13 @@ public class TorManager extends Manager {
 		return torRunning;
 	}
 
+	/**
+	 * Kills the Tor process if started.
+	 */
+	public void killtor() {
+		if (process != null) process.destroy();
+	}
+
 
 	/**
 	 * Stops the API Tor process, if no other API is using the process.
@@ -504,7 +515,7 @@ public class TorManager extends Manager {
 						logger.log(Level.INFO, "Output reading thread started.");
 						logger.log(Level.INFO, "Fetching the process stdout stream.");
 						BufferedReader standardOut = new BufferedReader(new InputStreamReader(process.getInputStream()));
-						boolean portsRead = false;
+						boolean bootstrapped = false;
 
 						logger.log(Level.INFO, "Output thread entering reading loop.");
 						while (condition.get()) {
@@ -513,8 +524,8 @@ public class TorManager extends Manager {
 								logger.log(Level.INFO, "Output thread read Tor output line:\n" + line);
 								// If we read null we are done with the process output.
 								if (line == null) break;
-								// If not, check if we read that the bootstrapping is complete.
-								if (line.contains(Constants.bootstrapdone)) {
+								// if not, check if we read that the bootstrapping is complete.
+								if (line.contains(Constants.bootstrapdone) && controlPortRead && socksPortRead) {
 									logger.log(Level.INFO, "Output thread Tor ports to Tor manager ports file.");
 									BufferedWriter writer = new BufferedWriter(new FileWriter(portsFile));
 
@@ -527,20 +538,23 @@ public class TorManager extends Manager {
 									writer.close();
 									logger.log(Level.INFO, "Output thread wrote Tor manager ports file.");
 
-									portsRead = true;
+									bootstrapped = true;
 
 									ready.set(true);
 									logger.log(Level.INFO, "Tor manager ready.");
 								// If not, check whether the control port is open.
-								} else if (line.contains(Constants.controlportopen))
+								} else if (line.contains(Constants.controlportopen)) {
 									torControlPort = readport(Constants.controlportopen, line);
+									controlPortRead = true;
 								// If not, check whether the SOCKS proxy port is open.
-								else if (line.contains(Constants.socksportopen))
+								} else if (line.contains(Constants.socksportopen)) {
 									torSOCKSProxyPort = readport(Constants.socksportopen, line);
+									socksPortRead = true;
+								}
 							} else {
 								try {
-									// If the Tor process ports are not read, sleep less. Otherwise sleep for a longer interval.
-									if (portsRead)
+									// If the Tor process bootstrapping is not done, sleep less. Otherwise sleep for a longer interval.
+									if (bootstrapped)
 										Thread.sleep(5 * 1000);
 									else
 										Thread.sleep(1 * 1000);
@@ -574,6 +588,8 @@ public class TorManager extends Manager {
 	 * @throws IOException Propagates any IOException thrown when reading the Tor manager ports file.
 	 */
 	private void readports() throws IOException {
+		if (controlPortRead && socksPortRead) return;
+
 		BufferedReader reader = new BufferedReader(new FileReader(portsFile));
 
 		String controlPortLine = reader.readLine();

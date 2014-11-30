@@ -82,8 +82,10 @@ public class TorP2P {
 			throw new IllegalArgumentException("Starting Tor failed!");
 
 		// Check if we reached the timeout without a finished boostrapping.
-		if (!tor.ready())
+		if (!tor.ready()) {
+			tor.killtor();
 			throw new IllegalArgumentException("Tor bootstrapping timeout expired!");
+		}
 
 		// Read the configuration.
 		config = new Configuration(Constants.configfile, tor.directory(), tor.controlport(), tor.socksport());
