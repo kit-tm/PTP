@@ -10,7 +10,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import p2p.Listener;
+import p2p.ReceiveListener;
 
 
 /**
@@ -73,7 +73,7 @@ public class ServerWaiterTest {
 	}
 
 	/**
-	 * Test method for {@link thread.ServerWaiter#set(p2p.Listener)}.
+	 * Test method for {@link thread.ServerWaiter#set(p2p.ReceiveListener)}.
 	 *
 	 * Attempts to send a message via the socket connected to the ServerWaiter and checks whether the message is propagated to a custom listener.
 	 *
@@ -87,7 +87,7 @@ public class ServerWaiterTest {
 		final AtomicBoolean received = new AtomicBoolean(false);
 
 		// Set a custom listener for the ServerWaiter.
-		waiter.set(new Listener() {
+		waiter.set(new ReceiveListener() {
 
 			@Override
 			public void receive(byte[] bytes) {

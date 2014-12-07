@@ -17,7 +17,7 @@ import p2p.Identifier;
  * @author Simeon Andreev
  *
  */
-public class TTLManager extends Manager {
+public class TTLManager extends Suspendable {
 
 
 	/**
@@ -100,7 +100,7 @@ public class TTLManager extends Manager {
 	}
 
 	/**
-	 * @see Manager
+	 * @see Suspendable
 	 */
 	@Override
 	public void stop() {

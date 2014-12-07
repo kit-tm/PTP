@@ -27,7 +27,7 @@ import p2p.Constants;
  * @author Simeon Andreev
  *
  */
-public class TorManager extends Manager {
+public class TorManager extends Suspendable {
 
 	/** A reglar expression, used to find numbers in a string. */
 	private static final String regex = "[0-9]+";
@@ -195,7 +195,7 @@ public class TorManager extends Manager {
 
 
 	/**
-	 * @see Manager
+	 * @see Suspendable
 	 */
 	public void start() {
 		running.set(true);
@@ -207,7 +207,7 @@ public class TorManager extends Manager {
 	}
 
 	/**
-	 * @see Manager
+	 * @see Suspendable
 	 */
 	@Override
 	public void stop() {

@@ -133,7 +133,7 @@ public class Client {
 	 *
 	 * @see Waiter
 	 */
-	public void listener(Listener listener) {
+	public void listener(ReceiveListener listener) {
 		waiter.set(listener);
 	}
 
@@ -270,13 +270,14 @@ public class Client {
 	 * Opens a socket connection to the specified Tor hidden service.
 	 *
 	 * @param identifier The Tor hidden service identifier of the destination.
+	 * @param socketTimeout The socket connect timeout.
 	 * @param port The port number of the destination Tor hidden service.
 	 * @return  ConnectResponse.OPEN    if a socket connection is already open for the identifier.
 	 * 			ConnectResponse.FAIL    if an IOException occured while opening the socket connection for the identifier.
 	 * 			ConnectResponse.SUCCESS if a socket connection is now open for the identifier.
 	 * 			ConnectResponse.TIMEOUT if the socket connection timeout was reached upon opening the connection to the identifier.
 	 */
-	public ConnectResponse connect(String identifier) {
+	public ConnectResponse connect(String identifier, int socketTimeout) {
 		logger.log(Level.INFO, "Opening a socket for identifier " + identifier + " on port " + configuration.getHiddenServicePort() + ".");
 
 		// Check if a socket is already open to the given identifier.
@@ -298,7 +299,7 @@ public class Client {
 		try {
 			// Bind the socket to the destination Tor hidden service.
 			logger.log(Level.INFO, "Binding destination address to the socket.");
-			socket.connect(destination, configuration.getSocketTimeout());
+			socket.connect(destination, socketTimeout);
 			logger.log(Level.INFO, "Adding socket to open sockets.");
 			sockets.put(identifier, socket);
 			logger.log(Level.INFO, "Opened socket for identifier: " + identifier);

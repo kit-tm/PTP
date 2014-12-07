@@ -5,7 +5,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import p2p.Constants;
-import p2p.Listener;
+import p2p.ReceiveListener;
 
 
 /**
@@ -19,7 +19,7 @@ public abstract class Waiter implements Runnable {
 	/** The logger for this class. */
 	protected final Logger logger = Logger.getLogger(Constants.waiterlogger);
 	/** The listener that should be notified of received messages on one of the open sockets. */
-	protected Listener listener = new Listener() {
+	protected ReceiveListener listener = new ReceiveListener() {
 
 		@Override
 		public void receive(byte[] message) { /* Default behaviour. Do nothing. */ }
@@ -43,7 +43,7 @@ public abstract class Waiter implements Runnable {
 	 *
 	 * @param listener The new listener.
 	 */
-	public void set(Listener listener) {
+	public void set(ReceiveListener listener) {
 		this.listener = listener;
 		logger.log(Level.INFO, "Waiter set the new listener.");
 	}

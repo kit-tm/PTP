@@ -11,7 +11,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import p2p.Listener;
+import p2p.ReceiveListener;
 import utility.RNG;
 
 
@@ -30,7 +30,7 @@ public class SocketWaiterTest {
 	 * @author Simeon Andreev
 	 *
 	 */
-	private static class Receiver implements Listener {
+	private static class Receiver implements ReceiveListener {
 
 		/** An atomic boolean used to check whether a message was received yet. */
 		public AtomicBoolean received = new AtomicBoolean(false);
@@ -39,7 +39,7 @@ public class SocketWaiterTest {
 
 
 		/**
-		 * @see Listener
+		 * @see ReceiveListener
 		 */
 		@Override
 		public void receive(byte[] message) {
@@ -198,7 +198,7 @@ public class SocketWaiterTest {
 	}
 
 	/**
-	 * Test method for {@link thread.Waiter#set(p2p.Listener)}.
+	 * Test method for {@link thread.Waiter#set(p2p.ReceiveListener)}.
 	 *
 	 * Sets the current listener of the SocketWaiter to a custom listener and sends a random message.
 	 *

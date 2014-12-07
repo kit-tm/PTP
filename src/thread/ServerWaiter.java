@@ -7,7 +7,7 @@ import java.net.SocketException;
 import java.util.LinkedList;
 import java.util.logging.Level;
 
-import p2p.Listener;
+import p2p.ReceiveListener;
 
 
 /**
@@ -64,7 +64,7 @@ public class ServerWaiter extends Waiter {
 	 * @see Waiter
 	 */
 	@Override
-	public void set(Listener listener) {
+	public void set(ReceiveListener listener) {
 		this.listener = listener;
 		for (Waiter waiter : waiters) waiter.set(listener);
 		logger.log(Level.INFO, "ServerWaiter set the new listener.");

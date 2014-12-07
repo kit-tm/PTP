@@ -3,10 +3,13 @@ package examples;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import p2p.Identifier;
-import p2p.Listener;
+import p2p.Message;
+import p2p.ReceiveListener;
+import p2p.SendListener;
 import p2p.TorP2P;
 
 
@@ -25,7 +28,7 @@ public class TorP2PPingPongExample {
 	 * @author Simeon Andreev
 	 *
 	 */
-	private static class MyListener implements Listener {
+	private static class MyListener implements ReceiveListener {
 
 		/** Handle of the client, needed to PONG upon PING. */
 		private final TorP2P client;
@@ -63,7 +66,7 @@ public class TorP2PPingPongExample {
 
 
 		/**
-		 * Sends a meesage to the destination hidden service identifier and port.
+		 * Sends a message to the destination hidden service identifier and port.
 		 *
 		 * @param message The message to send.
 		 * @param response Switch defining whether this is a PONG (true) or an initial message (false).
@@ -74,7 +77,8 @@ public class TorP2PPingPongExample {
 				// Set the timer start.
 				start = System.currentTimeMillis();
 				// Send the message.
-				client.SendMessage(message + (response ? " " + counter.get() : ""), identifier, 1 * 1000);
+				final Message m = new Message(message + (response ? " " + counter.get() : ""), identifier);
+				client.SendMessage(m, 1 * 1000);
 				++sent;
 			}
 			// Another PING-PONG initiated, increment counter.
@@ -103,7 +107,7 @@ public class TorP2PPingPongExample {
 		public int sent() { return sent; }
 
 		/**
-		 * @see Listener
+		 * @see ReceiveListener
 		 */
 		@Override
 		public void receive(byte[] bytes) {
@@ -149,9 +153,34 @@ public class TorP2PPingPongExample {
 
 	       	// Connect to the destination hidden service and port by sending a dummy message.
 			System.out.println("Connecting client.");
-			TorP2P.SendResponse response = client.SendMessage("", destination, 120 * 1000);
-			// Check if something broke when sending.
-			if (response != TorP2P.SendResponse.SUCCESS)
+			final AtomicBoolean connected = new AtomicBoolean(false);
+			final long timeout = 120 * 1000;
+			final Message m = new Message("", destination);
+			client.SendMessage(m, timeout, new SendListener() {
+
+				@Override
+				public void connectionSuccess(Message message) { connected.set(true); }
+
+				@Override
+				public void connectionTimeout(Message message) {}
+
+				@Override
+				public void sendSuccess(Message message) {}
+
+				@Override
+				public void sendFail(Message message) {}
+
+			});
+			// Wait for the sending result.
+			final long waitStart = System.currentTimeMillis();
+			while (System.currentTimeMillis() - waitStart <= timeout + (5 * 1000) && !connected.get()) {
+				try {
+					Thread.sleep(1 * 1000);
+				} catch (InterruptedException e) {
+					// Sleeping was interrupted. Do nothing.
+				}
+			}
+			if (!connected.get())
 				throw new IOException("Could not send greeting message in the given timeout.");
 			// Set the timer start for the hidden service availability measurement.
 			final long available = System.currentTimeMillis() - start;

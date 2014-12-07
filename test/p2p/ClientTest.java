@@ -120,7 +120,7 @@ public class ClientTest {
 		}
 
 		// Set the listener.
-		client1.listener(new Listener() {
+		client1.listener(new ReceiveListener() {
 
 			@Override
 			public void receive(byte[] bytes) {
@@ -145,7 +145,7 @@ public class ClientTest {
 		Client.ConnectResponse connect = Client.ConnectResponse.TIMEOUT;
 		while (connect == Client.ConnectResponse.TIMEOUT || connect == Client.ConnectResponse.FAIL) {
 			try {
-				connect = client1.connect(identifier);
+				connect = client1.connect(identifier, configuration1.getSocketTimeout());
 				Thread.sleep(5 * 1000);
 				if (System.currentTimeMillis() - start > 180 * 1000)
 					fail("Connecting to the created identifier took too long.");
@@ -217,7 +217,7 @@ public class ClientTest {
 		long start = System.currentTimeMillis();
 		while (connect == Client.ConnectResponse.TIMEOUT || connect == Client.ConnectResponse.FAIL) {
 			try {
-				connect = client1.connect(identifier2);
+				connect = client1.connect(identifier2, configuration1.getSocketTimeout());
 				Thread.sleep(5 * 1000);
 				if (System.currentTimeMillis() - start > 180 * 1000)
 					fail("Connecting first API object to second timed out.");
@@ -229,7 +229,7 @@ public class ClientTest {
 		start = System.currentTimeMillis();
 		while (connect == Client.ConnectResponse.TIMEOUT || connect == Client.ConnectResponse.FAIL) {
 			try {
-				connect = client2.connect(identifier1);
+				connect = client2.connect(identifier1, configuration2.getSocketTimeout());
 				Thread.sleep(5 * 1000);
 				if (System.currentTimeMillis() - start > 180 * 1000)
 					fail("Connecting second API object to first timed out.");
@@ -242,7 +242,7 @@ public class ClientTest {
 		final AtomicInteger counter = new AtomicInteger(0);
 
 		// Set the listeners.
-		client1.listener(new Listener() {
+		client1.listener(new ReceiveListener() {
 
 			@Override
 			public void receive(byte[] bytes) {
@@ -254,7 +254,7 @@ public class ClientTest {
 			}
 
 		});
-		client2.listener(new Listener() {
+		client2.listener(new ReceiveListener() {
 
 			@Override
 			public void receive(byte[] bytes) {

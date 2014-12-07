@@ -163,7 +163,7 @@ public class TTLManagerTest {
 	}
 
 	/**
-	 * Test method for {@link thread.Manager#running()}.
+	 * Test method for {@link thread.Suspendable#running()}.
 	 *
 	 * Checks whether the running TTLManager, the not started TTLManager and the stopped running TTLManager tell their states correctly.
 	 *

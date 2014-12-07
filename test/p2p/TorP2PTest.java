@@ -74,7 +74,7 @@ public class TorP2PTest {
 		final AtomicBoolean received = new AtomicBoolean(false);
 
 		// Set the listener.
-		client1.SetListener(new Listener() {
+		client1.SetListener(new ReceiveListener() {
 
 			@Override
 			public void receive(byte[] bytes) {
@@ -95,8 +95,34 @@ public class TorP2PTest {
 		}
 
 		// Send the message.
-		TorP2P.SendResponse sendResponse = client1.SendMessage(message, identifier, 180 * 1000);
-		if (sendResponse != TorP2P.SendResponse.SUCCESS)
+		final AtomicBoolean sendSuccess = new AtomicBoolean(false);
+		final Message m = new Message(message, identifier);
+		final long timeout = 180 * 1000;
+		client1.SendMessage(m, timeout, new SendListener() {
+
+			@Override
+			public void connectionSuccess(Message message) {}
+
+			@Override
+			public void connectionTimeout(Message message) {}
+
+			@Override
+			public void sendSuccess(Message message) { sendSuccess.set(true); }
+
+			@Override
+			public void sendFail(Message message) {}
+
+		});
+		// Wait for the sending result.
+		final long waitStart = System.currentTimeMillis();
+		while (System.currentTimeMillis() - waitStart <= timeout + (5 * 1000) && !sendSuccess.get()) {
+			try {
+				Thread.sleep(1 * 1000);
+			} catch (InterruptedException e) {
+				// Sleeping was interrupted. Do nothing.
+			}
+		}
+		if (!sendSuccess.get())
 			fail("Sending the message via the client to the created identifier was not successful.");
 
 		// Wait (no more than 3 minutes) until the message was received.
@@ -143,7 +169,7 @@ public class TorP2PTest {
 		final AtomicInteger counter = new AtomicInteger(0);
 
 		// Set the listeners.
-		client1.SetListener(new Listener() {
+		client1.SetListener(new ReceiveListener() {
 
 			@Override
 			public void receive(byte[] bytes) {
@@ -151,11 +177,12 @@ public class TorP2PTest {
 				final String m = new String(bytes);
 				if (!m.equals(message))
 					fail("First API object received message does not match sent message: " + m + " != " + message);
-				client1.SendMessage(m, identifier2, 5 * 1000);
+				final Message msg = new Message(m, identifier2);
+				client1.SendMessage(msg, 5 * 1000);
 			}
 
 		});
-		client2.SetListener(new Listener() {
+		client2.SetListener(new ReceiveListener() {
 
 			@Override
 			public void receive(byte[] bytes) {
@@ -163,15 +190,43 @@ public class TorP2PTest {
 				final String m = new String(bytes);
 				if (!m.equals(message))
 					fail("First API object received message does not match sent message: " + m + " != " + message);
-				client2.SendMessage(m, identifier1, 5 * 1000);
+				final Message msg = new Message(m, identifier1);
+				client2.SendMessage(msg, 5 * 1000);
 			}
 
 		});
 
 		// Send the initial ping-pong message.
-		TorP2P.SendResponse response = client1.SendMessage(message, identifier2, 180 * 1000);
-		if (response != TorP2P.SendResponse.SUCCESS)
+		final AtomicBoolean sendSuccess = new AtomicBoolean(false);
+		final Message m = new Message(message, identifier2);
+		final long timeout = 180 * 1000;
+		client1.SendMessage(m, timeout, new SendListener() {
+
+			@Override
+			public void connectionSuccess(Message message) {}
+
+			@Override
+			public void connectionTimeout(Message message) {}
+
+			@Override
+			public void sendSuccess(Message message) { sendSuccess.set(true); }
+
+			@Override
+			public void sendFail(Message message) {}
+
+		});
+		// Wait for the sending result.
+		final long waitStart = System.currentTimeMillis();
+		while (System.currentTimeMillis() - waitStart <= timeout + (5 * 1000) && !sendSuccess.get()) {
+			try {
+				Thread.sleep(1 * 1000);
+			} catch (InterruptedException e) {
+				// Sleeping was interrupted. Do nothing.
+			}
+		}
+		if (!sendSuccess.get())
 			fail("Sending initial ping-pong message failed.");
+
 
 		final long start = System.currentTimeMillis();
 		while (counter.get() < max && System.currentTimeMillis() - start < 300 * 1000) {

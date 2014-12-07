@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import thread.MessageDispatcher;
 import thread.TTLManager;
 import thread.TorManager;
 
@@ -43,6 +44,8 @@ public class TorP2P {
 	private final Client client;
 	/** The manager that closes sockets when their TTL expires. */
 	private final TTLManager manager;
+	/** The message dispatcher which sends the messages */
+	private final MessageDispatcher dispatcher;
 
 
 	/**
@@ -92,21 +95,9 @@ public class TorP2P {
 		// Create the client with the read configuration.
 		client = new Client(config);
 		// Create the manager with the given TTL.
-		manager = new TTLManager(
-			// Set the listener to disconnect connections with expired TTL.
-			new TTLManager.Listener() {
-
-				/**
-				 * @see TTLManager.Listener
-				 */
-				@Override
-				public void expired(Identifier identifier) throws IOException {
-					client.disconnect(identifier.getTorAddress());
-				}
-
-			},
-			config.getTTLPoll()
-		);
+		manager = new TTLManager(getTTLManagerListener(), config.getTTLPoll());
+		// Create the message dispatcher.
+		dispatcher = new MessageDispatcher(getMessageDispatcherListener(), config.getConnectionPoll());
 	}
 
 
@@ -124,56 +115,44 @@ public class TorP2P {
 	}
 
 	/**
-	 * Sends a message to a given hidden service identifier and port. Attempts to establish a connection within the given timeout.
+	 * Sends a message to a given hidden service identifier and port.
+	 * Success not guaranteed.
 	 *
 	 * @param message The message that should be sent.
-	 * @param identifier The destination hidden service identifier.
-	 * @param port The destination port.
 	 * @param timeout The timeout before exiting without a sent message.
-	 * @return  TorP2P.SUCCESS    if the message was sent successfully.
-	 * 			TorP2P.TIMEOUT    if the timeout was reached before a connection to the destination was established.
-	 * 			TorP2P.FAIL       if the API received an exception while sending the message.
 	 *
 	 * @see Client
 	 */
-	public SendResponse SendMessage(String message, Identifier identifier, long timeout) {
-		Client.ConnectResponse connect = Client.ConnectResponse.TIMEOUT;
-		long remaining = timeout;
+	public void SendMessage(Message message, long timeout) {
+		dispatcher.dispatchMessage(message, timeout, new SendListener() {
 
-		// Attempt a connection to the given indentifier at an interval, until the given timeout is reached.
-		while (connect == Client.ConnectResponse.TIMEOUT || connect == Client.ConnectResponse.FAIL) {
-			try {
-				final long start = System.currentTimeMillis();
-				// Set the remaining time until the timeout.
-				// If the timeout is reached return with the corresponding response.
-				if (remaining < 0) return SendResponse.TIMEOUT;
-				// Attempt a connection to the given identifier.
-				connect = client.connect(identifier.getTorAddress());
-				// Check if the connection was successful, not need to wait if so.
-				if (connect == Client.ConnectResponse.OPEN || connect == Client.ConnectResponse.SUCCESS) break;
-				// Sleep until the next attempt.
-				Thread.sleep(Math.min(config.getConnectionPoll(), remaining));
-				remaining -= System.currentTimeMillis() - start;
-			} catch (InterruptedException e) {
-				// Do nothing on interrupts.
-			}
-		}
+			@Override
+			public void connectionSuccess(Message message) {}
 
-		// If the connection to the destination hidden service was successful, add the identifier to the managed sockets.
-		if (connect == Client.ConnectResponse.SUCCESS)
-			manager.put(identifier);
+			@Override
+			public void connectionTimeout(Message message) {}
 
-		// Connection is successful
-		Client.SendResponse response = client.send(identifier.getTorAddress(), message);
+			@Override
+			public void sendSuccess(Message message) {}
 
-		// If the message was sent successfully, set the TTL of the socket opened for the identifier.
-		if (response == Client.SendResponse.SUCCESS) {
-			manager.set(identifier, config.getSocketTTL());
-			return SendResponse.SUCCESS;
-		}
+			@Override
+			public void sendFail(Message message) {}
 
-		// Otherwise the API was unable to send the message in the given timeout.
-		return SendResponse.FAIL;
+		});
+	}
+
+	/**
+	 * Sends a message to a given hidden service identifier and port and notify the given listener of sending events.
+	 * Success not guaranteed, listener is notified on failure.
+	 *
+	 * @param message The message that should be sent.
+	 * @param timeout The timeout before exiting without a sent message.
+	 * @param listener The listener to notify of sending events.
+	 *
+	 * @see Client
+	 */
+	public void SendMessage(Message message, long timeout, SendListener listener) {
+		dispatcher.dispatchMessage(message, timeout, listener);
 	}
 
 	/**
@@ -183,7 +162,7 @@ public class TorP2P {
 	 *
 	 * @see Client
 	 */
-	public void SetListener(Listener listener) {
+	public void SetListener(ReceiveListener listener) {
 		// Propagate the input listener.
 		client.listener(listener);
 	}
@@ -212,6 +191,86 @@ public class TorP2P {
 		manager.stop();
 		// Close the Tor process manager.
 		tor.stop();
+	}
+
+
+	/**
+	 * Returns a manager listener that will close socket connections with expired TTL.
+	 *
+	 * @return The manager listener which closes sockets with no TTL left.
+	 */
+	private TTLManager.Listener getTTLManagerListener() {
+		return new TTLManager.Listener() {
+
+			/**
+			 * Set the listener to disconnect connections with expired TTL.
+			 *
+			 * @param identifier The identifier with the expired socket connection.
+			 *
+			 * @see TTLManager.Listener
+			 */
+			@Override
+			public void expired(Identifier identifier) throws IOException {
+				client.disconnect(identifier.getTorAddress());
+			}
+
+		};
+	}
+
+	/**
+	 *
+	 * @return
+	 */
+	private MessageDispatcher.Listener getMessageDispatcherListener() {
+		return new MessageDispatcher.Listener() {
+
+			/**
+			 * Attempts to send a message via the raw API client. If the connection was not established and the timeout was not reached,
+			 * will indicate that the message should be kept in the dispatcher queue.
+			 *
+			 * @param message The message to send.
+			 * @param lisener The listener to be notified of sending events.
+			 * @param timeout The timeout for the sending.
+			 * @param elapsed The amount of time the message has waited so far.
+			 * @return false if a further attempt to send the message should be done.
+			 *
+			 * @see MessageDispatcher.Listener
+			 */
+			@Override
+			public boolean dispatch(Message message, SendListener listener, long elapsed, long timeout) {
+				Client.ConnectResponse connect = Client.ConnectResponse.TIMEOUT;
+
+				// If the timeout is reached return with the corresponding response.
+				if (elapsed > timeout) {
+					listener.connectionTimeout(message);
+					return true;
+				}
+
+				// Attempt a connection to the given identifier.
+				connect = client.connect(message.destination.getTorAddress(), config.getSocketTimeout());
+				// If the connection to the destination hidden service was successful, add the destination identifier to the managed sockets.
+				if (connect == Client.ConnectResponse.SUCCESS) {
+					manager.put(message.destination);
+					listener.connectionSuccess(message);
+				// Otherwise, check if the connection was not successful.
+				} else if (connect != Client.ConnectResponse.OPEN)
+					return false;
+
+				// Connection is successful, send the message.
+				Client.SendResponse response = client.send(message.destination.getTorAddress(), message.content);
+
+				// If the message was sent successfully, set the TTL of the socket opened for the identifier.
+				if (response == Client.SendResponse.SUCCESS) {
+					manager.set(message.destination, config.getSocketTTL());
+					listener.sendSuccess(message);
+					return true;
+				}
+
+				// Otherwise, indicate that the message was not sent successfully.
+				listener.sendFail(message);
+				return true;
+			}
+		};
 	}
 
 }

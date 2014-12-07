@@ -13,7 +13,7 @@ import p2p.Constants;
  * @author Simeon Andreev
  *
  */
-public abstract class Manager implements Runnable {
+public abstract class Suspendable implements Runnable {
 
 	/** The logger for this class. */
 	protected final Logger logger = Logger.getLogger(Constants.managerlogger);
@@ -28,21 +28,21 @@ public abstract class Manager implements Runnable {
 	/**
 	 * Constructor method, to be used only by deriving classes.
 	 */
-	protected Manager() {
+	protected Suspendable() {
 		thread = new Thread(this);
-		logger.log(Level.INFO, "Manager object created.");
+		logger.log(Level.INFO, "Suspendable object created.");
 	}
 
 
 	/**
-	 * Start the manager, executing the run method on the thread.
+	 * Start the suspendable, executing the run method on the thread.
 	 */
 	public void start() {
 		condition.set(true);
-		logger.log(Level.INFO, "Starting waiter thread.");
+		logger.log(Level.INFO, "Starting suspendable thread.");
 		// Execute the run method of the deriving class.
 		thread.start();
-		logger.log(Level.INFO, "Waiter thread started.");
+		logger.log(Level.INFO, "Suspendable thread started.");
 	}
 
 	/**
@@ -51,13 +51,13 @@ public abstract class Manager implements Runnable {
 	public abstract void stop();
 
 	/**
-	 * Returns whether the manager is running or not.
+	 * Returns whether the suspendable is running or not.
 	 *
-	 * @return true if the manager is running, otherwise false.
+	 * @return true if the suspendable is running, otherwise false.
 	 */
 	public boolean running() {
 		final boolean running = this.running.get();
-		logger.log(Level.INFO, "Checking if manager thread is running: " + (running ? "yes" : "no"));
+		logger.log(Level.INFO, "Checking if suspendable thread is running: " + (running ? "yes" : "no"));
 		return running;
 	}
 

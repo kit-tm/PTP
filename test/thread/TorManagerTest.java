@@ -191,7 +191,7 @@ public class TorManagerTest {
 	}
 
 	/**
-	 * Test method for {@link thread.Manager#running()}.
+	 * Test method for {@link thread.Suspendable#running()}.
 	 *
 	 * Checks whether the ready TorManager returns a running state and if the TorManager returns a non-running state.
 	 *

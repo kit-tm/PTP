@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import p2p.Client;
 import p2p.Configuration;
 import p2p.Constants;
-import p2p.Listener;
+import p2p.ReceiveListener;
 import thread.TorManager;
 
 
@@ -76,7 +76,7 @@ public class RawAPIPingPongExample {
 
 			final Configuration configuration = new Configuration(Constants.configfile, "./config", manager.controlport(), manager.socksport());
 			client = new Client(configuration);
-			client.listener(new Listener() {
+			client.listener(new ReceiveListener() {
 
 				@Override
 				public void receive(byte[] bytes) {
@@ -106,7 +106,7 @@ public class RawAPIPingPongExample {
 			start = System.currentTimeMillis();
 			while (connect == Client.ConnectResponse.TIMEOUT || connect == Client.ConnectResponse.FAIL) {
 				try {
-					connect = client.connect(holder.identifier);
+					connect = client.connect(holder.identifier, configuration.getSocketTimeout());
 					Thread.sleep(5 * 1000);
 				} catch (InterruptedException e) {
 					System.out.println("Main thread interrupted.");
