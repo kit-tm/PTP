@@ -42,7 +42,6 @@ public class MessageDispatcher extends Suspendable {
 	}
 
 
-
 	/**
 	 * A wrapper class for queue elements.
 	 *
@@ -87,7 +86,7 @@ public class MessageDispatcher extends Suspendable {
 	/** The interval (in milliseconds) at which the dispatcher should attempt to send the queue messages. */
 	private int poll;
 
-
+	// TODO: separate messages in a waiting queue (at poll interval, connecting messages) and a no-waiting queue (already connected, instant resend)
 	/**
 	 * Constructor method.
 	 *
