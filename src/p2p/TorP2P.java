@@ -94,10 +94,12 @@ public class TorP2P {
 		config = new Configuration(Constants.configfile, tor.directory(), tor.controlport(), tor.socksport());
 		// Create the client with the read configuration.
 		client = new Client(config);
-		// Create the manager with the given TTL.
+		// Create and start the manager with the given TTL.
 		manager = new TTLManager(getTTLManagerListener(), config.getTTLPoll());
-		// Create the message dispatcher.
+		//manager.start();
+		// Create and start the message dispatcher.
 		dispatcher = new MessageDispatcher(getMessageDispatcherListener(), config.getConnectionPoll());
+		dispatcher.start();
 	}
 
 
@@ -124,7 +126,7 @@ public class TorP2P {
 	 * @see Client
 	 */
 	public void SendMessage(Message message, long timeout) {
-		dispatcher.dispatchMessage(message, timeout, new SendListener() {
+		dispatcher.enqueueMessage(message, timeout, new SendListener() {
 
 			@Override
 			public void connectionSuccess(Message message) {}
@@ -152,7 +154,7 @@ public class TorP2P {
 	 * @see Client
 	 */
 	public void SendMessage(Message message, long timeout, SendListener listener) {
-		dispatcher.dispatchMessage(message, timeout, listener);
+		dispatcher.enqueueMessage(message, timeout, listener);
 	}
 
 	/**
@@ -189,6 +191,8 @@ public class TorP2P {
 		client.exit();
 		// Close the socket TTL manager.
 		manager.stop();
+		// Close the message dispatcher.
+		dispatcher.stop();
 		// Close the Tor process manager.
 		tor.stop();
 	}
@@ -237,17 +241,18 @@ public class TorP2P {
 			 * @see MessageDispatcher.Listener
 			 */
 			@Override
-			public boolean dispatch(Message message, SendListener listener, long elapsed, long timeout) {
-				Client.ConnectResponse connect = Client.ConnectResponse.TIMEOUT;
+			public boolean dispatch(Message message, SendListener listener, long timeout, long elapsed) {
+				logger.log(Level.INFO, "Attempting to send message: " + "timeout = " + timeout + ", wait = " + elapsed + ", message = " + message.content);
 
 				// If the timeout is reached return with the corresponding response.
-				if (elapsed > timeout) {
+				if (elapsed >= timeout) {
+					logger.log(Level.INFO, "Timeout on message expired: " + message.content);
 					listener.connectionTimeout(message);
 					return true;
 				}
 
 				// Attempt a connection to the given identifier.
-				connect = client.connect(message.destination.getTorAddress(), config.getSocketTimeout());
+				Client.ConnectResponse connect = client.connect(message.destination.getTorAddress(), config.getSocketTimeout());
 				// If the connection to the destination hidden service was successful, add the destination identifier to the managed sockets.
 				if (connect == Client.ConnectResponse.SUCCESS) {
 					manager.put(message.destination);
