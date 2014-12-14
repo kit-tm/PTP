@@ -106,16 +106,7 @@ public class TorP2PTest {
 		client1.SendMessage(m, timeout, new SendListener() {
 
 			@Override
-			public void connectionSuccess(Message message) {}
-
-			@Override
-			public void connectionTimeout(Message message) {}
-
-			@Override
 			public void sendSuccess(Message message) { sendSuccess.set(true); }
-
-			@Override
-			public void sendFail(Message message) {}
 
 		});
 		// Wait for the sending result.

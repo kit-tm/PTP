@@ -18,7 +18,7 @@ public class Element {
 	/** The listener to notify of sending events. */
 	public final SendListener listener;
 	/** Waiting time of the message. */
-	public long elapsed = 0;
+	public final long timestamp;
 
 
 	/**
@@ -32,6 +32,7 @@ public class Element {
 		this.message = message;
 		this.timeout = timeout;
 		this.listener = listener;
+		timestamp = System.currentTimeMillis();
 	}
 
 }

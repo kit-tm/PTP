@@ -62,21 +62,7 @@ public class MessageDispatcherTest {
 
 
 	/** A dummy listener to receive dispatcher notifications. */
-	private final SendListener listener = new SendListener() {
-
-		@Override
-		public void connectionSuccess(Message message) {}
-
-		@Override
-		public void connectionTimeout(Message message) {}
-
-		@Override
-		public void sendSuccess(Message message) {}
-
-		@Override
-		public void sendFail(Message message) {}
-
-	};
+	private final SendListener listener = new SendListener() {};
 
 	/** The started message dispatcher. */
 	private MessageDispatcher dispatcher;

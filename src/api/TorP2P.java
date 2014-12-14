@@ -135,21 +135,7 @@ public class TorP2P {
 	 * @see Client
 	 */
 	public void SendMessage(Message message, long timeout) {
-		dispatcher.enqueueMessage(message, timeout, new SendListener() {
-
-			@Override
-			public void connectionSuccess(Message message) {}
-
-			@Override
-			public void connectionTimeout(Message message) {}
-
-			@Override
-			public void sendSuccess(Message message) {}
-
-			@Override
-			public void sendFail(Message message) {}
-
-		});
+		dispatcher.enqueueMessage(message, timeout, new SendListener() {});
 	}
 
 	/**

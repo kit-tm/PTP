@@ -18,7 +18,7 @@ public abstract class Suspendable implements Runnable {
 	/** The logger for this class. */
 	protected final Logger logger = Logger.getLogger(Constants.managerlogger);
 	/** The thread executing the run method of a deriving class. */
-	protected final Thread thread;
+	protected Thread thread;
 	/** Atomic boolean, telling the manager whether it should exit its execution loop. */
 	protected final AtomicBoolean condition = new AtomicBoolean(false);
 	/** Atomic boolean, true iff the manager is running. */
@@ -41,6 +41,7 @@ public abstract class Suspendable implements Runnable {
 		condition.set(true);
 		logger.log(Level.INFO, "Starting suspendable thread.");
 		// Execute the run method of the deriving class.
+		thread = new Thread(this);
 		thread.start();
 		logger.log(Level.INFO, "Suspendable thread started.");
 	}

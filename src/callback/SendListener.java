@@ -9,7 +9,7 @@ import api.Message;
  * @author Simeon Andreev
  *
  */
-public interface SendListener {
+public abstract class SendListener {
 
 
 	/**
@@ -17,27 +17,27 @@ public interface SendListener {
 	 *
 	 * @param message The message with which the sending was initiated.
 	 */
-	void connectionSuccess(Message message);
+	public void connectionSuccess(Message message) { }
 
 	/**
 	 * Indicates that a connection was not established in the given timeout.
 	 *
 	 * @param message The message with which the sending was initiated.
 	 */
-	void connectionTimeout(Message message);
+	public void connectionTimeout(Message message) { }
 
 	/**
 	 * Indicates that the message was sent.
 	 *
 	 * @param message The message with which the sending was initiated.
 	 */
-	void sendSuccess(Message message);
+	public void sendSuccess(Message message) { }
 
 	/**
 	 * Indicates that the message could not be sent.
 	 *
 	 * @param message The message with which the sending was initiated.
 	 */
-	void sendFail(Message message);
+	public void sendFail(Message message) { }
 
 }

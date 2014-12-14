@@ -1,18 +1,12 @@
 package dispatch;
 
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import api.Message;
 import callback.DispatchListener;
 import callback.SendListener;
-import thread.Suspendable;
 import utility.Constants;
 
 
@@ -25,12 +19,18 @@ import utility.Constants;
 public class MessageDispatcher {
 
 	/** The logger for this class. */
-	protected final Logger logger = Logger.getLogger(Constants.dispatcherlogger);
+	private final Logger logger = Logger.getLogger(Constants.dispatcherlogger);
 	/** The set of message queues for all destinations. */
-	private final HashMap<String, ConcurrentLinkedQueue<Element>> queues = new HashMap<String, ConcurrentLinkedQueue<Element>>();
-	/** A lock to synchronize access to the message queue set. */
-	private final Lock lock = new ReentrantLock();
+	private final HashMap<String, Worker> map = new HashMap<String, Worker>();
+	/** The workers in the thread pool which will handle the message queues. */
 	private final Worker workers[];
+	/** The listener that will be notified of empty destination queues. */
+	private final Worker.Listener doneListener = new Worker.Listener() {
+
+		@Override
+		public void done(String destination) { remove(destination); }
+
+	};
 
 
 	/**
@@ -40,20 +40,20 @@ public class MessageDispatcher {
 	 * @param client The raw API client to use when sending messages.
 	 * @param manager The TTL manager to notify of established connections.
 	 */
-	public MessageDispatcher(DispatchListener listener, int threads) {
+	public MessageDispatcher(DispatchListener dispatchListener, int threads) {
 		workers = new Worker[threads];
 		for (int i = 0; i < workers.length; ++i)
-			workers[i] = new Worker(listener);
+			workers[i] = new Worker(dispatchListener, doneListener);
 
 		logger.log(Level.INFO, "Message dispatcher object created with maximum threads number: " + threads);
 	}
 
 
-	// TODO: inherit from Suspendable,
+	// TODO: inherit from Suspendable, periodically balance load
 
 
 	/**
-	 * Adds a message to the front of the queue and wakes the dispatcher, so that the message can be sent.
+	 * Adds a message to a destination queue and sets a thread to handle the message dispatch.
 	 *
 	 * @param message The message to add to the queue for sending.
 	 * @param timeout The timeout for the sending.
@@ -63,14 +63,7 @@ public class MessageDispatcher {
 		final String destination = message.destination.getTorAddress();
 		final Element element = new Element(message, timeout, listener);
 
-		// Lock access to the message queues set.
-		lock.lock();
-
-		if (!queues.containsKey(destination)) {
-			ConcurrentLinkedQueue<Element> queue = new ConcurrentLinkedQueue<Element>();
-			queue.add(element);
-			queues.put(destination, queue);
-
+		if (!map.containsKey(destination)) {
 			long minimumLoad = Long.MAX_VALUE;
 			int index = 0;
 
@@ -90,14 +83,12 @@ public class MessageDispatcher {
 				}
 			}
 
-			// Assign the message to the chosen worker.
-			workers[index].add(queue);
-			workers[index].start();
+			System.out.println("sending " + element.message.content + " to " + destination + " via thread " + index);
+			workers[index].addMessage(destination, element);
+			if (!workers[index].running()) workers[index].start();
+			map.put(destination, workers[index]);
 		} else
-			queues.get(destination).add(element);
-
-		// Unlock access to the message queues set.
-		lock.unlock();
+			map.get(destination).addMessage(destination, element);
 
 		logger.log(Level.INFO, "Message enqueued: " + message.content);
 	}
@@ -110,6 +101,15 @@ public class MessageDispatcher {
 
 		for (int i = 0; i < workers.length; ++i)
 			workers[i].stop();
+	}
+
+
+	/**
+	 * Removes a queue for a destination from the message queue set.
+	 * @param destination The destination of the queue that should be removed
+	 */
+	private synchronized void remove(String destination) {
+		map.remove(destination);
 	}
 
 }
