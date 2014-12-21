@@ -1,15 +1,16 @@
 package dispatch;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.logging.Level;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import callback.DispatchListener;
 import thread.Suspendable;
 
 
 /**
- * TODO: write
+ * A suspendable thread which dispatches messages to specific destinations.
  *
  * @author Simeon Andreev
  *
@@ -19,22 +20,19 @@ import thread.Suspendable;
 public class Worker extends Suspendable {
 
 
-	private static class Queue {
-
-		public String destination;
-		public ConcurrentLinkedQueue<Element> queue;
-
-
-		public Queue(String destination, ConcurrentLinkedQueue<Element> queue) {
-			this.destination = destination;
-			this.queue = queue;
-		}
-
-	}
-
-
+	/**
+	 * A listener to notify whenever a destination has no more messages to dispatch.
+	 *
+	 * @author Simeon Andreev
+	 *
+	 */
 	public static interface Listener {
 
+		/**
+		 * Notifies the listener that a destination has no more messages to dispatch.
+		 *
+		 * @param destination The destinations with no more messages.
+		 */
 		public void done(String destination);
 
 	}
@@ -45,9 +43,13 @@ public class Worker extends Suspendable {
 	/** The listener that should be notified when a queue is empty. */
 	private final Listener doneListener;
 	/** The set of queues that this thread handles. */
-	private LinkedList<Queue> queues = new LinkedList<Queue>();
-	/** The position of the current queue. */
-	private int current = 0;
+	private HashMap<String, LinkedList<Element>> queues = new HashMap<String, LinkedList<Element>>();
+	/** The set of destinations that this thread handles. */
+	private LinkedList<String> destinations = new LinkedList<String>();
+	/** A concurrent queue with messages that are not yet distributed. */
+	private ConcurrentLinkedQueue<Element> undistributed = new ConcurrentLinkedQueue<Element>();
+	/** An atomic integer that keeps count of the undistributed messages.  */
+	private AtomicInteger counter = new AtomicInteger(0);
 	/** The current load of this thread. */
 	private long load = 0;
 
@@ -63,34 +65,30 @@ public class Worker extends Suspendable {
 
 
 	/**
-	 * Adds a queue of messages to this worker, to dispatch messages from.
+	 * Adds a messages to dispatch in the appropriate queue for its destination.
+	 * Starts the dispatch loop if this thread is not running.
 	 *
-	 * @param queue The queue of messages.
+	 * @param message The message and auxiliary objects.
 	 */
-	public synchronized void addQueue(String destination, ConcurrentLinkedQueue<Element> queue) {
-		queues.add(new Queue(destination, queue));
-	}
+	public synchronized void addMessage(Element message) {
+		undistributed.add(message);
+		counter.incrementAndGet();
 
-	/**
-	 * Adds a messages to dispatch in the appropriate queue for the destination.
-	 *
-	 * @param queue The queue of messages.
-	 */
-	public synchronized void addMessage(String destination, Element element) {
-		// Update the threads load.
-		load += element.message.content.length();
-
-		// Check if the thread already has a queue for the destination.
-		for (Queue current : queues)
-			if (current.destination.equals(destination)) {
-				current.queue.add(element);
-				return;
+		// Check if the thread is not running, if so wake it.
+		if (!running.get()) {
+			// Possibly wait for the thread to exit its execution loop completely.
+			while (thread.isAlive())
+			{
+				try {
+					thread.join();
+				} catch (InterruptedException e) {
+					// Got interrupted. Do nothing.
+				}
 			}
-
-		// Otherwise, add a new queue.
-		ConcurrentLinkedQueue<Element> queue = new ConcurrentLinkedQueue<Element>();
-		queue.add(element);
-		queues.add(new Queue(destination, queue));
+			// Start the thread.
+			running.set(true);
+			start();
+		}
 	}
 
 	/**
@@ -98,27 +96,10 @@ public class Worker extends Suspendable {
 	 *
 	 * @return The current load of this worker.
 	 */
-	public synchronized long load() {
+	public long load() {
 		return load;
 	}
 
-	/**
-	 * @see Suspendable
-	 */
-	@Override
-	public void start() {
-		if (running.get()) return;
-
-		// We require running to be true as soon as we leave this method.
-		running.set(true);
-
-		condition.set(true);
-		logger.log(Level.INFO, "Starting suspendable thread.");
-		// We also require re-runnable objects.
-		thread = new Thread(this);
-		thread.start();
-		logger.log(Level.INFO, "Suspendable thread started.");
-	}
 
 	/**
 	 * @see Suspendable
@@ -126,27 +107,35 @@ public class Worker extends Suspendable {
 	@Override
 	public void run() {
 		// Loop and dispatch a message from each queue in rounds.
-		while (condition.get() && !empty()) {
-			Queue current = pick();
+		while (condition.get()) {
+			// Check for new messages.
+			distributeMessages();
 
-			Element element = current.queue.peek();
+			// Pick a destination queue to send a message from.
+			LinkedList<Element> current = pick();
+
+			// Fetch the first messages of the queue.
+			Element element = current.getFirst();
 			// Notify the listener of the message dispatch.
 			final boolean sent = dispatchLisener.dispatch(element.message, element.listener, element.timeout, System.currentTimeMillis() - element.timestamp);
 
 			// If the listener does not allow to remove the message from the queue, continue.
 			if (!sent) continue;
 
+			// Update the thread load.
 			load -= element.message.content.length();
 
 			// Otherwise, remove the message from the queue.
-			current.queue.remove();
-			if (current.queue.isEmpty()) {
-				// If the queue is now empty, tell the other listener that the queue is empty.
-				doneListener.done(current.destination);
-				remove();
+			current.removeFirst();
+			// Check if we ran out of messages to add.
+			if (current.isEmpty()) {
+				remove(element.message.destination.getTorAddress());
+
+				// If there are more destination queues, no need to check for execution stop.
+				if (!queues.isEmpty()) continue;
+				stopCheck();
 			}
 		}
-		running.set(false);
 	}
 
 	/**
@@ -160,12 +149,46 @@ public class Worker extends Suspendable {
 
 
 	/**
-	 * Checks whether the thread has no queues to process.
-	 *
-	 * @return true iff the thread has no queues to process.
+	 * Checks if this thread has no more undisturbed messages, and if so indicates that execution should stop.
 	 */
-	private synchronized boolean empty() {
-		return queues.isEmpty();
+	private synchronized void stopCheck() {
+		// Check if we have more messages to send.
+		if (!undistributed.isEmpty()) return;
+
+		// Otherwise, exit the execution loop.
+		condition.set(false);
+		running.set(false);
+	}
+
+	/**
+	 * Sends all current undistributed messages to their destination queues.
+	 */
+	private void distributeMessages() {
+		int n = counter.get();
+
+		// Remove all n elements from the undistributed message queue.
+		while (n > 0) {
+			Element element = undistributed.poll();
+			String destination = element.message.destination.getTorAddress();
+			// Update the threads load.
+			load += element.message.content.length();
+
+			// Check if the thread already has a queue for the destination.
+			if (queues.containsKey(destination)) {
+				queues.get(destination).addLast(element);
+			// Otherwise, add a new queue.
+			} else {
+				LinkedList<Element> queue = new LinkedList<Element>();
+				queue.add(element);
+				queues.put(destination, queue);
+				destinations.addLast(destination);
+			}
+
+			// Move to the next element.
+
+			--n;
+			counter.decrementAndGet();
+		}
 	}
 
 	/**
@@ -173,21 +196,28 @@ public class Worker extends Suspendable {
 	 *
 	 * @return The current message queue to dispatch a message from.
 	 */
-	private synchronized Queue pick() {
-		// Update current index.
-		current = (current + 1) % queues.size();
+	private LinkedList<Element> pick() {
+		// Pick the current front of the queue, and push it at the back of the queue.
+		final String next = destinations.removeFirst();
+		destinations.addLast(next);
+
 		// Return the next queue from which the worker should dispatch a message.
-		return queues.get(current);
+		return queues.get(next);
 	}
 
 	/**
-	 * Removes the current message queue from the set of queues.
+	 * Removes current message queue can be removed.
+	 *
+	 * @param destination The destination of the current queue.
 	 */
-	private synchronized void remove() {
-		// Return the next queue from which the worker should dispatch a message.
-		queues.remove(current);
-		// Update current index.
-		--current;
+	private void remove(String destination) {
+		// Remove the current destination for message dispatches.
+		destinations.removeLast();
+		// Remove the current queue from which the worker dispatched a message.
+		queues.remove(destination);
+
+		// If the queue is now empty, tell the other listener that the queue is empty.
+		doneListener.done(destination);
 	}
 
 }

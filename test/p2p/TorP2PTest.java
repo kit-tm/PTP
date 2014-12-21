@@ -164,6 +164,30 @@ public class TorP2PTest {
 		// An atomic counter used to check the number of received messages.
 		final AtomicInteger counter = new AtomicInteger(0);
 
+		// Send a message to the second identifier and wait to ensure it is available.
+		final AtomicBoolean sendSuccess1 = new AtomicBoolean(false);
+		final AtomicBoolean sendSuccess2 = new AtomicBoolean(false);
+		final Message m1 = new Message(message, identifier2);
+		final Message m2 = new Message(message, identifier1);
+		final long timeout = 180 * 1000;
+		client1.SendMessage(m1, timeout, new SendListener() {
+
+			@Override
+			public void sendSuccess(Message message) { sendSuccess1.set(true); }
+
+		});
+		// Wait for the sending result, to ensure second identifier is available.
+		long waitStart = System.currentTimeMillis();
+		while (System.currentTimeMillis() - waitStart <= timeout + (5 * 1000) && !sendSuccess1.get()) {
+			try {
+				Thread.sleep(1 * 1000);
+			} catch (InterruptedException e) {
+				// Sleeping was interrupted. Do nothing.
+			}
+		}
+		if (!sendSuccess1.get())
+			fail("Second hidden service identifier not available after timeout.");
+
 		// Set the listeners.
 		client1.SetListener(new ReceiveListener() {
 
@@ -174,7 +198,7 @@ public class TorP2PTest {
 				if (!m.equals(message))
 					fail("First API object received message does not match sent message: " + m + " != " + message);
 				final Message msg = new Message(m, identifier2);
-				client1.SendMessage(msg, 5 * 1000);
+				client1.SendMessage(msg, 10 * 1000);
 			}
 
 		});
@@ -185,45 +209,40 @@ public class TorP2PTest {
 				counter.incrementAndGet();
 				final String m = new String(bytes);
 				if (!m.equals(message))
-					fail("First API object received message does not match sent message: " + m + " != " + message);
+					fail("Second API object received message does not match sent message: " + m + " != " + message);
 				final Message msg = new Message(m, identifier1);
-				client2.SendMessage(msg, 5 * 1000);
+				client2.SendMessage(msg, 10 * 1000);
 			}
 
 		});
 
 		// Send the initial ping-pong message.
-		final AtomicBoolean sendSuccess = new AtomicBoolean(false);
-		final Message m = new Message(message, identifier2);
-		final long timeout = 180 * 1000;
-		client1.SendMessage(m, timeout, new SendListener() {
+		client2.SendMessage(m2, timeout, new SendListener() {
 
 			@Override
-			public void connectionSuccess(Message message) {}
-
-			@Override
-			public void connectionTimeout(Message message) {}
-
-			@Override
-			public void sendSuccess(Message message) { sendSuccess.set(true); }
-
-			@Override
-			public void sendFail(Message message) {}
+			public void sendSuccess(Message message) { sendSuccess2.set(true); }
 
 		});
-		// Wait for the sending result.
-		final long waitStart = System.currentTimeMillis();
-		while (System.currentTimeMillis() - waitStart <= timeout + (5 * 1000) && !sendSuccess.get()) {
+		client1.SendMessage(m1, timeout, new SendListener() {
+
+			@Override
+			public void sendSuccess(Message message) { sendSuccess1.set(true); }
+
+		});
+
+		// Wait for the sending result, to ensure first identifier is available.
+		waitStart = System.currentTimeMillis();
+		while (System.currentTimeMillis() - waitStart <= timeout + (5 * 1000) && !sendSuccess2.get()) {
 			try {
 				Thread.sleep(1 * 1000);
 			} catch (InterruptedException e) {
 				// Sleeping was interrupted. Do nothing.
 			}
 		}
-		if (!sendSuccess.get())
+		if (!sendSuccess2.get())
 			fail("Sending initial ping-pong message failed.");
 
-
+		// Wait for all ping-pong messages to arrive.
 		final long start = System.currentTimeMillis();
 		while (counter.get() < max && System.currentTimeMillis() - start < 300 * 1000) {
 			try {

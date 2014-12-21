@@ -106,6 +106,8 @@ public class MessageDispatcherTest {
 	public void testDispatchMessage() {
 		HashSet<Long> sent = new HashSet<Long>();
 
+		// TODO: test with different destinations
+
 		// Create some random message identifiers.
 		for (int i = 0; i < 50; ++i)
 			sent.add(random.nextLong());

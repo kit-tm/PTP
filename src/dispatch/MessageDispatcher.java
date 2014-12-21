@@ -1,6 +1,7 @@
 package dispatch;
 
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -22,6 +23,8 @@ public class MessageDispatcher {
 	private final Logger logger = Logger.getLogger(Constants.dispatcherlogger);
 	/** The set of message queues for all destinations. */
 	private final HashMap<String, Worker> map = new HashMap<String, Worker>();
+	/** The set of destinations with empty message queues. */
+	private final ConcurrentLinkedQueue<String> removed = new ConcurrentLinkedQueue<String>();
 	/** The workers in the thread pool which will handle the message queues. */
 	private final Worker workers[];
 	/** The listener that will be notified of empty destination queues. */
@@ -49,9 +52,6 @@ public class MessageDispatcher {
 	}
 
 
-	// TODO: inherit from Suspendable, periodically balance load
-
-
 	/**
 	 * Adds a message to a destination queue and sets a thread to handle the message dispatch.
 	 *
@@ -60,9 +60,16 @@ public class MessageDispatcher {
 	 * @param listener The listener to notify of sending events.
 	 */
 	public synchronized void enqueueMessage(Message message, long timeout, SendListener listener) {
-		final String destination = message.destination.getTorAddress();
-		final Element element = new Element(message, timeout, listener);
+		String destination = message.destination.getTorAddress();
+		Element element = new Element(message, timeout, listener);
 
+		// Update the destination set by removing destinations with empty queues.
+		while (!removed.isEmpty()) {
+			String d = removed.poll();
+			map.remove(d);
+		}
+
+		// Find a worker for the message.
 		if (!map.containsKey(destination)) {
 			long minimumLoad = Long.MAX_VALUE;
 			int index = 0;
@@ -83,14 +90,13 @@ public class MessageDispatcher {
 				}
 			}
 
-			System.out.println("sending " + element.message.content + " to " + destination + " via thread " + index);
-			workers[index].addMessage(destination, element);
-			if (!workers[index].running()) workers[index].start();
+			// Add the message to the chosen worker and map the destination to that worker.
+			workers[index].addMessage(element);
 			map.put(destination, workers[index]);
 		} else
-			map.get(destination).addMessage(destination, element);
+			map.get(destination).addMessage(element);
 
-		logger.log(Level.INFO, "Message enqueued: " + message.content);
+		logger.log(Level.INFO, "Message enqueued: " + message.content + " (" + message.identifier + ")");
 	}
 
 	/**
@@ -105,11 +111,12 @@ public class MessageDispatcher {
 
 
 	/**
-	 * Removes a queue for a destination from the message queue set.
-	 * @param destination The destination of the queue that should be removed
+	 * Marks a destination with an empty queue.
+	 *
+	 * @param destination The destination of the queue that went empty.
 	 */
-	private synchronized void remove(String destination) {
-		map.remove(destination);
+	private void remove(String destination) {
+		removed.add(destination);
 	}
 
 }
