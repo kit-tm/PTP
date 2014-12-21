@@ -6,8 +6,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.RandomAccessFile;
-import java.net.InetSocketAddress;
-import java.net.Proxy;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.nio.channels.FileChannel;
@@ -21,6 +19,7 @@ import utility.Constants;
 import callback.ReceiveListener;
 import connection.ServerWaiter;
 import net.freehaven.tor.control.TorControlConnection;
+import network.SOCKS;
 
 
 /**
@@ -288,20 +287,12 @@ public class Client {
 			return ConnectResponse.OPEN;
 		}
 
-		// Create a proxy by using the Tor SOCKS proxy.
-		InetSocketAddress midpoint = new InetSocketAddress(Constants.localhost, configuration.getTorSOCKSProxyPort());
-		logger.log(Level.INFO, "Creating proxy on " + Constants.localhost + ":" + configuration.getTorSOCKSProxyPort());
-		Proxy proxy = new Proxy(Proxy.Type.SOCKS, midpoint);
-		logger.log(Level.INFO, "Creating a socket using the proxy.");
-		Socket socket = new Socket(proxy);
-		InetSocketAddress destination = new InetSocketAddress(identifier, configuration.getHiddenServicePort());
-
 		ConnectResponse response = ConnectResponse.SUCCESS;
 
 		try {
-			// Bind the socket to the destination Tor hidden service.
-			logger.log(Level.INFO, "Binding destination address to the socket.");
-			socket.connect(destination, socketTimeout);
+			// Open a socket implementing the SOCKS4a protocol.
+			logger.log(Level.INFO, "Opening socket using the Tor SOCKS proxy, timeout: " + socketTimeout);
+			Socket socket = SOCKS.socks4aSocketConnection(identifier, configuration.getHiddenServicePort(), Constants.localhost, configuration.getTorSOCKSProxyPort(), socketTimeout);
 			logger.log(Level.INFO, "Adding socket to open sockets.");
 			sockets.put(identifier, socket);
 			logger.log(Level.INFO, "Opened socket for identifier: " + identifier);
