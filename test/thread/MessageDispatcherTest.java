@@ -61,6 +61,9 @@ public class MessageDispatcherTest {
 	}
 
 
+	/** Dummy destinations for the sending test. */
+	private final String destinations[] = { "d1", "d2", "d3", "d4", "d5" };
+
 	/** A dummy listener to receive dispatcher notifications. */
 	private final SendListener listener = new SendListener() {};
 
@@ -70,6 +73,7 @@ public class MessageDispatcherTest {
 	private Client client;
 	/** A RNG for message identifiers. */
 	private Random random;
+
 
 	/**
 	 * @see JUnit
@@ -114,7 +118,7 @@ public class MessageDispatcherTest {
 
 		// Sent messages with the random identifiers, check if they are all dispatched before a timeout.
 		for (Long i : sent)
-			dispatcher.enqueueMessage(new Message(i, "", new Identifier("")), 5 * 1000, listener);
+			dispatcher.enqueueMessage(new Message(i, destinations[random.nextInt(destinations.length)], new Identifier("")), 5 * 1000, listener);
 
 		// Wait for some time.
 		final long start = System.currentTimeMillis();

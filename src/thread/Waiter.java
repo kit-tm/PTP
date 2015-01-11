@@ -22,7 +22,7 @@ public abstract class Waiter implements Runnable {
 	protected ReceiveListener listener = new ReceiveListener() {
 
 		@Override
-		public void receive(byte[] message) { /* Default behaviour. Do nothing. */ }
+		public void receive(byte[] message) { /* Default behavior. Do nothing. */ }
 
 	};
 	/** The thread executing the run method of a deriving class, executing blocking calls. */

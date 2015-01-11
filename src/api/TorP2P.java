@@ -15,10 +15,10 @@ import utility.Constants;
 
 
 /**
- * Wrapper class for the Tor2P2 raw API. Provides nn top of the raw API:
+ * Wrapper class for the Tor2P2 raw API. Provides the following on top of the raw API:
  * 		* automatic socket management
  * 		* sets configuration parameters
- * 		* starts a private Tor instance
+ * 		* uses a shared Tor instance
  *
  * @author Simeon Andreev
  *
