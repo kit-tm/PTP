@@ -145,7 +145,6 @@ public class TTLManager extends Suspendable {
 	 * @throws IOException Propagates any IOException the API received while disconnecting a hidden service identifier.
 	 */
 	private synchronized void substract() throws IOException {
-		logger.log(Level.INFO, "Updating socket TTLs: -" + step);
 		LinkedList<Identifier> closed = new LinkedList<Identifier>();
 
 		// Iterate over the identifiers and substract the step from the socket TTLs.
@@ -161,11 +160,8 @@ public class TTLManager extends Suspendable {
 			closed.add(entry.getKey());
 		}
 
-		logger.log(Level.INFO, "Removing closed sockets from map.");
 		for (Identifier identifier : closed)
 			map.remove(identifier);
-
-		logger.log(Level.INFO, "Update finished.");
 	}
 
 	/**

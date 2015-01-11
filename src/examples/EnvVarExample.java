@@ -4,7 +4,7 @@ import utility.Constants;
 
 
 /**
- * Tests the TorP2P home environment variable.
+ * Example access of the TorP2P home environment variable.
  *
  * @author Simeon Andreev
  *

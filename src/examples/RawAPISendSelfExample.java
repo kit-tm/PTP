@@ -11,7 +11,7 @@ import utility.Constants;
 
 
 /**
- * An test application of the raw API, sends a message to the local identifier.
+ * Example application for the raw API, sends a message to the local identifier.
  *
  * @author Simeon Andreev
  *

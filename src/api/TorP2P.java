@@ -41,35 +41,41 @@ public class TorP2P {
 
 
 	/** The logger for this class. */
-	protected final Logger logger = Logger.getLogger(Constants.torp2plogger);
+	protected final Logger logger;
 	/** The configuration of the client. */
 	private final Configuration config;
 	/** The Tor process manager. */
 	private final TorManager tor;
 	/** The raw API client. */
 	private final Client client;
+	/** The message receiver which collects possibly broken-down messages. */
+	private final MessageAssembler messageAssembler;
 	/** The manager that closes sockets when their TTL expires. */
 	private final TTLManager manager;
 	/** The message dispatcher which sends the messages */
 	private final MessageDispatcher dispatcher;
+	/** A dummy sending listener to use when no listener is specified upon message sending. */
+	private final SendListener dummyListener = new SendListenerAdapter();
 
 
 	/**
 	 * Constructor method.
 	 *
 	 * @throws IllegalArgumentException
-	 * @throws IOException Propagates an IOException thrown by the construction of the raw API, the configuraiton, or the Tor process manager.
+	 * @throws IOException Propagates an IOException thrown by the construction of the raw API, the configuration, or the Tor process manager.
 	 *
 	 * @see Client
 	 * @see Configuration
 	 * @see TorManager
 	 */
 	public TorP2P() throws IllegalArgumentException, IOException {
-		// Create the Tor process manager and start the Tor process.
-		tor = new TorManager();
-
 		// Read the configuration.
 		config = new Configuration(Constants.configfile);
+		// Create the logger after the configuration sets the logger properties file.
+		logger = Logger.getLogger(Constants.torp2plogger);
+
+		// Create the Tor process manager and start the Tor process.
+		tor = new TorManager();
 
 		// Start the Tor process.
 		tor.start();
@@ -105,9 +111,12 @@ public class TorP2P {
 		config.setTorConfiguration(tor.directory(), tor.controlport(), tor.socksport());
 		// Create the client with the read configuration.
 		client = new Client(config);
+		// Create the receive listener.
+		messageAssembler = new MessageAssembler();
+		client.listener(messageAssembler);
 		// Create and start the manager with the given TTL.
 		manager = new TTLManager(getTTLManagerListener(), config.getTTLPoll());
-		//manager.start();
+		manager.start();
 		// Create and start the message dispatcher.
 		dispatcher = new MessageDispatcher(getMessageDispatcherListener(), config.getDispatcherThreadsNumber());
 	}
@@ -136,7 +145,8 @@ public class TorP2P {
 	 * @see Client
 	 */
 	public void SendMessage(Message message, long timeout) {
-		dispatcher.enqueueMessage(message, timeout, new SendListenerAdapter());
+		// Delegate with the dummy listener.
+		SendMessage(message, timeout, dummyListener);
 	}
 
 	/**
@@ -150,7 +160,9 @@ public class TorP2P {
 	 * @see Client
 	 */
 	public void SendMessage(Message message, long timeout, SendListener listener) {
-		dispatcher.enqueueMessage(message, timeout, listener);
+		// Alter the content with the message assembler.
+		final Message altered = new Message(message.identifier, messageAssembler.alterContent(message.content), message.destination);
+		dispatcher.enqueueMessage(altered, timeout, listener);
 	}
 
 	/**
@@ -162,7 +174,7 @@ public class TorP2P {
 	 */
 	public void SetListener(ReceiveListener listener) {
 		// Propagate the input listener.
-		client.listener(listener);
+		messageAssembler.setListener(listener);
 	}
 
 	/**
