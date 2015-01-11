@@ -14,7 +14,7 @@ import api.Identifier;
 import api.Message;
 import api.TorP2P;
 import callback.ReceiveListener;
-import callback.SendListener;
+import callback.SendListenerAdapter;
 import utility.RNG;
 
 
@@ -103,7 +103,7 @@ public class TorP2PTest {
 		final AtomicBoolean sendSuccess = new AtomicBoolean(false);
 		final Message m = new Message(message, identifier);
 		final long timeout = 180 * 1000;
-		client1.SendMessage(m, timeout, new SendListener() {
+		client1.SendMessage(m, timeout, new SendListenerAdapter() {
 
 			@Override
 			public void sendSuccess(Message message) { sendSuccess.set(true); }
@@ -170,7 +170,7 @@ public class TorP2PTest {
 		final Message m1 = new Message(message, identifier2);
 		final Message m2 = new Message(message, identifier1);
 		final long timeout = 180 * 1000;
-		client1.SendMessage(m1, timeout, new SendListener() {
+		client1.SendMessage(m1, timeout, new SendListenerAdapter() {
 
 			@Override
 			public void sendSuccess(Message message) { sendSuccess1.set(true); }
@@ -217,13 +217,13 @@ public class TorP2PTest {
 		});
 
 		// Send the initial ping-pong message.
-		client2.SendMessage(m2, timeout, new SendListener() {
+		client2.SendMessage(m2, timeout, new SendListenerAdapter() {
 
 			@Override
 			public void sendSuccess(Message message) { sendSuccess2.set(true); }
 
 		});
-		client1.SendMessage(m1, timeout, new SendListener() {
+		client1.SendMessage(m1, timeout, new SendListenerAdapter() {
 
 			@Override
 			public void sendSuccess(Message message) { sendSuccess1.set(true); }

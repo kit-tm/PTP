@@ -17,6 +17,7 @@ import api.Identifier;
 import api.Message;
 import callback.DispatchListener;
 import callback.SendListener;
+import callback.SendListenerAdapter;
 import dispatch.MessageDispatcher;
 
 
@@ -35,7 +36,7 @@ public class MessageDispatcherTest {
 	 * @author Simeon Andreev
 	 *
 	 */
-	private static class Client extends DispatchListener {
+	private static class Client implements DispatchListener {
 
 		/** An atomic counter indicating the number of dispatched messages. */
 		public final AtomicInteger counter = new AtomicInteger(0);
@@ -65,7 +66,7 @@ public class MessageDispatcherTest {
 	private final String destinations[] = { "d1", "d2", "d3", "d4", "d5" };
 
 	/** A dummy listener to receive dispatcher notifications. */
-	private final SendListener listener = new SendListener() {};
+	private final SendListener listener = new SendListenerAdapter();
 
 	/** The started message dispatcher. */
 	private MessageDispatcher dispatcher;

@@ -8,6 +8,7 @@ import callback.DispatchListener;
 import callback.ExpireListener;
 import callback.ReceiveListener;
 import callback.SendListener;
+import callback.SendListenerAdapter;
 import connection.TTLManager;
 import dispatch.MessageDispatcher;
 import tor.TorManager;
@@ -135,7 +136,7 @@ public class TorP2P {
 	 * @see Client
 	 */
 	public void SendMessage(Message message, long timeout) {
-		dispatcher.enqueueMessage(message, timeout, new SendListener() {});
+		dispatcher.enqueueMessage(message, timeout, new SendListenerAdapter());
 	}
 
 	/**

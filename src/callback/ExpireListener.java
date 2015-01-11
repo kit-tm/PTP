@@ -11,7 +11,7 @@ import api.Identifier;
  * @author Simeon Andreev
  *
  */
-public abstract class ExpireListener {
+public interface ExpireListener {
 
 	/**
 	 * Notifies this listener of a connections expired TTL.
@@ -19,6 +19,6 @@ public abstract class ExpireListener {
 	 * @param identifier The hidden service identifier whos connections TTL expired.
 	 * @throws IOException Propagates any IOException the API received while disconnecting a hidden service identifier.
 	 */
-	public void expired(Identifier identifier) throws IOException { }
+	public void expired(Identifier identifier) throws IOException;
 
 }
