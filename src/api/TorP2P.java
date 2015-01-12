@@ -135,6 +135,12 @@ public class TorP2P {
 		return new Identifier(client.identifier(true));
 	}
 
+	// TODO: Temporary code, remove
+	public Identifier ReuseIdentifier() throws IOException {
+		// Create a fresh hidden service identifier.
+		return new Identifier(client.identifier(false));
+	}
+
 	/**
 	 * Sends a message to a given hidden service identifier and port.
 	 * Success not guaranteed.

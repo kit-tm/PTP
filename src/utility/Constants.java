@@ -19,7 +19,7 @@ package utility;
  */
 public class Constants {
 
-
+	// TODO: temporary code, make all constants constant again
 	/* Tor general constants */
 
 	/** The name of the Tor hostname file. */
@@ -106,7 +106,7 @@ public class Constants {
 	/* JVM constants */
 
 	/** The port number which tells the JVM to pick any available port for a server socket. */
-	public static final int anyport = 0;
+	public static int anyport = 0;
 	/** The localhost address */
 	public static final String localhost = "127.0.0.1";
 	/** The working directory Java system property keyword. */

@@ -3,7 +3,6 @@ package examples;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import utility.DateUtils;
@@ -50,30 +49,22 @@ public class TorP2PSendExample {
 
 			};
 
-			System.out.println("Enter # messages to send:");
-			String number = br.readLine();
-			final int max = Integer.valueOf(number);
-			Random random = new Random();
-			Random delay = new Random();
+			final DateUtils.Time current = DateUtils.getAtomicTime();
+			int sent = 0;
 
-			final DateUtils.ExactCalendar c = DateUtils.getAtomicTime();
-
-			// Send the messages.
-			for (int i = 0; i < max; ++i) {
-				String content = i + " msg " + random.nextInt(1000);
-				String timestamped = (c.calendar.getTimeInMillis() + System.currentTimeMillis() - c.current) + " " + content;
+			while (true) {
+				System.out.println("Enter message to send (or exit to stop):");
+				String content = br.readLine();
+				if (content.equals("exit")) break;
+				String timestamped = (current.internet  + System.currentTimeMillis() - current.local) + " " + content;
 				Message message = new Message(timestamped, destination);
 				client.SendMessage(message, timeout, listener);
-				try {
-					Thread.sleep((1 + delay.nextInt(5)) * 1000);
-				} catch (InterruptedException e) {
-					// Do nothing.
-				}
+				++sent;
 			}
 
 			// Wait until all messages are sent.
 			System.out.println("Sleeping.");
-			while (counter.get() < max) {
+			while (counter.get() < sent) {
 				try {
 					// Sleep.
 					Thread.sleep(5 * 1000);

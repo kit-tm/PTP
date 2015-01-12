@@ -156,13 +156,14 @@ public class Client {
 			return ExitResponse.FAIL;
 		}
 
-		try {
+		// TODO: temporary commented code, uncomment
+		/*try {
 			// Delete the hidden service directory.
 			deleteHiddenService();
 		} catch (IOException e) {
 			logger.log(Level.WARNING, "Received IOException while deleting the hidden service directory: " + e.getMessage());
 			return ExitResponse.FAIL;
-		}
+		}*/
 
 		logger.log(Level.INFO, "Stopped server waiter and deleted hidden service directory.");
 		return ExitResponse.SUCCESS;
