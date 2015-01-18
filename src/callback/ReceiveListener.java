@@ -15,6 +15,6 @@ public interface ReceiveListener {
 	 *
 	 * @param message The received message.
 	 */
-	public void receive(byte[] message);
+	public void receivedMessage(byte[] message);
 
 }

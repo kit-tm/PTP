@@ -8,6 +8,7 @@ import java.util.logging.Logger;
 import api.Message;
 import callback.DispatchListener;
 import callback.SendListener;
+import thread.ThreadPool;
 import utility.Constants;
 
 
@@ -22,13 +23,13 @@ public class MessageDispatcher {
 	/** The logger for this class. */
 	private final Logger logger = Logger.getLogger(Constants.dispatcherlogger);
 	/** The set of message queues for all destinations. */
-	private final HashMap<String, Worker> map = new HashMap<String, Worker>();
+	private final HashMap<String, DispatchThread> map = new HashMap<String, DispatchThread>();
 	/** The set of destinations with empty message queues. */
 	private final ConcurrentLinkedQueue<String> removed = new ConcurrentLinkedQueue<String>();
-	/** The workers in the thread pool which will handle the message queues. */
-	private final Worker workers[];
+	/** The thread pool to use when dispatching to multiple destinations. */
+	private final ThreadPool<Element, DispatchThread> threadPool;
 	/** The listener that will be notified of empty destination queues. */
-	private final Worker.Listener doneListener = new Worker.Listener() {
+	private final DispatchThread.Listener doneListener = new DispatchThread.Listener() {
 
 		@Override
 		public void done(String destination) { remove(destination); }
@@ -39,16 +40,16 @@ public class MessageDispatcher {
 	/**
 	 * Constructor method.
 	 *
-	 * @param listener The parameters of this dispatcher.
-	 * @param client The raw API client to use when sending messages.
-	 * @param manager The TTL manager to notify of established connections.
+	 * @param dispatchListener The listener to notify on message dispatch.
+	 * @param threads The number of threads this dispatcher may use.
 	 */
 	public MessageDispatcher(DispatchListener dispatchListener, int threads) {
-		workers = new Worker[threads];
-		for (int i = 0; i < workers.length; ++i)
-			workers[i] = new Worker(dispatchListener, doneListener);
+		// Create the thread pool.
+		DispatchThread workers[] = new DispatchThread[threads];
+		for (int i = 0; i < threads; ++i) workers[i] = new DispatchThread(dispatchListener, doneListener);
+		threadPool = new ThreadPool<Element, DispatchThread>(workers);
 
-		logger.log(Level.INFO, "Message dispatcher object created with maximum threads number: " + threads);
+		logger.log(Level.INFO, "Message dispatcher object created with threads number: " + threads);
 	}
 
 
@@ -71,30 +72,12 @@ public class MessageDispatcher {
 
 		// Find a worker for the message.
 		if (!map.containsKey(destination)) {
-			long minimumLoad = Long.MAX_VALUE;
-			int index = 0;
-
-			// Find a free worker and assign the new queue.
-			for (int i = 0; i < workers.length; ++i) {
-				if (!workers[i].running()) {
-					index = i;
-					break;
-				}
-
-				final long load = workers[i].load();
-
-				// If no free worker is available, assign the new message to the worker with the least load.
-				if (load < minimumLoad) {
-					minimumLoad = load;
-					index = i;
-				}
-			}
-
+			DispatchThread worker = threadPool.getWorker();
 			// Add the message to the chosen worker and map the destination to that worker.
-			workers[index].addMessage(element);
-			map.put(destination, workers[index]);
+			worker.enqueue(element);
+			map.put(destination, worker);
 		} else
-			map.get(destination).addMessage(element);
+			map.get(destination).enqueue(element);
 
 		logger.log(Level.INFO, "Message enqueued: " + message.content + " (" + message.identifier + ")");
 	}
@@ -104,9 +87,7 @@ public class MessageDispatcher {
 	 */
 	public void stop() {
 		logger.log(Level.INFO, "Stopping message dispatcher.");
-
-		for (int i = 0; i < workers.length; ++i)
-			workers[i].stop();
+		threadPool.stop();
 	}
 
 

@@ -82,7 +82,7 @@ public class TorP2PTest {
 		client1.SetListener(new ReceiveListener() {
 
 			@Override
-			public void receive(byte[] bytes) {
+			public void receivedMessage(byte[] bytes) {
 				System.out.println("Received message: " + new String(bytes));
 				if (!new String(bytes).equals(message))
 					fail("Received message does not match sent message: " + message + " != " + new String(bytes));
@@ -192,7 +192,7 @@ public class TorP2PTest {
 		client1.SetListener(new ReceiveListener() {
 
 			@Override
-			public void receive(byte[] bytes) {
+			public void receivedMessage(byte[] bytes) {
 				counter.incrementAndGet();
 				final String m = new String(bytes);
 				if (!m.equals(message))
@@ -205,7 +205,7 @@ public class TorP2PTest {
 		client2.SetListener(new ReceiveListener() {
 
 			@Override
-			public void receive(byte[] bytes) {
+			public void receivedMessage(byte[] bytes) {
 				counter.incrementAndGet();
 				final String m = new String(bytes);
 				if (!m.equals(message))

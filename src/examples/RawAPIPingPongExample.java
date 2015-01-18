@@ -80,7 +80,7 @@ public class RawAPIPingPongExample {
 			client.listener(new ReceiveListener() {
 
 				@Override
-				public void receive(byte[] bytes) {
+				public void receivedMessage(byte[] bytes) {
 					final String message = new String(bytes);
 					System.out.println("Client received message: " + message);
 					if (holder.message == null) holder.message = message;

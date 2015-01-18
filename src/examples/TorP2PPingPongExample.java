@@ -110,7 +110,7 @@ public class TorP2PPingPongExample {
 		 * @see ReceiveListener
 		 */
 		@Override
-		public void receive(byte[] bytes) {
+		public void receivedMessage(byte[] bytes) {
 			final String received = new String(bytes);
 			System.out.println("Client received message: " + received);
 			if (message == null) message = received;

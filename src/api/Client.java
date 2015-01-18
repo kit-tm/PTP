@@ -15,9 +15,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import receive.ServerWaiter;
 import utility.Constants;
 import callback.ReceiveListener;
-import connection.ServerWaiter;
 import net.freehaven.tor.control.TorControlConnection;
 import network.SOCKS;
 
@@ -156,14 +156,13 @@ public class Client {
 			return ExitResponse.FAIL;
 		}
 
-		// TODO: temporary commented code, uncomment
-		/*try {
+		try {
 			// Delete the hidden service directory.
 			deleteHiddenService();
 		} catch (IOException e) {
 			logger.log(Level.WARNING, "Received IOException while deleting the hidden service directory: " + e.getMessage());
 			return ExitResponse.FAIL;
-		}*/
+		}
 
 		logger.log(Level.INFO, "Stopped server waiter and deleted hidden service directory.");
 		return ExitResponse.SUCCESS;
@@ -347,7 +346,7 @@ public class Client {
 	 *
 	 * @return The port number of the local hidden service.
 	 */
-	public int localport() {
+	public int localPort() {
 		return waiter.port();
 	}
 

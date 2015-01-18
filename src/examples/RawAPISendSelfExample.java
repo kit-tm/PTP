@@ -42,7 +42,7 @@ public class RawAPISendSelfExample {
 		client.listener(new ReceiveListener() {
 
 			@Override
-			public void receive(byte[] bytes) {
+			public void receivedMessage(byte[] bytes) {
 				System.out.println("Received message: " + new String(bytes));
 				if (new String(bytes).equals(message))
 					System.out.println("Received message matches sent message.");

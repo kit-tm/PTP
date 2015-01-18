@@ -6,18 +6,20 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import callback.DispatchListener;
-import thread.Suspendable;
+import thread.Worker;
 
 
 /**
- * A suspendable thread which dispatches messages to specific destinations.
+ * A thread pool worker which dispatches messages to specific destinations.
+ * Maintains a single queue per destination and alternates between queues
+ * when dispatching to multiple destinations.
  *
  * @author Simeon Andreev
  *
- * @see Suspendable
+ * @see Worker
  *
  */
-public class Worker extends Suspendable {
+public class DispatchThread extends Worker<Element> {
 
 
 	/**
@@ -39,7 +41,7 @@ public class Worker extends Suspendable {
 
 
 	/** The listener that should be notified when a message is to be sent. */
-	private final DispatchListener dispatchLisener;
+	private final DispatchListener dispatchListener;
 	/** The listener that should be notified when a queue is empty. */
 	private final Listener doneListener;
 	/** The set of queues that this thread handles. */
@@ -56,10 +58,10 @@ public class Worker extends Suspendable {
 	/**
 	 * Constructor method.
 	 *
-	 * @param listener The listener that should be notified when a message is to be sent.
+	 * @param dispatchListener The listener that should be notified when a message is to be sent.
 	 */
-	public Worker(DispatchListener dispatchLisener, Listener doneListener) {
-		this.dispatchLisener = dispatchLisener;
+	public DispatchThread(DispatchListener dispatchListener, Listener doneListener) {
+		this.dispatchListener = dispatchListener;
 		this.doneListener = doneListener;
 	}
 
@@ -70,7 +72,7 @@ public class Worker extends Suspendable {
 	 *
 	 * @param message The message and auxiliary objects.
 	 */
-	public synchronized void addMessage(Element message) {
+	public synchronized void enqueue(Element message) {
 		undistributed.add(message);
 		counter.incrementAndGet();
 
@@ -117,7 +119,7 @@ public class Worker extends Suspendable {
 			// Fetch the first messages of the queue.
 			Element element = current.getFirst();
 			// Notify the listener of the message dispatch.
-			final boolean sent = dispatchLisener.dispatch(element.message, element.listener, element.timeout, System.currentTimeMillis() - element.timestamp);
+			final boolean sent = dispatchListener.dispatch(element.message, element.listener, element.timeout, System.currentTimeMillis() - element.timestamp);
 
 			// If the listener does not allow to remove the message from the queue, continue.
 			if (!sent) continue;
@@ -136,15 +138,6 @@ public class Worker extends Suspendable {
 				stopCheck();
 			}
 		}
-	}
-
-	/**
-	 * @see Suspendable
-	 */
-	@Override
-	public void stop() {
-		if (!running.get()) return;
-		condition.set(false);
 	}
 
 

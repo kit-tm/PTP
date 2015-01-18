@@ -7,6 +7,7 @@ import java.util.logging.Logger;
 import callback.DispatchListener;
 import callback.ExpireListener;
 import callback.ReceiveListener;
+import callback.ReceiveListenerAdapter;
 import callback.SendListener;
 import callback.SendListenerAdapter;
 import connection.TTLManager;
@@ -41,15 +42,15 @@ public class TorP2P {
 
 
 	/** The logger for this class. */
-	protected final Logger logger;
+	private final Logger logger;
 	/** The configuration of the client. */
 	private final Configuration config;
 	/** The Tor process manager. */
 	private final TorManager tor;
 	/** The raw API client. */
 	private final Client client;
-	/** The message receiver which collects possibly broken-down messages. */
-	private final MessageAssembler messageAssembler;
+	/** The message receiver which collects possibly glued messages and handles control messages. */
+	private final MessageHandler messageWrapper;
 	/** The manager that closes sockets when their TTL expires. */
 	private final TTLManager manager;
 	/** The message dispatcher which sends the messages */
@@ -112,8 +113,8 @@ public class TorP2P {
 		// Create the client with the read configuration.
 		client = new Client(config);
 		// Create the receive listener.
-		messageAssembler = new MessageAssembler();
-		client.listener(messageAssembler);
+		messageWrapper = new MessageHandler(new ReceiveListenerAdapter());
+		client.listener(messageWrapper);
 		// Create and start the manager with the given TTL.
 		manager = new TTLManager(getTTLManagerListener(), config.getTTLPoll());
 		manager.start();
@@ -133,12 +134,6 @@ public class TorP2P {
 	public Identifier GetIdentifier() throws IOException {
 		// Create a fresh hidden service identifier.
 		return new Identifier(client.identifier(true));
-	}
-
-	// TODO: Temporary code, remove
-	public Identifier ReuseIdentifier() throws IOException {
-		// Create a fresh hidden service identifier.
-		return new Identifier(client.identifier(false));
 	}
 
 	/**
@@ -167,7 +162,7 @@ public class TorP2P {
 	 */
 	public void SendMessage(Message message, long timeout, SendListener listener) {
 		// Alter the content with the message assembler.
-		final Message altered = new Message(message.identifier, messageAssembler.alterContent(message.content), message.destination);
+		final Message altered = new Message(message.identifier, messageWrapper.wrap(message.content), message.destination);
 		dispatcher.enqueueMessage(altered, timeout, listener);
 	}
 
@@ -180,7 +175,7 @@ public class TorP2P {
 	 */
 	public void SetListener(ReceiveListener listener) {
 		// Propagate the input listener.
-		messageAssembler.setListener(listener);
+		messageWrapper.setStandardListener(listener);
 	}
 
 	/**
@@ -192,7 +187,7 @@ public class TorP2P {
 	 */
 	public int GetLocalPort() {
 		// Get the local port from the client.
-		return client.localport();
+		return client.localPort();
 	}
 
 	/**

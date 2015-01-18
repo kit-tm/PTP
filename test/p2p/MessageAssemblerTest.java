@@ -11,7 +11,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import callback.ReceiveListener;
-import api.MessageAssembler;
+import api.MessageHandler;
 import utility.RNG;
 
 /**
@@ -34,7 +34,7 @@ public class MessageAssemblerTest {
 	private static final int m = 50;
 
 	/** The message assembler to use for the tests. */
-	private MessageAssembler messageAssembler;
+	private MessageHandler messageWrapper;
 	/** The RNG to use when generating random strings. */
 	private RNG random;
 
@@ -44,7 +44,7 @@ public class MessageAssemblerTest {
 	 */
 	@Before
 	public void setUp() {
-		messageAssembler = new MessageAssembler();
+		messageWrapper = new MessageHandler();
 		random = new RNG();
 	}
 
@@ -65,14 +65,14 @@ public class MessageAssemblerTest {
 		// Add the strings to a string buffer.
 		final StringBuilder builder = new StringBuilder("");
 		for (int i = 0; i < messages.length; ++i)
-			builder.append(messageAssembler.alterContent(messages[i]));
+			builder.append(messageWrapper.alterContent(messages[i]));
 
 		// Set the receiving listener.
 		final Vector<String> received = new Vector<String>();
-		messageAssembler.setListener(new ReceiveListener() {
+		messageWrapper.setListener(new ReceiveListener() {
 
 			@Override
-			public void receive(byte[] message) { received.add(new String(message)); }
+			public void receivedMessage(byte[] message) { received.add(new String(message)); }
 
 		});
 
@@ -87,7 +87,7 @@ public class MessageAssemblerTest {
 
 		// Send the fragments.
 		for (String fragment : fragments)
-			messageAssembler.receive(fragment.getBytes());
+			messageWrapper.receivedMessage(fragment.getBytes());
 
 		for (int i = 0; i < messages.length; ++i) {
 			if (!received.get(i).equals(messages[i]))
