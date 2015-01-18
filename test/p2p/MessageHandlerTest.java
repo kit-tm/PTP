@@ -20,7 +20,9 @@ import utility.RNG;
  * @author Simeon Andreev
  *
  */
-public class MessageAssemblerTest {
+public class MessageHandlerTest {
+
+	// TODO: rewrite after all changes are done
 
 	/** Minimum message length to use when generating random strings. */
 	private static final int minMessageLength = 10;

@@ -6,11 +6,11 @@ import java.io.InputStreamReader;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import utility.DateUtils;
+import adapters.SendListenerAdapter;
 import api.Identifier;
 import api.Message;
 import api.TorP2P;
 import callback.SendListener;
-import callback.SendListenerAdapter;
 
 
 /**

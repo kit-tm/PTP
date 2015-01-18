@@ -6,8 +6,8 @@ import java.net.Socket;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import adapters.ReceiveListenerAdapter;
 import callback.ReceiveListener;
-import callback.ReceiveListenerAdapter;
 import thread.Suspendable;
 import thread.ThreadPool;
 import utility.Constants;
@@ -61,6 +61,7 @@ public class MessageReceiver extends Suspendable {
 				Socket socket = server.accept();
 				// Add the connection handling to the thread.
 				ReceiveThread worker = threadPool.getWorker();
+				// TODO: enqueue the socket to the worker
 				worker.enqueue(item);
 			} catch (IOException e) {
 				// Stopping the message receiver causes an IOException here, otherwise something went wrong.
@@ -87,8 +88,5 @@ public class MessageReceiver extends Suspendable {
 			// Server socket is already closed. Do nothing.
 		}
 	}
-
-
-
 
 }

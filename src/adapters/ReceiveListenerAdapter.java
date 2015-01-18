@@ -1,4 +1,6 @@
-package callback;
+package adapters;
+
+import callback.ReceiveListener;
 
 
 /**

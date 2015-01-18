@@ -13,11 +13,11 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import adapters.SendListenerAdapter;
 import api.Identifier;
 import api.Message;
 import callback.DispatchListener;
 import callback.SendListener;
-import callback.SendListenerAdapter;
 import dispatch.MessageDispatcher;
 
 

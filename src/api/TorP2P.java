@@ -4,12 +4,13 @@ import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import adapters.ControlListenerAdapter;
+import adapters.ReceiveListenerAdapter;
+import adapters.SendListenerAdapter;
 import callback.DispatchListener;
 import callback.ExpireListener;
 import callback.ReceiveListener;
-import callback.ReceiveListenerAdapter;
 import callback.SendListener;
-import callback.SendListenerAdapter;
 import connection.TTLManager;
 import dispatch.MessageDispatcher;
 import tor.TorManager;
@@ -82,7 +83,7 @@ public class TorP2P {
 		tor.start();
 
 		// Wait until Tors bootstrapping is complete.
-		// TODO: configuration parameters for this
+		// TODO:  add configuration parameters for this
 		final long timeout = 120000;
 		final long poll = 2000;
 		long waited = 0;
@@ -113,7 +114,7 @@ public class TorP2P {
 		// Create the client with the read configuration.
 		client = new Client(config);
 		// Create the receive listener.
-		messageWrapper = new MessageHandler(new ReceiveListenerAdapter());
+		messageWrapper = new MessageHandler(new ControlListenerAdapter());
 		client.listener(messageWrapper);
 		// Create and start the manager with the given TTL.
 		manager = new TTLManager(getTTLManagerListener(), config.getTTLPoll());

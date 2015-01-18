@@ -1,5 +1,6 @@
-package callback;
+package adapters;
 
+import callback.SendListener;
 import api.Message;
 
 

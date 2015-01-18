@@ -9,6 +9,8 @@ package callback;
  */
 public interface ReceiveListener {
 
+	// TODO: change to string instead of byte array?
+
 
 	/**
 	 * Indicates that a message was received over the Tor Hidden Service to this listener.

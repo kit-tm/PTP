@@ -1,8 +1,9 @@
 package api;
 
+import adapters.ReceiveListenerAdapter;
 import utility.Constants;
+import callback.ControlListener;
 import callback.ReceiveListener;
-import callback.ReceiveListenerAdapter;
 
 
 /**
@@ -16,7 +17,7 @@ import callback.ReceiveListenerAdapter;
 public class MessageHandler implements ReceiveListener {
 
 	/** The listener to notify when control messages are received. */
-	private final ReceiveListener controlListener;
+	private final ControlListener controlListener;
 	/** The listener to notify when standard messages are received. */
 	private ReceiveListener standardListener = new ReceiveListenerAdapter();
 
@@ -26,7 +27,7 @@ public class MessageHandler implements ReceiveListener {
 	 *
 	 * @param controlListener The listener to notify when control messages are received.
 	 */
-	public MessageHandler(ReceiveListener controlListener) {
+	public MessageHandler(ControlListener controlListener) {
 		this.controlListener = controlListener;
 	}
 
@@ -68,10 +69,10 @@ public class MessageHandler implements ReceiveListener {
 			// Fetch the message.
 			final String message = bulk.substring(position + 2, position + 2 + length);
 			// Delegate the message to the respective listener.
-			if (flag == Constants.messagecontrolflag)
-				controlListener.receivedMessage(message.getBytes());
-			else if (flag == Constants.messagestandardflag)
+			if (flag == Constants.messagestandardflag)
 				standardListener.receivedMessage(message.getBytes());
+			else
+				controlListener.receivedMessage(flag, message);
 			// Move to the next message.
 			index = position + 2 + length;
 		}

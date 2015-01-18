@@ -10,11 +10,11 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import adapters.SendListenerAdapter;
 import api.Identifier;
 import api.Message;
 import api.TorP2P;
 import callback.ReceiveListener;
-import callback.SendListenerAdapter;
 import utility.RNG;
 
 
