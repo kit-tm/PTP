@@ -14,8 +14,10 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import api.Identifier;
 import api.Message;
 import api.MessageHandler;
+import callback.ConnectionListener;
 import callback.ReceiveListener;
 import receive.MessageReceiver;
 import utility.Constants;
@@ -70,6 +72,17 @@ public class MessageReceiverTest {
 
 	}
 
+	/** A dummy listener which is notified on newly opened connections. */
+	private final ConnectionListener dummyListener = new ConnectionListener() {
+
+		/**
+		 * @see ConnectionListener
+		 */
+		@Override
+		public void ConnectionOpen(Identifier identifier, Socket socket) { /* Do nothing. */ }
+
+	};
+
 
 	/** The message receiver. */
 	private MessageReceiver receiver;
@@ -86,7 +99,7 @@ public class MessageReceiverTest {
 	public void setUp() {
 		// Create and start the message receiver.
 		try {
-			receiver = new MessageReceiver(Constants.anyport, 2, 250);
+			receiver = new MessageReceiver(dummyListener, Constants.anyport, 2, 250);
 		} catch (IOException e) {
 			fail("Could not create message receiver object.");
 		}

@@ -17,6 +17,7 @@ import java.util.logging.Logger;
 
 import receive.MessageReceiver;
 import utility.Constants;
+import callback.ConnectionListener;
 import callback.ReceiveListener;
 import net.freehaven.tor.control.TorControlConnection;
 import network.SOCKS;
@@ -96,6 +97,8 @@ public class Client {
 	private final MessageReceiver receiver;
 	/** The open socket connections to Tor hidden services. */
 	private final ConcurrentHashMap<String, Socket> sockets = new ConcurrentHashMap<String, Socket>();
+	/** The current hidden service identifier. */
+	private String identifier = null;
 	/** The hidden service sub-directory of this client. */
 	private String directory = null;
 
@@ -110,7 +113,7 @@ public class Client {
 	public Client(Configuration configuration) throws IOException {
 		this.configuration = configuration;
 		// Tell the JVM we want any available port.
-		receiver = new MessageReceiver(Constants.anyport, configuration.getReceiverThreadsNumber(), configuration.getSocketReceivePoll());
+		receiver = new MessageReceiver(getConnectionListener(), Constants.anyport, configuration.getReceiverThreadsNumber(), configuration.getSocketReceivePoll());
 		receiver.start();
 
 		// Check if the hidden service directory exists, if not create it.
@@ -122,6 +125,8 @@ public class Client {
 		lockFile = new File(configuration.getWorkingDirectory() + File.separator + Constants.rawapilockfile);
 		if (!lockFile.exists() && !lockFile.createNewFile())
 			throw new IOException("Could not create raw API lock file!");
+
+		identifier = configuration.getDefaultIdentifier();
 
 		logger.log(Level.INFO, "Client object created.");
 	}
@@ -211,7 +216,8 @@ public class Client {
 			File hostname = new File(configuration.getHiddenServiceDirectory() + File.separator + directory + File.separator + Constants.hostname);
 
 			// Read the content of the Tor hidden service hostname file.
-			return readIdentifier(hostname);
+			identifier = readIdentifier(hostname);;
+			return identifier;
 		} finally {
 			// Release the lock, if acquired.
 			logger.log(Level.INFO, "Client releasing the lock on the raw API lock file.");
@@ -291,6 +297,10 @@ public class Client {
 			logger.log(Level.INFO, "Adding socket to open sockets.");
 			sockets.put(identifier, socket);
 			logger.log(Level.INFO, "Opened socket for identifier: " + identifier);
+			// Send the current identifier as the first message.
+			send(identifier, MessageHandler.wrapRaw(identifier, Constants.messageoriginflag));
+			// Add the new connection to the message receiver.
+			receiver.addConnection(socket);
 		} catch (SocketTimeoutException e) {
 			// Socket connection timeout reached.
 			logger.log(Level.WARNING, "Timeout reached for connection to identifier: " + identifier);
@@ -436,6 +446,29 @@ public class Client {
 
 		logger.log(Level.INFO, "Read identifier: " + identifier);
 		return identifier;
+	}
+
+
+	/**
+	 * Returns the connection listener which adds new incoming connections to the known connections.
+	 *
+	 * @return The connection listener which handles new incoming connections.
+	 */
+	private ConnectionListener getConnectionListener() {
+		return new ConnectionListener() {
+
+			/**
+			 * @see ConnectionListener
+			 */
+			@Override
+			public void ConnectionOpen(Identifier identifier, Socket socket) {
+				// Add the connection to the socket set.
+				sockets.put(identifier.getTorAddress(), socket);
+				// Send the initial identifier message.
+				send(identifier.getTorAddress(), MessageHandler.wrapRaw(Client.this.identifier, Constants.messageoriginflag));
+			}
+
+		};
 	}
 
 }

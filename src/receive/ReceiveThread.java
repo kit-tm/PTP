@@ -9,6 +9,7 @@ import api.Identifier;
 import api.Message;
 import api.MessageHandler;
 import api.Packet;
+import callback.ConnectionListener;
 import callback.ReceiveListener;
 import thread.Worker;
 import utility.Constants;
@@ -27,17 +28,21 @@ public class ReceiveThread extends Worker<Origin> {
 
 	/** The set of sockets on which this thread listens. */
 	private final Vector<Origin> origins = new Vector<Origin>();
+	/** The listener to notify on newly opened connections. */
+	private final ConnectionListener connectionListener;
 	/** The listener to notify on received messages. */
-	private ReceiveListener listener = new ReceiveListenerAdapter();
+	private ReceiveListener receiveListener = new ReceiveListenerAdapter();
 	/** The poll interval (in milliseconds) at which this thread checks for available socket data. */
 	private final int pollInterval;
 
 	/**
 	 * Constructor method.
 	 *
+	 * @param connectionListener The listener to notify on newly opened connections.
 	 * @param pollInterval The interval (in milliseconds) at which this thread checks the open sockets for incoming data.
 	 */
-	public ReceiveThread(int pollInterval) {
+	public ReceiveThread(ConnectionListener connectionListener, int pollInterval) {
+		this.connectionListener = connectionListener;
 		this.pollInterval = pollInterval;
 		load = 0;
 	}
@@ -74,11 +79,12 @@ public class ReceiveThread extends Worker<Origin> {
 					Packet[] packets = MessageHandler.unwrapBulk(bulk);
 					for (int i = 0; i < packets.length; ++i) {
 						// Set origin if available.
-						if (packets[i].flags == Constants.messageoriginflag)
+						if (packets[i].flags == Constants.messageoriginflag) {
 							origin.identifier = new Identifier(packets[i].message.content);
+							connectionListener.ConnectionOpen(origin.identifier, origin.socket);
 						// Otherwise notify listener.
-						else
-							listener.receivedMessage(new Message(packets[i].message.content, origin.identifier));
+						} else
+							receiveListener.receivedMessage(new Message(packets[i].message.content, origin.identifier));
 					}
 				} catch (IOException e) {
 					// Socket was closed. Do nothing.
@@ -131,7 +137,7 @@ public class ReceiveThread extends Worker<Origin> {
 	 * @param listener The listener to notify on received messages.
 	 */
 	public void setListener(ReceiveListener listener) {
-		this.listener = listener;
+		this.receiveListener = listener;
 	}
 
 

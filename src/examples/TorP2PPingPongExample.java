@@ -239,7 +239,7 @@ public class TorP2PPingPongExample {
 		// Done, exit.
 		System.out.println("Exiting client.");
 		if (client != null)
-		client.Exit();
+			client.Exit();
 	}
 
 }

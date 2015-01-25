@@ -66,17 +66,6 @@ public class MessageHandler {
 		return new Message(wrapRaw(message.content, Constants.messagestandardflag), message.identifier);
 	}
 
-	/**
-	 * Wraps an identifier into a message with meta information.
-	 *
-	 * @param identifier The identifier which should be wrapped.
-	 * @return The wrapped message.
-	 */
-	public static Message wrapIdentifier(Identifier identifier) {
-		// Add the message content length and flags to the actual content.
-		return new Message(wrapRaw(identifier.getTorAddress(), Constants.messageoriginflag), identifier);
-	}
-
 
 	/**
 	 * Wrap a raw string in the format length|delimiter|flags|message, where length is the message length.

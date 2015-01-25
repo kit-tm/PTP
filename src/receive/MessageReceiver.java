@@ -6,6 +6,7 @@ import java.net.Socket;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import callback.ConnectionListener;
 import callback.ReceiveListener;
 import thread.Suspendable;
 import thread.ThreadPool;
@@ -33,17 +34,18 @@ public class MessageReceiver extends Suspendable {
 	/**
 	 * Constructor method.
 	 *
+	 * @param listener The listener to notify on newly opened connections.
 	 * @param port The port number on which to start the server socket.
 	 * @param threads The number of threads the message receiver may use.
 	 * @param pollInterval The poll interval (in milliseconds) at which worker threads check the open sockets for incoming data.
 	 * @throws IOException Propagates any IOException thrown during the server socket creation.
 	 */
-	public MessageReceiver(int port, int threads, int pollInterval) throws IOException {
+	public MessageReceiver(ConnectionListener listener, int port, int threads, int pollInterval) throws IOException {
 		// Create the server socket.
 		server = new ServerSocket(port);
 		// Create the thread pool.
 		workers = new ReceiveThread[threads];
-		for (int i = 0; i < threads; ++i) workers[i] = new ReceiveThread(pollInterval);
+		for (int i = 0; i < threads; ++i) workers[i] = new ReceiveThread(listener, pollInterval);
 		threadPool = new ThreadPool<Origin, ReceiveThread>(workers);
 
 		logger.log(Level.INFO, "Message receiver object created with threads number: " + threads);

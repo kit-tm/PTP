@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import adapters.ReceiveListenerAdapter;
 import adapters.SendListenerAdapter;
 import callback.DispatchListener;
 import callback.ExpireListener;
@@ -40,6 +41,30 @@ public class TorP2P {
 	}
 
 
+	/**
+	 * A custom receive listener which notes message origins and adds them to the
+	 *
+	 * @author Simeon Andreev
+	 *
+	 */
+	private static class OriginListener implements ReceiveListener {
+
+		/** . */
+		public ReceiveListener listener = new ReceiveListenerAdapter();
+
+
+		/**
+		 * @see ReceiveListener
+		 */
+		@Override
+		public void receivedMessage(Message message) {
+			listener.receivedMessage(message);
+		}
+
+
+	}
+
+
 	/** The logger for this class. */
 	private final Logger logger;
 	/** The configuration of the client. */
@@ -54,8 +79,8 @@ public class TorP2P {
 	private final MessageDispatcher dispatcher;
 	/** A dummy sending listener to use when no listener is specified upon message sending. */
 	private final SendListener dummyListener = new SendListenerAdapter();
-	/** The identifier of this client. */
-	private Identifier identifier = new Identifier("");
+	/** The listener which adds incoming connections to the available destinations. */
+	private final OriginListener receiveListener = new OriginListener();
 
 
 	/**
@@ -106,8 +131,9 @@ public class TorP2P {
 
 		// Set the control ports.
 		config.setTorConfiguration(tor.directory(), tor.controlport(), tor.socksport());
-		// Create the client with the read configuration.
+		// Create the client with the read configuration and set its receiving listener.
 		client = new Client(config);
+		client.listener(receiveListener);
 		// Create and start the manager with the given TTL.
 		manager = new TTLManager(getTTLManagerListener(), config.getTTLPoll());
 		manager.start();
@@ -126,8 +152,7 @@ public class TorP2P {
 	 */
 	public Identifier GetIdentifier() throws IOException {
 		// Create a fresh hidden service identifier.
-		identifier = new Identifier(client.identifier(true));
-		return identifier;
+		return new Identifier(client.identifier(true));
 	}
 
 	/**
@@ -168,7 +193,7 @@ public class TorP2P {
 	 */
 	public void SetListener(ReceiveListener listener) {
 		// Propagate the input listener.
-		client.listener(listener);
+		receiveListener.listener = listener;
 	}
 
 	/**
@@ -254,23 +279,18 @@ public class TorP2P {
 					return true;
 				}
 
-				// Content may be altered if a new connection is open, as the identifier of this client will be sent first.
-				String content = message.content;
-
 				// Attempt a connection to the given identifier.
 				Client.ConnectResponse connect = client.connect(message.identifier.getTorAddress(), config.getSocketTimeout());
 				// If the connection to the destination hidden service was successful, add the destination identifier to the managed sockets.
 				if (connect == Client.ConnectResponse.SUCCESS) {
 					manager.put(message.identifier);
 					listener.connectionSuccess(message);
-					// TODO: concatenate wrapped identifier to message
-					content = MessageHandler.wrapIdentifier(identifier).content + message.content;
 				// Otherwise, check if the connection was not successful.
 				} else if (connect != Client.ConnectResponse.OPEN)
 					return false;
 
 				// Connection is successful, send the message.
-				Client.SendResponse response = client.send(message.identifier.getTorAddress(), content);
+				Client.SendResponse response = client.send(message.identifier.getTorAddress(), message.content);
 
 				// If the message was sent successfully, set the TTL of the socket opened for the identifier.
 				if (response == Client.SendResponse.SUCCESS) {

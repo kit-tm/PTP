@@ -35,6 +35,7 @@ public class Configuration {
 	public static final String comment = "#";
 
 	/** Configuration file property names. */
+	public static final String DefaultIdentifier = "DefaultIdentifier";
 	public static final String HiddenServicePort = "HiddenServicePort";
 	// TODO: eventually support authentication types
 	//public static final String AuthenticationType = "AuthenticationType";
@@ -50,6 +51,8 @@ public class Configuration {
 
 	/** The logger configuration file. */
 	private final String loggerConfiguration;
+	/** The default hidden service identifier. */
+	private final String defaultIdentifier;
 	/** The port on which the hidden service should be available. */
 	private final int hiddenServicePort;
 	/** The authentication bytes needed by a control connection to Tor. */
@@ -132,6 +135,7 @@ public class Configuration {
 		logger.info("Set the logger properties file to: " + loggerConfiguration);
 
 		// Check if all the needed properties are in the configuration file.
+		check(properties, DefaultIdentifier);
 		check(properties, HiddenServicePort);
 		check(properties, TorBootstrapTimeout);
 		check(properties, SocketConnectTimeout);
@@ -141,6 +145,9 @@ public class Configuration {
 
 
 		// Set the configuration parameters.
+		defaultIdentifier = properties.get(DefaultIdentifier);
+		logger.info("Read " + DefaultIdentifier + " = " + defaultIdentifier);
+
 		hiddenServicePort = parse(properties, HiddenServicePort);
 		logger.info("Read " + HiddenServicePort + " = " + hiddenServicePort);
 
@@ -181,6 +188,10 @@ public class Configuration {
 
 		sb.append("\tworking directory = ");
 		sb.append(workingDirectory);
+		sb.append("\n");
+
+		sb.append("\tdefault identifier = ");
+		sb.append(defaultIdentifier);
 		sb.append("\n");
 
 		sb.append("\thidden service directory = ");
@@ -261,6 +272,13 @@ public class Configuration {
 	 * @return The TorP2P working directory.
 	 */
 	public String getWorkingDirectory() { return workingDirectory; }
+
+	/**
+	 * Returns the default Tor hidden service identifier.
+	 *
+	 * @return The default Tor hidden service identifier.
+	 */
+	public String getDefaultIdentifier() { return defaultIdentifier; }
 
 	/**
 	 * Returns the Tor hidden service directory as specified.
