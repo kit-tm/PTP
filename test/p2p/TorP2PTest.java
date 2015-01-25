@@ -82,10 +82,10 @@ public class TorP2PTest {
 		client1.SetListener(new ReceiveListener() {
 
 			@Override
-			public void receivedMessage(byte[] bytes) {
-				System.out.println("Received message: " + new String(bytes));
-				if (!new String(bytes).equals(message))
-					fail("Received message does not match sent message: " + message + " != " + new String(bytes));
+			public void receivedMessage(Message m) {
+				System.out.println("Received message: " + m.content);
+				if (!m.content.equals(message))
+					fail("Received message does not match sent message: " + message + " != " + m.content);
 				received.set(true);
 			}
 
@@ -192,12 +192,11 @@ public class TorP2PTest {
 		client1.SetListener(new ReceiveListener() {
 
 			@Override
-			public void receivedMessage(byte[] bytes) {
+			public void receivedMessage(Message m) {
 				counter.incrementAndGet();
-				final String m = new String(bytes);
-				if (!m.equals(message))
-					fail("First API object received message does not match sent message: " + m + " != " + message);
-				final Message msg = new Message(m, identifier2);
+				if (!m.content.equals(message))
+					fail("First API object received message does not match sent message: " + m.content + " != " + message);
+				final Message msg = new Message(m.content, identifier2);
 				client1.SendMessage(msg, 10 * 1000);
 			}
 
@@ -205,12 +204,11 @@ public class TorP2PTest {
 		client2.SetListener(new ReceiveListener() {
 
 			@Override
-			public void receivedMessage(byte[] bytes) {
+			public void receivedMessage(Message m) {
 				counter.incrementAndGet();
-				final String m = new String(bytes);
-				if (!m.equals(message))
-					fail("Second API object received message does not match sent message: " + m + " != " + message);
-				final Message msg = new Message(m, identifier1);
+				if (!m.content.equals(message))
+					fail("Second API object received message does not match sent message: " + m.content + " != " + message);
+				final Message msg = new Message(m.content, identifier1);
 				client2.SendMessage(msg, 10 * 1000);
 			}
 

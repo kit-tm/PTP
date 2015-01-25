@@ -1,59 +1,34 @@
 package api;
 
-import adapters.ReceiveListenerAdapter;
+import java.util.Vector;
+
 import utility.Constants;
-import callback.ControlListener;
-import callback.ReceiveListener;
 
 
 /**
- * This class handles messages received via the API.
+ * This class offers static methods for handling messages received via the API.
  * Messages are assumed to be at most glued during unwrapping,
  * i.e. bulk messages are supported, fragmentation is not.
+ *
  *
  * @author Simeon Andreev
  *
  */
-public class MessageHandler implements ReceiveListener {
+public class MessageHandler {
 
-	/** The listener to notify when control messages are received. */
-	private final ControlListener controlListener;
-	/** The listener to notify when standard messages are received. */
-	private ReceiveListener standardListener = new ReceiveListenerAdapter();
+
+	// TODO: initial origin message sending/handling
 
 
 	/**
-	 * Constructor method.
+	 * Removes the meta information from a packet bulk and extracts the messages in the bulk.
 	 *
-	 * @param controlListener The listener to notify when control messages are received.
+	 * @param bulk The packet bulk.
+	 *
+	 * @return The packets in the bulk.
 	 */
-	public MessageHandler(ControlListener controlListener) {
-		this.controlListener = controlListener;
-	}
-
-
-	/**
-	 * Set the listener to notify when standard messages are received.
-	 *
-	 * @param standardListener The listener to notify when standard messages are received.
-	 */
-	public void setStandardListener(ReceiveListener standardListener) {
-		this.standardListener = standardListener;
-	}
-
-
-	/**
-	 * Removes the meta information from a message bulk and
-	 * extracts the messages in the bulk. Notifies the
-	 * control and standard message listeners.
-	 *
-	 * @param bytes The message bulk bytes.
-	 *
-	 * @see ReceiveListener
-	 */
-	@Override
-	public void receivedMessage(byte[] bytes) {
-		final String bulk = new String(bytes);
+	public static Packet[] unwrapBulk(String bulk) {
+		Vector<Packet> buffer = new Vector<Packet>();
 		int index = 0;
 
 		// Check if we can complete the current message and possibly further messages.
@@ -61,33 +36,57 @@ public class MessageHandler implements ReceiveListener {
 			// Get the position of the next wrapped message length delimiter.
 			final int position = bulk.indexOf(Constants.messagelengthdelimiter, index);
 			// If no length delimiter is found we are done.
-			if (position == -1) return;
+			if (position == -1) break;
 			// Fetch the message length.
 			final int length = Integer.valueOf(bulk.substring(index, position));
 			// Fetch the message flag.
-			final char flag = bulk.charAt(position + 1);
+			final char flags = bulk.charAt(position + 1);
 			// Fetch the message.
-			final String message = bulk.substring(position + 2, position + 2 + length);
-			// Delegate the message to the respective listener.
-			if (flag == Constants.messagestandardflag)
-				standardListener.receivedMessage(message.getBytes());
-			else
-				controlListener.receivedMessage(flag, message);
+			final String content = bulk.substring(position + 2, position + 2 + length);
+			// Add the message to the message buffer.
+			buffer.add(new Packet(new Message(content, null), flags));
 			// Move to the next message.
 			index = position + 2 + length;
 		}
+
+		Packet[] packets = new Packet[buffer.size()];
+		for (int i = 0; i < buffer.size(); ++i) packets[i] = buffer.get(i);
+
+		return packets;
 	}
 
 
 	/**
-	 * Wraps a message with meta information.
+	 * Wraps a message into a message with meta information.
 	 *
 	 * @param message The message which should be wrapped.
-	 * @return The wrapped content.
+	 * @return The wrapped message.
 	 */
-	public String wrap(String message) {
-		// Add the message content length to the actual content.
-		return message.length() + Constants.messagelengthdelimiter + Constants.messagestandardflag + message;
+	public static Message wrapMessage(Message message) {
+		return new Message(wrapRaw(message.content, Constants.messagestandardflag), message.identifier);
+	}
+
+	/**
+	 * Wraps an identifier into a message with meta information.
+	 *
+	 * @param identifier The identifier which should be wrapped.
+	 * @return The wrapped message.
+	 */
+	public static Message wrapIdentifier(Identifier identifier) {
+		// Add the message content length and flags to the actual content.
+		return new Message(wrapRaw(identifier.getTorAddress(), Constants.messageoriginflag), identifier);
+	}
+
+
+	/**
+	 * Wrap a raw string in the format length|delimiter|flags|message, where length is the message length.
+	 *
+	 * @param message The message to wrap.
+	 * @param flags The flags to add to the message.
+	 * @return The wrapped message.
+	 */
+	public static String wrapRaw(String content, char flags) {
+		return content.length() + "" + Constants.messagelengthdelimiter + "" + flags + "" + content;
 	}
 
 }

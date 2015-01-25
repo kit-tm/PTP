@@ -38,8 +38,11 @@ public class Configuration {
 	public static final String HiddenServicePort = "HiddenServicePort";
 	// TODO: eventually support authentication types
 	//public static final String AuthenticationType = "AuthenticationType";
+	public static final String TorBootstrapTimeout = "TorBootstrapTimeout";
 	public static final String DispatcherThreadsNumber = "DispatcherThreads";
+	public static final String ReceiverThreadsNumber = "ReceiverThreads";
 	public static final String SocketConnectTimeout = "SocketConnectTimeout";
+	public static final String SocketReceivePoll = "SocketReceivePoll";
 	public static final String SocketTTL = "SocketTTL";
 	public static final String SocketTTLPoll = "TTLPoll";
 	public static final String LoggerConfigFile = "LoggerConfigFile";
@@ -51,10 +54,16 @@ public class Configuration {
 	private final int hiddenServicePort;
 	/** The authentication bytes needed by a control connection to Tor. */
 	private final byte[] authenticationBytes;
+	/** The timeout (in milliseconds) for the Tor bootstrapping. */
+	private final int bootstrapTimeout;
 	/** The maximum number of message dispatcher threads. */
 	private final int dispatcherThreadsNumber;
+	/** The maximum number of message receiver threads. */
+	private final int receiverThreadsNumber;
 	/** The timeout (in milliseconds) for a socket connection to a hidden service identifier. */
 	private final int socketTimeout;
+	/** The interval (in milliseconds) at which the open sockets are polled for incoming data. */
+	private final int receivePoll;
 	/** The TTL (in milliseconds) for a socket connection to a hidden service identifier. */
 	private final int socketTTL;
 	/** The interval (in milliseconds) at each the TTL of all sockets is checked. */
@@ -124,7 +133,9 @@ public class Configuration {
 
 		// Check if all the needed properties are in the configuration file.
 		check(properties, HiddenServicePort);
+		check(properties, TorBootstrapTimeout);
 		check(properties, SocketConnectTimeout);
+		check(properties, SocketReceivePoll);
 		check(properties, SocketTTL);
 		check(properties, SocketTTLPoll);
 
@@ -135,11 +146,20 @@ public class Configuration {
 
 		authenticationBytes = new byte[0];
 
+		bootstrapTimeout = parse(properties, TorBootstrapTimeout);
+		logger.info("Read " + TorBootstrapTimeout + " = " + bootstrapTimeout);
+
 		dispatcherThreadsNumber = parse(properties, DispatcherThreadsNumber);
 		logger.info("Read " + DispatcherThreadsNumber + " = " + dispatcherThreadsNumber);
 
+		receiverThreadsNumber = parse(properties, ReceiverThreadsNumber);
+		logger.info("Read " + receiverThreadsNumber + " = " + receiverThreadsNumber);
+
 		socketTimeout = parse(properties, SocketConnectTimeout);
 		logger.info("Read " + SocketConnectTimeout + " = " + socketTimeout);
+
+		receivePoll = parse(properties, SocketReceivePoll);
+		logger.info("Read " + receivePoll + " = " + receivePoll);
 
 		socketTTL = parse(properties, SocketTTL);
 		logger.info("Read " + SocketTTL + " = " + socketTTL);
@@ -171,6 +191,10 @@ public class Configuration {
 		sb.append(hiddenServicePort);
 		sb.append("\n");
 
+		sb.append("\tTor bootstrap timeout = ");
+		sb.append(bootstrapTimeout);
+		sb.append("\n");
+
 		sb.append("\tTor control port number = ");
 		sb.append(torControlPort);
 		sb.append("\n");
@@ -179,8 +203,16 @@ public class Configuration {
 		sb.append(dispatcherThreadsNumber);
 		sb.append("\n");
 
+		sb.append("\tnumber of receiver threads = ");
+		sb.append(receiverThreadsNumber);
+		sb.append("\n");
+
 		sb.append("\tsocket connection timeout = ");
 		sb.append(socketTimeout);
+		sb.append("\n");
+
+		sb.append("\tsocket receive poll = ");
+		sb.append(SocketReceivePoll);
 		sb.append("\n");
 
 		sb.append("\tsocket connection TTL = ");
@@ -245,7 +277,14 @@ public class Configuration {
 	public int getHiddenServicePort() { return hiddenServicePort; }
 
 	/**
-	 * Returns the bytes needed by a Tor authentication message.
+	 * Returns the Tor bootstrap timeout (in milliseconds).
+	 *
+	 * @return The Tor bootstrap timeout.
+	 */
+	public int getTorBootstrapTimeout() { return bootstrapTimeout; }
+
+	/**
+	 * Returns the bytes needed by the Tor authentication message.
 	 *
 	 * @return The Tor authentication bytes.
 	 * @see https://gitweb.torproject.org/torspec.git/blob/HEAD:/control-spec.txt
@@ -274,11 +313,25 @@ public class Configuration {
 	public int getDispatcherThreadsNumber() { return dispatcherThreadsNumber; }
 
 	/**
+	 * Returns the maximum number of message receiver threads.
+	 *
+	 * @return The socket connection timeout.
+	 */
+	public int getReceiverThreadsNumber() { return receiverThreadsNumber; }
+
+	/**
 	 * Returns the socket connection timeout (in milliseconds) when connecting to a hidden service identifier.
 	 *
 	 * @return The socket connection timeout.
 	 */
 	public int getSocketTimeout() { return socketTimeout; }
+
+	/**
+	 * Returns the interval (in milliseconds) at which open sockets are polled for incoming data.
+	 *
+	 * @return The socket read poll interval.
+	 */
+	public int getSocketReceivePoll() { return receivePoll; }
 
 	/**
 	 * Returns the socket TTL (in milliseconds) of a connection to a hidden service identifier.

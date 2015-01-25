@@ -39,4 +39,11 @@ public class RNG {
 		return new String(buffer);
 	}
 
+	/**
+	 * Returns a random double in [0.0, 1.0].
+	 *
+	 * @return A random double in [0.0, 1.0].
+	 */
+	public double floating() { return random.nextDouble(); }
+
 }

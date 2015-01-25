@@ -1,5 +1,6 @@
 package adapters;
 
+import api.Message;
 import callback.ReceiveListener;
 
 
@@ -17,6 +18,6 @@ public class ReceiveListenerAdapter implements ReceiveListener {
 	 * @see ReceiveListener
 	 */
 	@Override
-	public void receivedMessage(byte[] message) { }
+	public void receivedMessage(Message message) { }
 
 }

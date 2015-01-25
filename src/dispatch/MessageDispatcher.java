@@ -61,7 +61,7 @@ public class MessageDispatcher {
 	 * @param listener The listener to notify of sending events.
 	 */
 	public synchronized void enqueueMessage(Message message, long timeout, SendListener listener) {
-		String destination = message.destination.getTorAddress();
+		String destination = message.identifier.getTorAddress();
 		Element element = new Element(message, timeout, listener);
 
 		// Update the destination set by removing destinations with empty queues.

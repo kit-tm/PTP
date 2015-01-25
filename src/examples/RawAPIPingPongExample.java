@@ -7,6 +7,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import api.Client;
 import api.Configuration;
+import api.Message;
+import api.MessageHandler;
 import callback.ReceiveListener;
 import tor.TorManager;
 import utility.Constants;
@@ -39,7 +41,7 @@ public class RawAPIPingPongExample {
 
 		public void send(boolean response) {
 			if (counter.get() < max) {
-				client.send(identifier, message + (response ? " " + counter.get() : ""));
+				client.send(identifier, MessageHandler.wrapRaw(message + (response ? " " + counter.get() : ""), Constants.messagestandardflag));
 				start = System.currentTimeMillis();
 				++sent;
 			}
@@ -80,10 +82,9 @@ public class RawAPIPingPongExample {
 			client.listener(new ReceiveListener() {
 
 				@Override
-				public void receivedMessage(byte[] bytes) {
-					final String message = new String(bytes);
-					System.out.println("Client received message: " + message);
-					if (holder.message == null) holder.message = message;
+				public void receivedMessage(Message message) {
+					System.out.println("Client received message: " + message.content);
+					if (holder.message == null) holder.message = message.content;
 					else holder.receive();
 					holder.send(true);
 				}

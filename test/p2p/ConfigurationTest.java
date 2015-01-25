@@ -41,10 +41,13 @@ public class ConfigurationTest {
 	private String hiddenServiceDirectory = null;
 	private int hiddenServicePort = -1;
 	private byte[] authenticationBytes = null;
+	private int torBootstrapTimeout = -1;
 	private int torControlPort = -1;
 	private int torSOCKSProxyPort = -1;
 	private int dispatcherThreadsNumber = -1;
+	private int receiverThreadsNumber = -1;
 	private int socketTimeout = -1;
+	private int socketReceivePoll = -1;
 	private int socketTTL = -1;
 	private int ttlPoll;
 
@@ -69,8 +72,11 @@ public class ConfigurationTest {
 		torControlPort = random.nextInt();
 		torSOCKSProxyPort = random.nextInt();
 		hiddenServicePort = random.nextInt();
+		torBootstrapTimeout = random.nextInt();
 		dispatcherThreadsNumber = random.nextInt();
+		receiverThreadsNumber = random.nextInt();
 		socketTimeout = random.nextInt();
+		socketReceivePoll = random.nextInt();
 		socketTTL = random.nextInt();
 		ttlPoll = random.nextInt();
 
@@ -85,8 +91,11 @@ public class ConfigurationTest {
 		System.out.println(Configuration.SocketTTLPoll + " " + ttlPoll + newline);
 
 		output.write(Configuration.HiddenServicePort + " " + hiddenServicePort + newline);
+		output.write(Configuration.TorBootstrapTimeout + " " + torBootstrapTimeout + newline);
 		output.write(Configuration.DispatcherThreadsNumber + " " + dispatcherThreadsNumber + newline);
+		output.write(Configuration.ReceiverThreadsNumber + " " + receiverThreadsNumber + newline);
 		output.write(Configuration.SocketConnectTimeout + " " + socketTimeout + newline);
+		output.write(Configuration.SocketReceivePoll + " " + socketReceivePoll + newline);
 		output.write(Configuration.SocketTTL + " " + socketTTL + newline);
 		output.write(Configuration.SocketTTLPoll + " " + ttlPoll + newline);
 
@@ -133,6 +142,19 @@ public class ConfigurationTest {
 	public void testGetHiddenServicePort() {
 		if (hiddenServicePort != configuration.getHiddenServicePort())
 			fail("Hidden service port property does not match: " + hiddenServicePort + " != " + configuration.getHiddenServicePort());
+	}
+
+	/**
+	 * Test method for {@link api.Configuration#getTorBootstrapTimeout()}.
+	 *
+	 * Checks whether the configuration read the Tor bootstrap timeout property correctly.
+	 *
+	 * Fails iff the read property is not equal to the written property.
+	 */
+	@Test
+	public void testGetTorBootstrapTimeout() {
+		if (torBootstrapTimeout != configuration.getTorBootstrapTimeout())
+			fail("Hidden service port property does not match: " + torBootstrapTimeout + " != " + configuration.getTorBootstrapTimeout());
 	}
 
 	/**

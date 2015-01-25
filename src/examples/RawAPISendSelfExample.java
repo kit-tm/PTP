@@ -5,6 +5,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import api.Client;
 import api.Configuration;
+import api.Message;
+import api.MessageHandler;
 import callback.ReceiveListener;
 import tor.TorManager;
 import utility.Constants;
@@ -42,9 +44,9 @@ public class RawAPISendSelfExample {
 		client.listener(new ReceiveListener() {
 
 			@Override
-			public void receivedMessage(byte[] bytes) {
-				System.out.println("Received message: " + new String(bytes));
-				if (new String(bytes).equals(message))
+			public void receivedMessage(Message m) {
+				System.out.println("Received message: " + m.content);
+				if (m.content.equals(message))
 					System.out.println("Received message matches sent message.");
 				else
 					System.out.println("Received message does not match sent message.");
@@ -65,7 +67,7 @@ public class RawAPISendSelfExample {
 			}
 		}
 		System.out.println("Sending message.");
-		client.send(identifier, message);
+		client.send(identifier, MessageHandler.wrapRaw(message, Constants.messagestandardflag));
 
 		System.out.println("Sleeping.");
 		while (!received.get()) {

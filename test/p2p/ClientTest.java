@@ -12,6 +12,8 @@ import org.junit.Test;
 
 import api.Client;
 import api.Configuration;
+import api.Message;
+import api.MessageHandler;
 import callback.ReceiveListener;
 import tor.TorManager;
 import utility.Constants;
@@ -130,10 +132,10 @@ public class ClientTest {
 		client1.listener(new ReceiveListener() {
 
 			@Override
-			public void receivedMessage(byte[] bytes) {
-				System.out.println("Received message: " + new String(bytes));
-				if (!new String(bytes).equals(message))
-					fail("Received message does not match sent message: " + message + " != " + new String(bytes));
+			public void receivedMessage(Message m) {
+				System.out.println("Received message: " + m.content);
+				if (!m.content.equals(message))
+					fail("Received message does not match sent message: " + message + " != " + m.content);
 				received.set(true);
 			}
 
@@ -162,7 +164,7 @@ public class ClientTest {
 		}
 
 		// Send the message.
-		Client.SendResponse sendResponse = client1.send(identifier, message);
+		Client.SendResponse sendResponse = client1.send(identifier, MessageHandler.wrapRaw(message, Constants.messagestandardflag));
 		if (sendResponse != Client.SendResponse.SUCCESS)
 			fail("Sending the message via the client to the created identifier was not successful.");
 
@@ -252,28 +254,26 @@ public class ClientTest {
 		client1.listener(new ReceiveListener() {
 
 			@Override
-			public void receivedMessage(byte[] bytes) {
+			public void receivedMessage(Message m) {
 				counter.incrementAndGet();
-				final String m = new String(bytes);
-				if (!m.equals(message))
-					fail("First API object received message does not match sent message: " + m + " != " + message);
-				client1.send(identifier2, m);
+				if (!m.content.equals(message))
+					fail("First API object received message does not match sent message: " + m.content + " != " + message);
+				client1.send(identifier2, MessageHandler.wrapRaw(m.content, Constants.messagestandardflag));
 			}
 
 		});
 		client2.listener(new ReceiveListener() {
 
 			@Override
-			public void receivedMessage(byte[] bytes) {
-				final String m = new String(bytes);
-				if (!m.equals(message))
-					fail("Second API object received message does not match sent message: " + m + " != " + message);
-				client2.send(identifier1, m);
+			public void receivedMessage(Message m) {
+				if (!m.content.equals(message))
+					fail("Second API object received message does not match sent message: " + m.content + " != " + message);
+				client2.send(identifier1, MessageHandler.wrapRaw(m.content, Constants.messagestandardflag));
 			}
 
 		});
 		// Initiate the ping-pong.
-		Client.SendResponse sendResponse = client1.send(identifier2, message);
+		Client.SendResponse sendResponse = client1.send(identifier2, MessageHandler.wrapRaw(message, Constants.messagestandardflag));
 		if (sendResponse != Client.SendResponse.SUCCESS)
 			fail("Sending first message failed.");
 

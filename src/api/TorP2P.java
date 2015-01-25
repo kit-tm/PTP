@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import adapters.ControlListenerAdapter;
-import adapters.ReceiveListenerAdapter;
 import adapters.SendListenerAdapter;
 import callback.DispatchListener;
 import callback.ExpireListener;
@@ -50,14 +48,14 @@ public class TorP2P {
 	private final TorManager tor;
 	/** The raw API client. */
 	private final Client client;
-	/** The message receiver which collects possibly glued messages and handles control messages. */
-	private final MessageHandler messageWrapper;
 	/** The manager that closes sockets when their TTL expires. */
 	private final TTLManager manager;
 	/** The message dispatcher which sends the messages */
 	private final MessageDispatcher dispatcher;
 	/** A dummy sending listener to use when no listener is specified upon message sending. */
 	private final SendListener dummyListener = new SendListenerAdapter();
+	/** The identifier of this client. */
+	private Identifier identifier = new Identifier("");
 
 
 	/**
@@ -82,20 +80,17 @@ public class TorP2P {
 		// Start the Tor process.
 		tor.start();
 
-		// Wait until Tors bootstrapping is complete.
-		// TODO:  add configuration parameters for this
-		final long timeout = 120000;
-		final long poll = 2000;
+		// Wait until the Tor bootstrapping is complete.
 		long waited = 0;
 
 		logger.log(Level.INFO, "Waiting for Tors bootstrapping to finish.");
-		while (!tor.ready() && tor.running() && waited < timeout) {
+		while (!tor.ready() && tor.running() && waited < config.getTorBootstrapTimeout()) {
 			try {
 				final long start = System.currentTimeMillis();
-				Thread.sleep(poll);
+				Thread.sleep(250);
 				waited += System.currentTimeMillis() - start;
 			} catch (InterruptedException e) {
-				logger.log(Level.INFO, "Waiting interrupted.");
+				// Waiting was interrupted. Do nothing.
 			}
 		}
 
@@ -113,9 +108,6 @@ public class TorP2P {
 		config.setTorConfiguration(tor.directory(), tor.controlport(), tor.socksport());
 		// Create the client with the read configuration.
 		client = new Client(config);
-		// Create the receive listener.
-		messageWrapper = new MessageHandler(new ControlListenerAdapter());
-		client.listener(messageWrapper);
 		// Create and start the manager with the given TTL.
 		manager = new TTLManager(getTTLManagerListener(), config.getTTLPoll());
 		manager.start();
@@ -134,7 +126,8 @@ public class TorP2P {
 	 */
 	public Identifier GetIdentifier() throws IOException {
 		// Create a fresh hidden service identifier.
-		return new Identifier(client.identifier(true));
+		identifier = new Identifier(client.identifier(true));
+		return identifier;
 	}
 
 	/**
@@ -162,9 +155,8 @@ public class TorP2P {
 	 * @see Client
 	 */
 	public void SendMessage(Message message, long timeout, SendListener listener) {
-		// Alter the content with the message assembler.
-		final Message altered = new Message(message.identifier, messageWrapper.wrap(message.content), message.destination);
-		dispatcher.enqueueMessage(altered, timeout, listener);
+		// Alter the content with the message handler and dispatch.
+		dispatcher.enqueueMessage(MessageHandler.wrapMessage(message), timeout, listener);
 	}
 
 	/**
@@ -176,7 +168,7 @@ public class TorP2P {
 	 */
 	public void SetListener(ReceiveListener listener) {
 		// Propagate the input listener.
-		messageWrapper.setStandardListener(listener);
+		client.listener(listener);
 	}
 
 	/**
@@ -262,22 +254,27 @@ public class TorP2P {
 					return true;
 				}
 
+				// Content may be altered if a new connection is open, as the identifier of this client will be sent first.
+				String content = message.content;
+
 				// Attempt a connection to the given identifier.
-				Client.ConnectResponse connect = client.connect(message.destination.getTorAddress(), config.getSocketTimeout());
+				Client.ConnectResponse connect = client.connect(message.identifier.getTorAddress(), config.getSocketTimeout());
 				// If the connection to the destination hidden service was successful, add the destination identifier to the managed sockets.
 				if (connect == Client.ConnectResponse.SUCCESS) {
-					manager.put(message.destination);
+					manager.put(message.identifier);
 					listener.connectionSuccess(message);
+					// TODO: concatenate wrapped identifier to message
+					content = MessageHandler.wrapIdentifier(identifier).content + message.content;
 				// Otherwise, check if the connection was not successful.
 				} else if (connect != Client.ConnectResponse.OPEN)
 					return false;
 
 				// Connection is successful, send the message.
-				Client.SendResponse response = client.send(message.destination.getTorAddress(), message.content);
+				Client.SendResponse response = client.send(message.identifier.getTorAddress(), content);
 
 				// If the message was sent successfully, set the TTL of the socket opened for the identifier.
 				if (response == Client.SendResponse.SUCCESS) {
-					manager.set(message.destination, config.getSocketTTL());
+					manager.set(message.identifier, config.getSocketTTL());
 					listener.sendSuccess(message);
 					return true;
 				}

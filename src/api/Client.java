@@ -15,7 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import receive.ServerWaiter;
+import receive.MessageReceiver;
 import utility.Constants;
 import callback.ReceiveListener;
 import net.freehaven.tor.control.TorControlConnection;
@@ -93,7 +93,7 @@ public class Client {
 	/** The raw API lock file. */
 	private final File lockFile;
 	/** The server socket receiving messages. */
-	private final ServerWaiter waiter;
+	private final MessageReceiver receiver;
 	/** The open socket connections to Tor hidden services. */
 	private final ConcurrentHashMap<String, Socket> sockets = new ConcurrentHashMap<String, Socket>();
 	/** The hidden service sub-directory of this client. */
@@ -110,8 +110,8 @@ public class Client {
 	public Client(Configuration configuration) throws IOException {
 		this.configuration = configuration;
 		// Tell the JVM we want any available port.
-		waiter = new ServerWaiter(Constants.anyport);
-		waiter.start();
+		receiver = new MessageReceiver(Constants.anyport, configuration.getReceiverThreadsNumber(), configuration.getSocketReceivePoll());
+		receiver.start();
 
 		// Check if the hidden service directory exists, if not create it.
 		File directory = new File(configuration.getHiddenServiceDirectory());
@@ -135,7 +135,7 @@ public class Client {
 	 * @see Waiter
 	 */
 	public void listener(ReceiveListener listener) {
-		waiter.set(listener);
+		receiver.setListener(listener);
 	}
 
 	/**
@@ -147,14 +147,9 @@ public class Client {
 	public ExitResponse exit() {
 		logger.log(Level.INFO, "Client exiting.");
 
-		try {
-			// Stop the server waiter and all socket waiters of open socket connections.
-			logger.log(Level.INFO, "Stopping server waiter.");
-			waiter.stop();
-		} catch (IOException e) {
-			logger.log(Level.WARNING, "Received IOException while closing the server socket: " + e.getMessage());
-			return ExitResponse.FAIL;
-		}
+		// Stop the message receiver and all threads waiting on open socket connections.
+		logger.log(Level.INFO, "Stopping message receiver.");
+		receiver.stop();
 
 		try {
 			// Delete the hidden service directory.
@@ -199,7 +194,7 @@ public class Client {
 
 			// If no hidden service was created so far, create a sub-directory for the new hidden service.
 			if (none) {
-				directory = Constants.hiddenserviceprefix + waiter.port();
+				directory = Constants.hiddenserviceprefix + receiver.getPort();
 				logger.log(Level.INFO, "Creating hidden service sub-directory: " + directory);
 
 				File dir = new File(configuration.getHiddenServiceDirectory() + File.separator + directory);
@@ -347,7 +342,7 @@ public class Client {
 	 * @return The port number of the local hidden service.
 	 */
 	public int localPort() {
-		return waiter.port();
+		return receiver.getPort();
 	}
 
 

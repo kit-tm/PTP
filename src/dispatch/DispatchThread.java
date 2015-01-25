@@ -104,7 +104,7 @@ public class DispatchThread extends Worker<Element> {
 
 
 	/**
-	 * @see Suspendable
+	 * @see Worker
 	 */
 	@Override
 	public void run() {
@@ -131,7 +131,7 @@ public class DispatchThread extends Worker<Element> {
 			current.removeFirst();
 			// Check if we ran out of messages to add.
 			if (current.isEmpty()) {
-				remove(element.message.destination.getTorAddress());
+				remove(element.message.identifier.getTorAddress());
 
 				// If there are more destination queues, no need to check for execution stop.
 				if (!queues.isEmpty()) continue;
@@ -162,7 +162,7 @@ public class DispatchThread extends Worker<Element> {
 		// Remove all n elements from the undistributed message queue.
 		while (n > 0) {
 			Element element = undistributed.poll();
-			String destination = element.message.destination.getTorAddress();
+			String destination = element.message.identifier.getTorAddress();
 			// Update the threads load.
 			load += element.message.content.length();
 

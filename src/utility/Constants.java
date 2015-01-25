@@ -61,12 +61,10 @@ public class Constants {
 
 	/* API constants. */
 
-	/** The maximum length of a message that can be received on the local socket. */
-	public static final int maxlength = 1024;
 	/** A delimiter to separate message length from message content. */
 	public static final char messagelengthdelimiter = '.';
-	/** A flag to indicate a control message. */
-	public static final char messagecontrolflag = 'c';
+	/** A flag to indicate a message origin. */
+	public static final char messageoriginflag = 'o';
 	/** A flag to indicate a standard message. */
 	public static final char messagestandardflag = 's';
 	/** The path to and the name of the configuration file. */
