@@ -38,6 +38,7 @@ public class ConfigurationTest {
 	/** The configuration used for the test. */
 	private Configuration configuration = null;
 	/** The properties used for the test */
+	private String defaultIdentifier = null;
 	private String hiddenServiceDirectory = null;
 	private int hiddenServicePort = -1;
 	private byte[] authenticationBytes = null;
@@ -63,6 +64,8 @@ public class ConfigurationTest {
 		Random random = new Random();
 		file = File.createTempFile(prefix, suffix);
 
+		// Set the default identifier.
+		defaultIdentifier = "defid";
 		// Set the hidden service directory.
 		hiddenServiceDirectory = Paths.get("").toString() + File.separator + Constants.hiddenservicedir;
 		// Set the authentication bytes.
@@ -90,6 +93,7 @@ public class ConfigurationTest {
 		System.out.println(Configuration.SocketTTL + " " + socketTTL + newline);
 		System.out.println(Configuration.SocketTTLPoll + " " + ttlPoll + newline);
 
+		output.write(Configuration.DefaultIdentifier + " " + defaultIdentifier + newline);
 		output.write(Configuration.HiddenServicePort + " " + hiddenServicePort + newline);
 		output.write(Configuration.TorBootstrapTimeout + " " + torBootstrapTimeout + newline);
 		output.write(Configuration.DispatcherThreadsNumber + " " + dispatcherThreadsNumber + newline);
@@ -115,6 +119,21 @@ public class ConfigurationTest {
 		// Delete the file containing the properties.
 		file.delete();
 		assertFalse(file.exists());
+	}
+
+
+	/**
+	 * Test method for {@link api.Configuration#getDefaultIdentifier()}.
+	 *
+	 * Checks whether the configuration read the hidden service directory property correctly.
+	 *
+	 * Fails iff the read property is not equal to the written property.
+	 */
+	@Test
+	public void testGetDefaultIdentifier() {
+		System.out.println(configuration.getDefaultIdentifier());
+		if (!defaultIdentifier.equals(configuration.getDefaultIdentifier()))
+			fail("Default identifier property does not match: " + defaultIdentifier + " != " + configuration.getDefaultIdentifier());
 	}
 
 	/**
@@ -154,7 +173,7 @@ public class ConfigurationTest {
 	@Test
 	public void testGetTorBootstrapTimeout() {
 		if (torBootstrapTimeout != configuration.getTorBootstrapTimeout())
-			fail("Hidden service port property does not match: " + torBootstrapTimeout + " != " + configuration.getTorBootstrapTimeout());
+			fail("Bootstrap timeout property does not match: " + torBootstrapTimeout + " != " + configuration.getTorBootstrapTimeout());
 	}
 
 	/**
