@@ -63,7 +63,7 @@ public class MessageReceiver extends Suspendable {
 				// Wait on a connection.
 				Socket socket = server.accept();
 				// Add the socket to the thread pool.
-				addConnection(socket);
+				addConnection(Constants.niaorigin, socket);
 				logger.log(Level.INFO, "Message receiver accepted connection.");
 			} catch (IOException e) {
 				// Stopping the message receiver causes an IOException here, otherwise something went wrong.
@@ -96,13 +96,14 @@ public class MessageReceiver extends Suspendable {
 	/**
 	 * Adds a socket connection to the thread pool, assigning a thread to poll the connection for incoming data.
 	 *
+	 * @param address The Tor hidden service identifier of the connection.
 	 * @param socket The socket connection to poll for incoming data.
 	 */
-	public synchronized void addConnection(Socket socket) {
+	public synchronized void addConnection(String address, Socket socket) {
 		// Add the connection handling to the thread.
 		ReceiveThread worker = threadPool.getWorker();
 		// Enqueue the socket.
-		worker.enqueue(new Origin(socket));
+		worker.enqueue(new Origin(address, socket));
 		logger.log(Level.INFO, "Message receiver accepted connection.");
 	}
 

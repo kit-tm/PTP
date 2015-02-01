@@ -85,7 +85,8 @@ public class Constants {
 	public static final String tormanagerlockfile = "TorP2PTorManagerLock";
 	/** The name of the raw API lock file. */
 	public static final String rawapilockfile = "TorP2PRawAPILock";
-
+	/** The Tor hidden service origin identifier placeholder when no information is available. */
+	public static final String niaorigin = "N/A";
 
 	/* Logger constants */
 

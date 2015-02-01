@@ -23,8 +23,12 @@ public class Origin {
 	/**
 	 * Constructor method.
 	 *
+	 * @param address The Tor hidden service identifier of the pair.
 	 * @param socket The socket of the pair.
 	 */
-	public Origin(Socket socket) { this.socket = socket; }
+	public Origin(String address, Socket socket) {
+		this.identifier = new Identifier(address);
+		this.socket = socket;
+	}
 
 }

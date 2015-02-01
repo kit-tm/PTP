@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import adapters.ReceiveListenerAdapter;
 import adapters.SendListenerAdapter;
 import callback.DispatchListener;
 import callback.ExpireListener;
@@ -41,30 +40,6 @@ public class TorP2P {
 	}
 
 
-	/**
-	 * A custom receive listener which notes message origins and adds them to the
-	 *
-	 * @author Simeon Andreev
-	 *
-	 */
-	private static class OriginListener implements ReceiveListener {
-
-		/** . */
-		public ReceiveListener listener = new ReceiveListenerAdapter();
-
-
-		/**
-		 * @see ReceiveListener
-		 */
-		@Override
-		public void receivedMessage(Message message) {
-			listener.receivedMessage(message);
-		}
-
-
-	}
-
-
 	/** The logger for this class. */
 	private final Logger logger;
 	/** The configuration of the client. */
@@ -79,8 +54,6 @@ public class TorP2P {
 	private final MessageDispatcher dispatcher;
 	/** A dummy sending listener to use when no listener is specified upon message sending. */
 	private final SendListener dummyListener = new SendListenerAdapter();
-	/** The listener which adds incoming connections to the available destinations. */
-	private final OriginListener receiveListener = new OriginListener();
 
 
 	/**
@@ -133,7 +106,6 @@ public class TorP2P {
 		config.setTorConfiguration(tor.directory(), tor.controlport(), tor.socksport());
 		// Create the client with the read configuration and set its receiving listener.
 		client = new Client(config);
-		client.listener(receiveListener);
 		// Create and start the manager with the given TTL.
 		manager = new TTLManager(getTTLManagerListener(), config.getTTLPoll());
 		manager.start();
@@ -192,8 +164,8 @@ public class TorP2P {
 	 * @see Client
 	 */
 	public void SetListener(ReceiveListener listener) {
-		// Propagate the input listener.
-		receiveListener.listener = listener;
+		// Propagate the receive listener.
+		client.listener(listener);
 	}
 
 	/**
@@ -270,7 +242,7 @@ public class TorP2P {
 			 */
 			@Override
 			public boolean dispatch(Message message, SendListener listener, long timeout, long elapsed) {
-				logger.log(Level.INFO, "Attempting to send message: " + "timeout = " + timeout + ", wait = " + elapsed + ", message = " + message.content);
+				logger.log(Level.INFO, "Attempting to send message: " + "timeout = " + timeout + ", wait = " + elapsed + ", message = " + message.content + ", destination = " + message.identifier.getTorAddress());
 
 				// If the timeout is reached return with the corresponding response.
 				if (elapsed >= timeout) {

@@ -160,13 +160,13 @@ public class Configuration {
 		logger.info("Read " + DispatcherThreadsNumber + " = " + dispatcherThreadsNumber);
 
 		receiverThreadsNumber = parse(properties, ReceiverThreadsNumber);
-		logger.info("Read " + receiverThreadsNumber + " = " + receiverThreadsNumber);
+		logger.info("Read " + ReceiverThreadsNumber + " = " + receiverThreadsNumber);
 
 		socketTimeout = parse(properties, SocketConnectTimeout);
 		logger.info("Read " + SocketConnectTimeout + " = " + socketTimeout);
 
 		receivePoll = parse(properties, SocketReceivePoll);
-		logger.info("Read " + receivePoll + " = " + receivePoll);
+		logger.info("Read " + SocketReceivePoll + " = " + receivePoll);
 
 		socketTTL = parse(properties, SocketTTL);
 		logger.info("Read " + SocketTTL + " = " + socketTTL);

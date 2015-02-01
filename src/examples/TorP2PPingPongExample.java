@@ -6,11 +6,11 @@ import java.io.InputStreamReader;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import adapters.SendListenerAdapter;
 import api.Identifier;
 import api.Message;
 import api.TorP2P;
 import callback.ReceiveListener;
-import callback.SendListener;
 
 
 /**
@@ -111,7 +111,7 @@ public class TorP2PPingPongExample {
 		 */
 		@Override
 		public void receivedMessage(Message received) {
-			System.out.println("Client received message: " + received);
+			System.out.println("Client received message: " + received.content);
 			if (message == null) message = received.content;
 			else duration += System.currentTimeMillis() - start;
 			send(message, true);
@@ -155,23 +155,14 @@ public class TorP2PPingPongExample {
 			final AtomicBoolean connected = new AtomicBoolean(false);
 			final long timeout = 120 * 1000;
 			final Message m = new Message("", destination);
-			client.SendMessage(m, timeout, new SendListener() {
+			client.SendMessage(m, timeout, new SendListenerAdapter() {
 
 				@Override
-				public void connectionSuccess(Message message) { connected.set(true); }
-
-				@Override
-				public void connectionTimeout(Message message) {}
-
-				@Override
-				public void sendSuccess(Message message) {}
-
-				@Override
-				public void sendFail(Message message) {}
+				public void sendSuccess(Message message) { connected.set(true); }
 
 			});
 			// Wait for the sending result.
-			final long waitStart = System.currentTimeMillis();
+			long waitStart = System.currentTimeMillis();
 			while (System.currentTimeMillis() - waitStart <= timeout + (5 * 1000) && !connected.get()) {
 				try {
 					Thread.sleep(1 * 1000);
@@ -181,6 +172,17 @@ public class TorP2PPingPongExample {
 			}
 			if (!connected.get())
 				throw new IOException("Could not send greeting message in the given timeout.");
+
+			// Wait some extra time until the greeting message is propagated to the current listener.
+			waitStart = System.currentTimeMillis();
+			while (System.currentTimeMillis() - waitStart <= 2 * 1000) {
+				try {
+					Thread.sleep(1 * 1000);
+				} catch (InterruptedException e) {
+					// Sleeping was interrupted. Do nothing.
+				}
+			}
+
 			// Set the timer start for the hidden service availability measurement.
 			final long available = System.currentTimeMillis() - start;
 
@@ -189,7 +191,6 @@ public class TorP2PPingPongExample {
 			// Create the listener and set it.
 			final MyListener listener = new MyListener(client, destination, max);
 			client.SetListener(listener);
-
 
 			// Connected, ask if a message should be sent.
 			System.out.println("Connected.");

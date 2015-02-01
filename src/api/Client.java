@@ -216,7 +216,9 @@ public class Client {
 			File hostname = new File(configuration.getHiddenServiceDirectory() + File.separator + directory + File.separator + Constants.hostname);
 
 			// Read the content of the Tor hidden service hostname file.
-			identifier = readIdentifier(hostname);;
+			identifier = readIdentifier(hostname);
+			logger.log(Level.INFO, "Fetched hidden service identifier: " + identifier);
+
 			return identifier;
 		} finally {
 			// Release the lock, if acquired.
@@ -236,23 +238,23 @@ public class Client {
 	/**
 	 * Sends a message to an open socket at the specified Tor hidden service identifier.
 	 *
-	 * @param identifier The identifier of the Tor hidden service.
+	 * @param destination The  identifier of the destination Tor hidden service.
 	 * @param message The message to be sent.
 	 * @return  ConnectResponse.CLOSED  if a socket connection is not open for the identifier.
 	 * 			ConnectResponse.FAIL    if an IOException occured while sending the message to the identifier.
 	 * 			ConnectResponse.SUCCESS if the message was sent to the identifier.
 	 */
-	public SendResponse send(String identifier, String message) {
-		logger.log(Level.INFO, "Sending a message to identifier " + identifier + " on port " + configuration.getHiddenServicePort() + ".");
+	public SendResponse send(String destination, String message) {
+		logger.log(Level.INFO, "Sending a message to identifier " + destination + " on port " + configuration.getHiddenServicePort() + ".");
 		// Check if a socket is open for the specified identifier.
-		if (!sockets.containsKey(identifier)) {
-			logger.log(Level.INFO, "No socket is open for identifier: " + identifier);
+		if (!sockets.containsKey(destination)) {
+			logger.log(Level.INFO, "No socket is open for identifier: " + destination);
 			return SendResponse.CLOSED;
 		}
 
 		// Get the socket for the specified identifier.
 		logger.log(Level.INFO, "Getting socket from map.");
-		Socket socket = sockets.get(identifier);
+		Socket socket = sockets.get(destination);
 
 		try {
 			// Send the message and close the socket connection.
@@ -260,7 +262,7 @@ public class Client {
 			socket.getOutputStream().write(message.getBytes());
 		} catch (IOException e) {
 			// IOException when getting socket output stream or sending bytes via the stream.
-			logger.log(Level.WARNING, "Received an IOException while sending a message to identifier = " + identifier + ": " + e.getMessage());
+			logger.log(Level.WARNING, "Received an IOException while sending a message to identifier = " + destination + ": " + e.getMessage());
 			return SendResponse.FAIL;
 		}
 
@@ -279,11 +281,11 @@ public class Client {
 	 * 			ConnectResponse.SUCCESS if a socket connection is now open for the identifier.
 	 * 			ConnectResponse.TIMEOUT if the socket connection timeout was reached upon opening the connection to the identifier.
 	 */
-	public ConnectResponse connect(String identifier, int socketTimeout) {
-		logger.log(Level.INFO, "Opening a socket for identifier " + identifier + " on port " + configuration.getHiddenServicePort() + ".");
+	public ConnectResponse connect(String destination, int socketTimeout) {
+		logger.log(Level.INFO, "Opening a socket for identifier " + destination + " on port " + configuration.getHiddenServicePort() + ".");
 
 		// Check if a socket is already open to the given identifier.
-		if (sockets.containsKey(identifier)) {
+		if (sockets.containsKey(destination)) {
 			logger.log(Level.INFO, "A socket is already open for the given identifier.");
 			return ConnectResponse.OPEN;
 		}
@@ -293,20 +295,20 @@ public class Client {
 		try {
 			// Open a socket implementing the SOCKS4a protocol.
 			logger.log(Level.INFO, "Opening socket using the Tor SOCKS proxy, timeout: " + socketTimeout);
-			Socket socket = SOCKS.socks4aSocketConnection(identifier, configuration.getHiddenServicePort(), Constants.localhost, configuration.getTorSOCKSProxyPort(), socketTimeout);
+			Socket socket = SOCKS.socks4aSocketConnection(destination, configuration.getHiddenServicePort(), Constants.localhost, configuration.getTorSOCKSProxyPort(), socketTimeout);
 			logger.log(Level.INFO, "Adding socket to open sockets.");
-			sockets.put(identifier, socket);
-			logger.log(Level.INFO, "Opened socket for identifier: " + identifier);
+			sockets.put(destination, socket);
+			logger.log(Level.INFO, "Opened socket for identifier: " + destination);
 			// Send the current identifier as the first message.
-			send(identifier, MessageHandler.wrapRaw(identifier, Constants.messageoriginflag));
+			send(destination, MessageHandler.wrapRaw(identifier, Constants.messageoriginflag));
 			// Add the new connection to the message receiver.
-			receiver.addConnection(socket);
+			receiver.addConnection(destination, socket);
 		} catch (SocketTimeoutException e) {
 			// Socket connection timeout reached.
-			logger.log(Level.WARNING, "Timeout reached for connection to identifier: " + identifier);
+			logger.log(Level.WARNING, "Timeout reached for connection to identifier: " + destination);
 			response = ConnectResponse.TIMEOUT;
 		} catch (IOException e) {
-			logger.log(Level.WARNING, "Received an IOException while connecting the socket to identifier = " + identifier + ": " + e.getMessage());
+			logger.log(Level.WARNING, "Received an IOException while connecting the socket to identifier = " + destination + ": " + e.getMessage());
 			response = ConnectResponse.FAIL;
 		}
 
@@ -461,11 +463,9 @@ public class Client {
 			 * @see ConnectionListener
 			 */
 			@Override
-			public void ConnectionOpen(Identifier identifier, Socket socket) {
+			public void ConnectionOpen(Identifier origin, Socket socket) {
 				// Add the connection to the socket set.
-				sockets.put(identifier.getTorAddress(), socket);
-				// Send the initial identifier message.
-				send(identifier.getTorAddress(), MessageHandler.wrapRaw(Client.this.identifier, Constants.messageoriginflag));
+				sockets.put(origin.getTorAddress(), socket);
 			}
 
 		};

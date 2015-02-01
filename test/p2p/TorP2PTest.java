@@ -188,6 +188,16 @@ public class TorP2PTest {
 		if (!sendSuccess1.get())
 			fail("Second hidden service identifier not available after timeout.");
 
+		// Wait some extra time until the greeting message is propagated to the current listener.
+		waitStart = System.currentTimeMillis();
+		while (System.currentTimeMillis() - waitStart <= 2 * 1000) {
+			try {
+				Thread.sleep(1 * 1000);
+			} catch (InterruptedException e) {
+				// Sleeping was interrupted. Do nothing.
+			}
+		}
+
 		// Set the listeners.
 		client1.SetListener(new ReceiveListener() {
 
