@@ -2,6 +2,7 @@
 <classpath>
 	<classpathentry excluding="jtorctl/HiddenServiceTest.java" kind="src" path="src"/>
 	<classpathentry kind="src" path="test"/>
+	<classpathentry kind="src" path="chat"/>
 	<classpathentry kind="lib" path="lib/jtorctl.jar"/>
 	<classpathentry kind="lib" path="lib/commons-net-3.3.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
