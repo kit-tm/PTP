@@ -33,13 +33,11 @@ public class Chatroom {
 		unread.add(new Message(user, content, new Date()));
 	}
 
-	public Message[] getUnreadMessages() {
+	public Message[] getMessages() {
 		Message[] messages = new Message[unread.size()];
 
 		for (int i = 0; i < unread.size(); ++i)
 			messages[i] = unread.get(i);
-
-		unread.clear();
 
 		return messages;
 	}
