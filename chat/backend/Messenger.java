@@ -30,10 +30,7 @@ public class Messenger {
 		@Override
 		public void receivedMessage(Message message) {
 			final String address = message.identifier.getTorAddress();
-
-			if (!rooms.containsKey(address)) rooms.put(address, new Chatroom());
-			rooms.get(address).addMessage(address, message.content);
-
+			log(message.content, address);
 			listener.received(message.content, address);
 		}
 
@@ -70,8 +67,14 @@ public class Messenger {
 	public long send(String message, String destination) {
 		++id;
 		client.SendMessage(new Message(id, message, new Identifier(destination)), 60 * 1000, sendListener);
+		log(message, destination);
 		return id;
 	}
 
+
+	private void log(String message, String address) {
+		if (!rooms.containsKey(address)) rooms.put(address, new Chatroom());
+		rooms.get(address).addMessage(address, message);
+	}
 
 }
