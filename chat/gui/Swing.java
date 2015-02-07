@@ -40,6 +40,7 @@ import backend.Messenger;
 public class Swing {
 
 	private final static String font = "Arial";
+	private final static String nick = "Me";
 
 	private final Messenger messenger;
 
@@ -58,26 +59,29 @@ public class Swing {
 
 			@Override
 			public void sent(long id) {
-				// TODO Auto-generated method stub
+				// TODO: mark the message as sent in the chat
 
 			}
 
 			@Override
 			public void received(String message, String origin) {
-				// TODO Auto-generated method stub
-
+				if (map.containsKey(origin)) {
+					if (selected != -1 && map.get(origin).equals(model.getValueAt(selected, 0)))
+						append(model.getValueAt(selected, 0) + ": " + message + "\n");
+					// TODO: else indicate that a message was received by the contact
+				}
+				// TODO: else add an entry to the contact list with the tor address
 			}
 
 			@Override
 			public void failed(long id) {
-				// TODO Auto-generated method stub
-
+				// TODO: mark message sending fail
 			}
 		});
 
 		frame = new JFrame();
 		frame.setLayout(new BorderLayout());
-		frame.setTitle("TorP2P Messenger");
+		frame.setTitle("Current address: " + messenger.getAddress());
 
 		try {
 			frame.setIconImage(ImageIO.read(new File("image/toricon.png")));
@@ -105,9 +109,8 @@ public class Swing {
 					String message = input.getText();
 					input.setText("");
 
-					try {
-						text.insertString(text.getLength(), "Sent message: " + message + "\n", null);
-					} catch (BadLocationException e1) { /* useless exception n13463 ? */ }
+					// TODO: mark the message as not yet sent in the log
+					append(nick + ": " + message + "\n");
 				}
 			}
 
@@ -126,6 +129,8 @@ public class Swing {
 		panel.setLayout(new BorderLayout());
 		panel.setPreferredSize(new Dimension(120, 480));
 
+		// TODO: right click on table should allow contact edit
+		// TODO: message from unknown contact -> new entry in table with .onion id
 		table = new JTable();
 		table.setEnabled(true);
 		table.setFillsViewportHeight(true);
@@ -145,9 +150,7 @@ public class Swing {
 				selected = table.getSelectedRow();
 				if (selected == -1) return;
 
-				try {
-					text.insertString(text.getLength(), "Selected: " + table.getValueAt(selected, 0) + " (" + map.get(table.getValueAt(selected, 0)) + ")" + "\n", null);
-				} catch (BadLocationException e1) { /* useless exception n13463 ? */ }
+				append("Selected: " + table.getValueAt(selected, 0) + " (" + map.get(table.getValueAt(selected, 0)) + ")" + "\n");
 			}
 		};
 		table.getSelectionModel().addListSelectionListener(listener);
@@ -199,7 +202,7 @@ public class Swing {
 							if (model.getValueAt(r, 0).equals(nickname.getText())) {
 								final int s = selected;
 								model.removeRow(r);
-								System.out.println("Removing " + r + ", selected is " + s);
+
 								if (s == r) {
 									selected = model.getRowCount();
 									updated = true;
@@ -243,5 +246,11 @@ public class Swing {
 		frame.setVisible(true);
 	}
 
+
+	private void append(String line) {
+		try {
+			text.insertString(text.getLength(), line, null);
+		} catch (BadLocationException e1) { /* useless exception n13463 ? */ }
+	}
 
 }
