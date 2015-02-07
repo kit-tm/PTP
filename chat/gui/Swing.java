@@ -9,9 +9,12 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+
 import javax.imageio.ImageIO;
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -31,10 +34,14 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.StyledDocument;
 
+import backend.Messenger;
+
 
 public class Swing {
 
 	private final static String font = "Arial";
+
+	private final Messenger messenger;
 
 	private final HashMap<String, String> map = new HashMap<String, String>();
 	private final JFrame frame;
@@ -46,7 +53,28 @@ public class Swing {
 	public int selected = -1;
 
 
-	public Swing() {
+	public Swing() throws IllegalArgumentException, IOException {
+		messenger = new Messenger(new Messenger.Listener() {
+
+			@Override
+			public void sent(long id) {
+				// TODO Auto-generated method stub
+
+			}
+
+			@Override
+			public void received(String message, String origin) {
+				// TODO Auto-generated method stub
+
+			}
+
+			@Override
+			public void failed(long id) {
+				// TODO Auto-generated method stub
+
+			}
+		});
+
 		frame = new JFrame();
 		frame.setLayout(new BorderLayout());
 		frame.setTitle("TorP2P Messenger");
@@ -108,7 +136,6 @@ public class Swing {
 		table.setRowHeight(20);
 		table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		JScrollPane tablePane = new JScrollPane(table);
-		tablePane.setPreferredSize(new Dimension(120, 450));
 		table.setTableHeader(null);
 		final ListSelectionListener listener = new ListSelectionListener() {
 
@@ -186,8 +213,8 @@ public class Swing {
 					model.addRow(new String[]{ nickname.getText() });
 					if (updated) {
 						System.out.println("here");
-						table.editCellAt(model.getRowCount() - 1, 0);
-						// TODO: fix this
+						table.setRowSelectionInterval(model.getRowCount() - 1, model.getRowCount() - 1);
+						table.setColumnSelectionInterval(0, 0);
 					}
 				}
 			}
@@ -195,14 +222,24 @@ public class Swing {
 		});
 
 		panel.add(button, BorderLayout.PAGE_START);
-		panel.add(tablePane, BorderLayout.PAGE_END);
+		panel.add(tablePane, BorderLayout.CENTER);
 
 		frame.add(panel, BorderLayout.LINE_END);
 
 		//frame.setExtendedState(Frame.MAXIMIZED_BOTH);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.addWindowListener(new WindowAdapter() {
+
+			@Override
+			public void windowClosing(WindowEvent e) { messenger.cleanUp(); }
+
+		});
 
 		frame.pack();
+	}
+
+
+	public void show() {
 		frame.setVisible(true);
 	}
 

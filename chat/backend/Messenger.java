@@ -53,6 +53,7 @@ public class Messenger {
 	private final HashMap<String, Chatroom> rooms = new HashMap<String, Chatroom>();
 	private final Listener listener;
 	private final TorP2P client;
+	private final Identifier identifier;
 	private long id = 0;
 
 
@@ -61,16 +62,31 @@ public class Messenger {
 		this.listener = listener;
 		client =  new TorP2P();
 		client.SetListener(receiveListener);
+		identifier = client.GetIdentifier();
 	}
 
 
-	public long send(String message, String destination) {
+	public long sendMessage(String message, String destination, String nickname) {
 		++id;
 		client.SendMessage(new Message(id, message, new Identifier(destination)), 60 * 1000, sendListener);
-		log(message, destination);
+		log(message, identifier.getTorAddress());
 		return id;
 	}
 
+	public void relocateChatroom(String from, String to) {
+		if (!rooms.containsKey(from)) return;
+
+		rooms.put(to, rooms.get(from));
+		rooms.remove(from);
+	}
+
+	public String getAddress() {
+		return identifier.getTorAddress();
+	}
+
+	public void cleanUp() {
+		client.Exit();
+	}
 
 	private void log(String message, String address) {
 		if (!rooms.containsKey(address)) rooms.put(address, new Chatroom());
