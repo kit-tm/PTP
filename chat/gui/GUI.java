@@ -10,6 +10,7 @@ import java.io.IOException;
 
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
+import javax.swing.UIManager;
 
 import backend.Chatroom;
 import backend.Messenger;
@@ -25,13 +26,17 @@ public class GUI {
 	private final InfoWindow info;
 	private final Messenger messenger;
 	private final ContactList contacts;
-	private final ChatOutput chat;
-	private final MessageInput input;
+	private final ChatPane chat;
+	private final MessageBar input;
 
 	public String current = null;
 
 
 	public GUI() throws IllegalArgumentException, IOException {
+		try {
+			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+		} catch (Exception e) { }
+
 		frame = new JFrame();
 		frame.setLayout(new BorderLayout());
 
@@ -39,9 +44,9 @@ public class GUI {
 			frame.setIconImage(ImageIO.read(new File("image/toricon.png")));
 		} catch (IOException e) { }
 
-		chat = new ChatOutput(new Dimension(640, 480), new Font("Arial", 0, 14));
+		chat = new ChatPane(new Dimension(640, 480), new Font("Arial", 0, 14));
 
-		input = new MessageInput(new Dimension(640, 35), new Font("Arial", 0, 18), new MessageInput.Listener() {
+		input = new MessageBar(new Dimension(640, 35), new Font("Arial", 0, 18), new MessageBar.Listener() {
 
 			@Override
 			public void entered(String message) {
@@ -86,8 +91,8 @@ public class GUI {
 
 		});
 
-		frame.add(input.getComponent(), BorderLayout.PAGE_END);
-		frame.add(chat.getPane(), BorderLayout.CENTER);
+		frame.add(input.getPanel(), BorderLayout.PAGE_END);
+		frame.add(chat.getPanel(), BorderLayout.CENTER);
 		frame.add(contacts.getPanel(), BorderLayout.LINE_END);
 
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -145,7 +150,9 @@ public class GUI {
 		});
 
 		info.hide();
-		frame.setTitle("Current address: " + messenger.getAddress());
+
+		input.setAddress(messenger.getAddress());
+		input.setText("Current address: " + messenger.getAddress());
 		contacts.enable();
 	}
 

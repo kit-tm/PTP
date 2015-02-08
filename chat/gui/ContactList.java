@@ -1,6 +1,7 @@
 package gui;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
@@ -18,6 +19,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
+import javax.swing.border.MatteBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
@@ -183,6 +185,7 @@ public class ContactList {
 
 		panel.add(button, BorderLayout.PAGE_START);
 		panel.add(scrollPane, BorderLayout.CENTER);
+		panel.setBorder(new MatteBorder(1, 1, 1, 1, Color.GRAY));
 
 		this.listener = listener;
 
