@@ -9,15 +9,15 @@ public class Chatroom {
 
 	public static class Message {
 
-		public final String user;
 		public final String content;
 		public final Date timestamp;
+		public final boolean remote;
 
 
-		public Message(String user, String content, Date timestamp) {
-			this.user = user;
+		public Message(String content, Date timestamp, boolean remote) {
 			this.content = content;
 			this.timestamp = timestamp;
+			this.remote = remote;
 		}
 
 	}
@@ -29,8 +29,8 @@ public class Chatroom {
 	public Chatroom() { }
 
 
-	public void addMessage(String user, String content) {
-		unread.add(new Message(user, content, new Date()));
+	public void addMessage(String content, boolean remote) {
+		unread.add(new Message(content, new Date(), remote));
 	}
 
 	public Message[] getMessages() {

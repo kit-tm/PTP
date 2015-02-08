@@ -30,7 +30,7 @@ public class Messenger {
 		@Override
 		public void receivedMessage(Message message) {
 			final String address = message.identifier.getTorAddress();
-			log(message.content, address);
+			log(message.content, address, true);
 			listener.received(message.content, address);
 		}
 
@@ -66,31 +66,40 @@ public class Messenger {
 	}
 
 
-	public long sendMessage(String message, String destination, String nickname) {
+	public long sendMessage(String message, String destination) {
 		++id;
 		client.SendMessage(new Message(id, message, new Identifier(destination)), 60 * 1000, sendListener);
-		log(message, identifier.getTorAddress());
+		log(message, destination, false);
 		return id;
 	}
 
+
 	public void relocateChatroom(String from, String to) {
-		if (!rooms.containsKey(from)) return;
+		if (!rooms.containsKey(from) || from.equals(to)) return;
 
 		rooms.put(to, rooms.get(from));
-		rooms.remove(from);
+		removeChatroom(from);
 	}
 
-	public String getAddress() {
-		return identifier.getTorAddress();
+	public void addChatroom(String address) {
+		if (!rooms.containsKey(address))
+			rooms.put(address, new Chatroom());
 	}
 
-	public void cleanUp() {
-		client.Exit();
-	}
+	public void removeChatroom(String address) { rooms.remove(address); }
 
-	private void log(String message, String address) {
-		if (!rooms.containsKey(address)) rooms.put(address, new Chatroom());
-		rooms.get(address).addMessage(address, message);
+	public String getAddress() { return identifier.getTorAddress(); }
+
+
+	public Chatroom.Message[] getMessages(String address) { return rooms.get(address).getMessages(); }
+
+
+	public void cleanUp() { client.Exit(); }
+
+
+	private void log(String message, String address, boolean remote) {
+		addChatroom(address);
+		rooms.get(address).addMessage(message, remote);
 	}
 
 }

@@ -2,14 +2,14 @@ package main;
 
 import java.io.IOException;
 
-import gui.Swing;
+import gui.GUI;
 
 public class MessengerApplication {
 
 
 	public static void main(String[] args) throws IllegalArgumentException, IOException {
-		Swing gui = new Swing();
-		gui.show();
+		@SuppressWarnings("unused")
+		GUI gui = new GUI();
 	}
 
 }
