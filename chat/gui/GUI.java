@@ -35,7 +35,9 @@ public class GUI {
 		frame = new JFrame();
 		frame.setLayout(new BorderLayout());
 
-		frame.setIconImage(ImageIO.read(new File("image/toricon.png")));
+		try {
+			frame.setIconImage(ImageIO.read(new File("image/toricon.png")));
+		} catch (IOException e) { }
 
 		chat = new ChatOutput(new Dimension(640, 480), new Font("Arial", 0, 14));
 
