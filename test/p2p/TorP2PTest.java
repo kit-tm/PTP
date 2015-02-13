@@ -36,7 +36,7 @@ public class TorP2PTest {
 	/** The second API wrapper object used in the ping-pong test. */
 	private TorP2P client2 = null;
 	/** The message used in the tests. */
-	private String message = null;
+	private String testString = null;
 
 
 	/**
@@ -51,7 +51,7 @@ public class TorP2PTest {
 		RNG random = new RNG();
 
 		// Generate a random message within the length bounds.
-		message = random.string(minMessageLength, maxMessageLength);
+		testString = random.string(minMessageLength, maxMessageLength);
 
 		// Create the API wrapper objects.
 		client1 = new TorP2P();
@@ -109,26 +109,29 @@ public class TorP2PTest {
 		Identifier invalidId2 = new Identifier("1234567812345678.onion");
 		
 		// a random valid address
-		Identifier offlineId = new Identifier("bwehoflnshqul43e.onion");
+		Identifier offlineId = new Identifier("bwehoflnshqul42e.onion");
 		
 		// helper class as we will be testing different addresses
 		class TestSendFailHelper {
+			
+			private Message returnedMessage = null;
+			
 			public void run(Identifier id) {
 				sendSuccess.set(false);
 				sendFail.set(false);
 	
 				// Send a message.
-				final Message m = new Message(message, id);
+				final Message m = new Message(testString, id);
 				final long timeout = 20 * 1000;
 				client1.SendMessage(m, timeout, new SendListenerAdapter() {
 	
 					@Override
 					public void sendSuccess(Message message) { sendSuccess.set(true); }
-					
+			
 					@Override
 					public void sendFail(Message message) {
 						sendFail.set(true);
-						assertEquals(m, message);
+						returnedMessage = message;
 					}
 				});
 				// Wait for the sending result.
@@ -140,8 +143,9 @@ public class TorP2PTest {
 						// Sleeping was interrupted. Do nothing.
 					}
 				}
-				assertFalse(sendSuccess.get());
-				assertTrue(sendFail.get());			
+				assertTrue(!sendSuccess.get() && sendFail.get());
+				assertEquals(returnedMessage, m); // FIXME: how can I compare messages (content, ID, everything?)
+				assertEquals(returnedMessage.content, testString);
 			}
 		}
 		TestSendFailHelper helper = new TestSendFailHelper();
@@ -166,8 +170,8 @@ public class TorP2PTest {
 			@Override
 			public void receivedMessage(Message m) {
 				System.out.println("Received message: " + m.content);
-				if (!m.content.equals(message))
-					fail("Received message does not match sent message: " + message + " != " + m.content);
+				if (!m.content.equals(testString))
+					fail("Received message does not match sent message: " + testString + " != " + m.content);
 				received.set(true);
 			}
 
@@ -183,7 +187,7 @@ public class TorP2PTest {
 
 		// Send the message.
 		final AtomicBoolean sendSuccess = new AtomicBoolean(false);
-		final Message m = new Message(message, identifier);
+		final Message m = new Message(testString, identifier);
 		final long timeout = 180 * 1000;
 		client1.SendMessage(m, timeout, new SendListenerAdapter() {
 
@@ -249,8 +253,8 @@ public class TorP2PTest {
 		// Send a message to the second identifier and wait to ensure it is available.
 		final AtomicBoolean sendSuccess1 = new AtomicBoolean(false);
 		final AtomicBoolean sendSuccess2 = new AtomicBoolean(false);
-		final Message m1 = new Message(message, identifier2);
-		final Message m2 = new Message(message, identifier1);
+		final Message m1 = new Message(testString, identifier2);
+		final Message m2 = new Message(testString, identifier1);
 		final long timeout = 180 * 1000;
 		client1.SendMessage(m1, timeout, new SendListenerAdapter() {
 
@@ -286,8 +290,8 @@ public class TorP2PTest {
 			@Override
 			public void receivedMessage(Message m) {
 				counter.incrementAndGet();
-				if (!m.content.equals(message))
-					fail("First API object received message does not match sent message: " + m.content + " != " + message);
+				if (!m.content.equals(testString))
+					fail("First API object received message does not match sent message: " + m.content + " != " + testString);
 				final Message msg = new Message(m.content, identifier2);
 				client1.SendMessage(msg, 10 * 1000);
 			}
@@ -298,8 +302,8 @@ public class TorP2PTest {
 			@Override
 			public void receivedMessage(Message m) {
 				counter.incrementAndGet();
-				if (!m.content.equals(message))
-					fail("Second API object received message does not match sent message: " + m.content + " != " + message);
+				if (!m.content.equals(testString))
+					fail("Second API object received message does not match sent message: " + m.content + " != " + testString);
 				final Message msg = new Message(m.content, identifier1);
 				client2.SendMessage(msg, 10 * 1000);
 			}
