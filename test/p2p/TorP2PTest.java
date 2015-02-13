@@ -67,6 +67,88 @@ public class TorP2PTest {
 		client1.Exit();
 		client2.Exit();
 	}
+	
+	/**
+	 * Test for GetIdentifier()
+	 */
+	@Test
+	public void testGetIdentifier() {
+		
+		Identifier id1 = null;
+		Identifier id2 = null;
+		
+		try {
+			id1 = client1.GetIdentifier();
+		} catch (IOException e) {
+			fail("Caught an IOException while creating the hidden service identifier: " + e.getMessage());
+		}
+		assertNotNull(id1);
+
+		try {
+			id2 = client1.GetIdentifier();
+		} catch (IOException e) {
+			fail("Caught an IOException while creating the hidden service identifier: " + e.getMessage());
+		}
+		assertEquals(id1, id2);
+	}
+	
+	/**
+	 * Test for fail handlers in SendListenerAdapter
+	 */
+	@Test
+	public void testSendFail() {
+		
+		// An atomic boolean used to check whether the sent message was received.		
+		final AtomicBoolean sendSuccess = new AtomicBoolean();
+		
+		// An atomic boolean used to check whether the sending failed.		
+		final AtomicBoolean sendFail = new AtomicBoolean();
+
+		// two invalid identifiers
+		Identifier invalidId1 = new Identifier("12345");
+		Identifier invalidId2 = new Identifier("1234567812345678.onion");
+		
+		// a random valid address
+		Identifier offlineId = new Identifier("bwehoflnshqul43e.onion");
+		
+		// helper class as we will be testing different addresses
+		class TestSendFailHelper {
+			public void run(Identifier id) {
+				sendSuccess.set(false);
+				sendFail.set(false);
+	
+				// Send a message.
+				final Message m = new Message(message, id);
+				final long timeout = 20 * 1000;
+				client1.SendMessage(m, timeout, new SendListenerAdapter() {
+	
+					@Override
+					public void sendSuccess(Message message) { sendSuccess.set(true); }
+					
+					@Override
+					public void sendFail(Message message) {
+						sendFail.set(true);
+						assertEquals(m, message);
+					}
+				});
+				// Wait for the sending result.
+				final long waitStart = System.currentTimeMillis();
+				while ((System.currentTimeMillis() - waitStart <= timeout + (5 * 1000)) && (!sendSuccess.get() || !sendFail.get())) {
+					try {
+						Thread.sleep(1 * 1000);
+					} catch (InterruptedException e) {
+						// Sleeping was interrupted. Do nothing.
+					}
+				}
+				assertFalse(sendSuccess.get());
+				assertTrue(sendFail.get());			
+			}
+		}
+		TestSendFailHelper helper = new TestSendFailHelper();
+		helper.run(invalidId1);
+		helper.run(invalidId2);
+		helper.run(offlineId);
+	}
 
 	/**
 	 * Test the API wrapper by sending a message to the local port, and then testing if the same message was received.
