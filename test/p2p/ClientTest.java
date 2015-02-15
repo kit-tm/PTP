@@ -120,6 +120,7 @@ public class ClientTest {
 	public void testSelfSend() {
 		// An atomic boolean used to check whether the sent message was received yet.
 		final AtomicBoolean received = new AtomicBoolean(false);
+		final AtomicBoolean matches = new AtomicBoolean(false);
 
 		// Create the API object.
 		try {
@@ -137,6 +138,7 @@ public class ClientTest {
 				if (!m.content.equals(message))
 					fail("Received message does not match sent message: " + message + " != " + m.content);
 				received.set(true);
+				matches.set(m.content.equals(message));
 			}
 
 		});
@@ -182,6 +184,9 @@ public class ClientTest {
 
 		if (!received.get())
 			fail("Message not received.");
+
+		if (!matches.get())
+			fail("Received message does not match sent message.");
 
 		// Disconnect the API from the created identifier.
 		Client.DisconnectResponse disconnectResponse = client1.disconnect(identifier);

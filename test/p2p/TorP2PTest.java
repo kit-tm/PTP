@@ -67,16 +67,16 @@ public class TorP2PTest {
 		client1.Exit();
 		client2.Exit();
 	}
-	
+
 	/**
 	 * Test for GetIdentifier()
 	 */
 	@Test
 	public void testGetIdentifier() {
-		
+
 		Identifier id1 = null;
 		Identifier id2 = null;
-		
+
 		try {
 			id1 = client1.GetIdentifier();
 		} catch (IOException e) {
@@ -91,43 +91,49 @@ public class TorP2PTest {
 		}
 		assertEquals(id1, id2);
 	}
-	
+
 	/**
 	 * Test for fail handlers in SendListenerAdapter
 	 */
 	@Test
 	public void testSendFail() {
-		
-		// An atomic boolean used to check whether the sent message was received.		
+
+		// An atomic boolean used to check whether the sent message was received.
 		final AtomicBoolean sendSuccess = new AtomicBoolean();
-		
-		// An atomic boolean used to check whether the sending failed.		
+
+		// An atomic boolean used to check whether the sending failed.
 		final AtomicBoolean sendFail = new AtomicBoolean();
 
 		// two invalid identifiers
 		Identifier invalidId1 = new Identifier("12345");
 		Identifier invalidId2 = new Identifier("1234567812345678.onion");
-		
+
 		// a random valid address
 		Identifier offlineId = new Identifier("bwehoflnshqul42e.onion");
-		
+
 		// helper class as we will be testing different addresses
 		class TestSendFailHelper {
-			
+
 			private Message returnedMessage = null;
-			
+
 			public void run(Identifier id) {
 				sendSuccess.set(false);
 				sendFail.set(false);
-	
+
 				// Send a message.
 				final Message m = new Message(testString, id);
 				final long timeout = 20 * 1000;
 				client1.SendMessage(m, timeout, new SendListenerAdapter() {
-	
+
 					@Override
 					public void sendSuccess(Message message) { sendSuccess.set(true); }
-			
+
+					@Override
+					public void connectionTimeout(Message message) {
+						sendFail.set(true);
+						returnedMessage = message;
+					}
+
 					@Override
 					public void sendFail(Message message) {
 						sendFail.set(true);
@@ -143,9 +149,14 @@ public class TorP2PTest {
 						// Sleeping was interrupted. Do nothing.
 					}
 				}
-				assertTrue(!sendSuccess.get() && sendFail.get());
-				assertEquals(returnedMessage, m); // FIXME: how can I compare messages (content, ID, everything?)
-				assertEquals(returnedMessage.content, testString);
+
+				if (sendSuccess.get())
+					fail("Received send success notification.");
+				if (!sendFail.get())
+					fail("No failure notification received");
+				//assertEquals(returnedMessage.content, m.content); // FIXME: how can I compare messages (content, ID, everything?)
+				if (!returnedMessage.content.equals(testString))
+					fail("Notifier message " + returnedMessage.content + " does not equal sent message " + testString);
 			}
 		}
 		TestSendFailHelper helper = new TestSendFailHelper();
@@ -163,6 +174,7 @@ public class TorP2PTest {
 	public void testSelfSend() {
 		// An atomic boolean used to check whether the sent message was received yet.
 		final AtomicBoolean received = new AtomicBoolean(false);
+		final AtomicBoolean matches = new AtomicBoolean(false);
 
 		// Set the listener.
 		client1.SetListener(new ReceiveListener() {
@@ -173,6 +185,7 @@ public class TorP2PTest {
 				if (!m.content.equals(testString))
 					fail("Received message does not match sent message: " + testString + " != " + m.content);
 				received.set(true);
+				matches.set(m.content.equals(testString));
 			}
 
 		});
@@ -221,6 +234,9 @@ public class TorP2PTest {
 
 		if (!received.get())
 			fail("Message not received.");
+
+		if (!matches.get())
+			fail("Received message does not match sent message.");
 	}
 
 	/**
