@@ -58,7 +58,7 @@ public class TorP2PSendExample {
 				if (content.equals("exit")) break;
 				String timestamped = (current.internet  + System.currentTimeMillis() - current.local) + " " + content;
 				Message message = new Message(timestamped, destination);
-				client.SendMessage(message, timeout, listener);
+				client.sendMessage(message, timeout, listener);
 				++sent;
 			}
 
@@ -80,7 +80,7 @@ public class TorP2PSendExample {
 
 		// Done, exit.
 		System.out.println("Exiting client.");
-		if (client != null) client.Exit();
+		if (client != null) client.exit();
 	}
 
 }

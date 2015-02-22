@@ -30,6 +30,8 @@ import dispatch.MessageDispatcher;
  */
 public class MessageDispatcherTest {
 
+	/** The maximum number of threads to use for the message dispaching. */
+	private static final int threads = 1;
 	/** The minimum message length of the random messages. */
 	private static final int minimumMessageLength = 10;
 	/** The maximum message length of the random messages. */
@@ -92,7 +94,7 @@ public class MessageDispatcherTest {
 	@Before
 	public void setUp() {
 		client = new Client();
-		dispatcher = new MessageDispatcher(client, 2);
+		dispatcher = new MessageDispatcher(client, threads);
 		random = new RNG();
 
 		// Wait for the dispatcher thread to enter its execution loop.

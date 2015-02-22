@@ -102,6 +102,7 @@ public class Client {
 	/** The hidden service sub-directory of this client. */
 	private String directory = null;
 
+
 	/**
 	 * Constructor method.
 	 *
@@ -110,15 +111,27 @@ public class Client {
 	 *
 	 * @see Configuration
 	 */
-	public Client(Configuration configuration) throws IOException {
+	public Client(Configuration configuration) throws IOException { this(configuration, null); }
+
+
+	/**
+	 * Constructor method.
+	 *
+	 * @param configuration The parameters of this client.
+	 * @param directory The name of the hidden service directory this client will use. If null, the client will use the server socket port for the name.
+	 * @throws IOException Throws an IOException if unable to open a server socket on any port.
+	 *
+	 * @see Configuration
+	 */
+	public Client(Configuration configuration, String directory) throws IOException {
 		this.configuration = configuration;
 		// Tell the JVM we want any available port.
 		receiver = new MessageReceiver(getConnectionListener(), Constants.anyport, configuration.getReceiverThreadsNumber(), configuration.getSocketReceivePoll());
 		receiver.start();
 
 		// Check if the hidden service directory exists, if not create it.
-		File directory = new File(configuration.getHiddenServiceDirectory());
-		if (!directory.exists() && !directory.mkdirs())
+		File hiddenServiceDirectory = new File(configuration.getHiddenServiceDirectory());
+		if (!hiddenServiceDirectory.exists() && !hiddenServiceDirectory.mkdirs())
 			throw new IOException("Could not create hidden service directory!");
 
 		// Check if the lock file exists, if not create it.
@@ -128,6 +141,7 @@ public class Client {
 
 		identifier = configuration.getDefaultIdentifier();
 
+		this.directory = directory != null ? directory : Constants.hiddenserviceprefix + receiver.getPort();
 		logger.log(Level.INFO, "Client object created.");
 	}
 
@@ -146,22 +160,25 @@ public class Client {
 	/**
 	 * Closes the server socket and any open receiving socket connections. Will not close connections open for sending.
 	 *
+	 * @param clean If true, will delete the current hidden service directory.
 	 * @return  ExitResponse.FAIL    if an IOException occurred while closing the server socket, or when deleting the hidden service directory.
 	 * 			ExitResponse.SUCCESS if the server socket was closed.
 	 */
-	public ExitResponse exit() {
+	public ExitResponse exit(boolean clean) {
 		logger.log(Level.INFO, "Client exiting.");
 
 		// Stop the message receiver and all threads waiting on open socket connections.
 		logger.log(Level.INFO, "Stopping message receiver.");
 		receiver.stop();
 
-		try {
-			// Delete the hidden service directory.
-			deleteHiddenService();
-		} catch (IOException e) {
-			logger.log(Level.WARNING, "Received IOException while deleting the hidden service directory: " + e.getMessage());
-			return ExitResponse.FAIL;
+		if (clean) {
+			try {
+				// Delete the hidden service directory.
+				deleteHiddenService();
+			} catch (IOException e) {
+				logger.log(Level.WARNING, "Received IOException while deleting the hidden service directory: " + e.getMessage());
+				return ExitResponse.FAIL;
+			}
 		}
 
 		logger.log(Level.INFO, "Stopped server waiter and deleted hidden service directory.");
@@ -191,24 +208,19 @@ public class Client {
 			lock = channel.lock();
 
 			logger.log(Level.INFO, "Client acquired the lock on raw API lock file.");
+
+			File dir = new File(configuration.getHiddenServiceDirectory() + File.separator + directory);
+			final boolean create = !dir.exists();
+
 			// If a fresh identifier is requested, delete the current hidden service directory.
-			if (fresh)
+			if (fresh && !create)
 				deleteHiddenService();
 
-			final boolean none = directory == null;
-
-			// If no hidden service was created so far, create a sub-directory for the new hidden service.
-			if (none) {
-				directory = Constants.hiddenserviceprefix + receiver.getPort();
-				logger.log(Level.INFO, "Creating hidden service sub-directory: " + directory);
-
-				File dir = new File(configuration.getHiddenServiceDirectory() + File.separator + directory);
-				if (!dir.exists() && !dir.mkdir())
-					throw new IOException("Unable to create the hidden service directory!");
-			}
+			if (!dir.exists() && !dir.mkdir())
+				throw new IOException("Unable to create the hidden service directory!");
 
 			// If the Tor hostname file does not exist in the Tor hidden service directory, create a hidden service with JTorCtl.
-			if (fresh || none) {
+			if (fresh || create) {
 				logger.log(Level.INFO, "Creating hidden service.");
 				createHiddenService();
 			}

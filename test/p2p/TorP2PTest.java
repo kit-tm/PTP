@@ -64,8 +64,8 @@ public class TorP2PTest {
 	@After
 	public void tearDown() {
 		// Clean up the APIs.
-		client1.Exit();
-		client2.Exit();
+		client1.exit();
+		client2.exit();
 	}
 
 	/**
@@ -78,14 +78,14 @@ public class TorP2PTest {
 		Identifier id2 = null;
 
 		try {
-			id1 = client1.GetIdentifier();
+			id1 = client1.getIdentifier();
 		} catch (IOException e) {
 			fail("Caught an IOException while creating the hidden service identifier: " + e.getMessage());
 		}
 		assertNotNull(id1);
 
 		try {
-			id2 = client1.GetIdentifier();
+			id2 = client1.getIdentifier();
 		} catch (IOException e) {
 			fail("Caught an IOException while creating the hidden service identifier: " + e.getMessage());
 		}
@@ -123,7 +123,7 @@ public class TorP2PTest {
 				// Send a message.
 				final Message m = new Message(testString, id);
 				final long timeout = 20 * 1000;
-				client1.SendMessage(m, timeout, new SendListenerAdapter() {
+				client1.sendMessage(m, timeout, new SendListenerAdapter() {
 
 					@Override
 					public void sendSuccess(Message message) { sendSuccess.set(true); }
@@ -177,7 +177,7 @@ public class TorP2PTest {
 		final AtomicBoolean matches = new AtomicBoolean(false);
 
 		// Set the listener.
-		client1.SetListener(new ReceiveListener() {
+		client1.setListener(new ReceiveListener() {
 
 			@Override
 			public void receivedMessage(Message m) {
@@ -193,7 +193,7 @@ public class TorP2PTest {
 		// Create the hidden service identifier.
 		Identifier identifier = null;
 		try {
-			identifier = client1.GetIdentifier();
+			identifier = client1.getIdentifier();
 		} catch (IOException e) {
 			fail("Caught an IOException while creating the hidden service identifier: " + e.getMessage());
 		}
@@ -202,7 +202,7 @@ public class TorP2PTest {
 		final AtomicBoolean sendSuccess = new AtomicBoolean(false);
 		final Message m = new Message(testString, identifier);
 		final long timeout = 180 * 1000;
-		client1.SendMessage(m, timeout, new SendListenerAdapter() {
+		client1.sendMessage(m, timeout, new SendListenerAdapter() {
 
 			@Override
 			public void sendSuccess(Message message) { sendSuccess.set(true); }
@@ -254,8 +254,8 @@ public class TorP2PTest {
 		Identifier i1 = null;
 		Identifier i2 = null;
 		try {
-			i1 = client1.GetIdentifier();
-			i2 = client2.GetIdentifier();
+			i1 = client1.getIdentifier();
+			i2 = client2.getIdentifier();
 		} catch (IOException e) {
 			fail("Caught an IOException while creating the identifiers: " + e.getMessage());
 		}
@@ -272,7 +272,7 @@ public class TorP2PTest {
 		final Message m1 = new Message(testString, identifier2);
 		final Message m2 = new Message(testString, identifier1);
 		final long timeout = 180 * 1000;
-		client1.SendMessage(m1, timeout, new SendListenerAdapter() {
+		client1.sendMessage(m1, timeout, new SendListenerAdapter() {
 
 			@Override
 			public void sendSuccess(Message message) { sendSuccess1.set(true); }
@@ -301,7 +301,7 @@ public class TorP2PTest {
 		}
 
 		// Set the listeners.
-		client1.SetListener(new ReceiveListener() {
+		client1.setListener(new ReceiveListener() {
 
 			@Override
 			public void receivedMessage(Message m) {
@@ -309,11 +309,11 @@ public class TorP2PTest {
 				if (!m.content.equals(testString))
 					fail("First API object received message does not match sent message: " + m.content + " != " + testString);
 				final Message msg = new Message(m.content, identifier2);
-				client1.SendMessage(msg, 10 * 1000);
+				client1.sendMessage(msg, 10 * 1000);
 			}
 
 		});
-		client2.SetListener(new ReceiveListener() {
+		client2.setListener(new ReceiveListener() {
 
 			@Override
 			public void receivedMessage(Message m) {
@@ -321,19 +321,19 @@ public class TorP2PTest {
 				if (!m.content.equals(testString))
 					fail("Second API object received message does not match sent message: " + m.content + " != " + testString);
 				final Message msg = new Message(m.content, identifier1);
-				client2.SendMessage(msg, 10 * 1000);
+				client2.sendMessage(msg, 10 * 1000);
 			}
 
 		});
 
 		// Send the initial ping-pong message.
-		client2.SendMessage(m2, timeout, new SendListenerAdapter() {
+		client2.sendMessage(m2, timeout, new SendListenerAdapter() {
 
 			@Override
 			public void sendSuccess(Message message) { sendSuccess2.set(true); }
 
 		});
-		client1.SendMessage(m1, timeout, new SendListenerAdapter() {
+		client1.sendMessage(m1, timeout, new SendListenerAdapter() {
 
 			@Override
 			public void sendSuccess(Message message) { sendSuccess1.set(true); }

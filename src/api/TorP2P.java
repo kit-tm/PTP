@@ -54,19 +54,37 @@ public class TorP2P {
 	private final MessageDispatcher dispatcher;
 	/** A dummy sending listener to use when no listener is specified upon message sending. */
 	private final SendListener dummyListener = new SendListenerAdapter();
-
+	/** The identifier of the currently used hidden service. */
+	private Identifier current = null;
+	/** Indicates whether this API wrapper should reuse a hidden service. */
+	private final boolean reuse;
 
 	/**
-	 * Constructor method.
+	 * Constructor method. Creates an API wrapper which manages a Tor process.
 	 *
-	 * @throws IllegalArgumentException
-	 * @throws IOException Propagates an IOException thrown by the construction of the raw API, the configuration, or the Tor process manager.
+	 * @throws IllegalArgumentException Propagates any IllegalArgumentException thrown by the reading of the configuration.
+	 * @throws IOException Propagates any IOException thrown by the construction of the raw API, the configuration, or the Tor process manager.
 	 *
 	 * @see Client
 	 * @see Configuration
 	 * @see TorManager
 	 */
 	public TorP2P() throws IllegalArgumentException, IOException {
+		this(null);
+	}
+
+	/**
+	 * Constructor method. Creates an API wrapper which manages a Tor process.
+	 *
+	 * @param directory The name of the hidden service to reuse. May be null to indicate no specific reuse request.
+	 * @throws IllegalArgumentException Propagates any IllegalArgumentException thrown by the reading of the configuration.
+	 * @throws IOException Propagates any IOException thrown by the construction of the raw API, the configuration, or the Tor process manager.
+	 *
+	 * @see Client
+	 * @see Configuration
+	 * @see TorManager
+	 */
+	public TorP2P(String directory) throws IllegalArgumentException, IOException {
 		// Read the configuration.
 		config = new Configuration(Constants.configfile);
 		// Create the logger after the configuration sets the logger properties file.
@@ -74,9 +92,11 @@ public class TorP2P {
 
 		// Create the Tor process manager and start the Tor process.
 		tor = new TorManager();
-
 		// Start the Tor process.
 		tor.start();
+
+		// Did not receive a hidden service directory to reuse.
+		reuse = directory != null;
 
 		// Wait until the Tor bootstrapping is complete.
 		long waited = 0;
@@ -105,7 +125,57 @@ public class TorP2P {
 		// Set the control ports.
 		config.setTorConfiguration(tor.directory(), tor.controlport(), tor.socksport());
 		// Create the client with the read configuration and set its receiving listener.
-		client = new Client(config);
+		client = new Client(config, directory);
+		// Create and start the manager with the given TTL.
+		manager = new TTLManager(getTTLManagerListener(), config.getTTLPoll());
+		manager.start();
+		// Create and start the message dispatcher.
+		dispatcher = new MessageDispatcher(getMessageDispatcherListener(), config.getDispatcherThreadsNumber());
+	}
+
+	/**
+	 * Constructor method. Creates an API wrapper which uses a Tor process running outside the API.
+	 *
+	 * @param workingDirectory The working directory of the Tor process.
+	 * @param controlPort The control port of the Tor process.
+	 * @param socksPort The SOCKS port of the Tor process.
+	 * @throws IllegalArgumentException Propagates any IllegalArgumentException thrown by the reading of the configuration.
+	 * @throws IOException Propagates any IOException thrown by the construction of the raw API, the configuration, or the Tor process manager.
+	 *
+	 * @see Client
+	 * @see Configuration
+	 */
+	public TorP2P(String workingDirectory, int controlPort, int socksPort) throws IllegalArgumentException, IOException {
+		this(workingDirectory, controlPort, socksPort, null);
+	}
+
+	/**
+	 * Constructor method. Creates an API wrapper which uses a Tor process running outside the API.
+	 *
+	 * @param workingDirectory The working directory of the Tor process.
+	 * @param controlPort The control port of the Tor process.
+	 * @param socksPort The SOCKS port of the Tor process.
+	 * @param directory The name of the hidden service to reuse. May be null to indicate no specific reuse request.
+	 * @throws IllegalArgumentException Propagates any IllegalArgumentException thrown by the reading of the configuration.
+	 * @throws IOException Propagates any IOException thrown by the construction of the raw API, the configuration, or the Tor process manager.
+	 *
+	 * @see Client
+	 * @see Configuration
+	 */
+	public TorP2P(String workingDirectory, int controlPort, int socksPort, String directory) throws IllegalArgumentException, IOException {
+		// Read the configuration.
+		config = new Configuration(workingDirectory + "/" + Constants.configfile);
+		// Create the logger after the configuration sets the logger properties file.
+		logger = Logger.getLogger(Constants.torp2plogger);
+
+		// We will use an already running Tor instance, instead of managing one.
+		tor = null;
+
+		// Set the control ports.
+		config.setTorConfiguration(workingDirectory, controlPort, socksPort);
+		// Create the client with the read configuration and set its receiving listener.
+		reuse = directory != null;
+		client = new Client(config, directory);
 		// Create and start the manager with the given TTL.
 		manager = new TTLManager(getTTLManagerListener(), config.getTTLPoll());
 		manager.start();
@@ -115,6 +185,20 @@ public class TorP2P {
 
 
 	/**
+	 * Returns the currently used hidden service identifier. Will create a hidden service if none is currently used.
+	 *
+	 * @return The hidden service identifier of the used/created hidden service.
+	 * @throws IOException Propagates any IOException the API received while creating the hidden service.
+	 *
+	 * @see Client
+	 */
+	public Identifier getIdentifier() throws IOException {
+		// Create a fresh hidden service identifier.
+		if (current == null) current = new Identifier(client.identifier(!reuse));
+		return current;
+	}
+
+	/**
 	 * Creates a fresh hidden service.
 	 *
 	 * @return The hidden service identifier of the created service.
@@ -122,9 +206,9 @@ public class TorP2P {
 	 *
 	 * @see Client
 	 */
-	public Identifier GetIdentifier() throws IOException {
+	public void createHiddenService() throws IOException {
 		// Create a fresh hidden service identifier.
-		return new Identifier(client.identifier(true));
+		current = new Identifier(client.identifier(true));
 	}
 
 	/**
@@ -136,9 +220,9 @@ public class TorP2P {
 	 *
 	 * @see Client
 	 */
-	public void SendMessage(Message message, long timeout) {
+	public void sendMessage(Message message, long timeout) {
 		// Delegate with the dummy listener.
-		SendMessage(message, timeout, dummyListener);
+		sendMessage(message, timeout, dummyListener);
 	}
 
 	/**
@@ -151,9 +235,9 @@ public class TorP2P {
 	 *
 	 * @see Client
 	 */
-	public void SendMessage(Message message, long timeout, SendListener listener) {
+	public void sendMessage(Message message, long timeout, SendListener listener) {
 		// Alter the content with the message handler and dispatch.
-		dispatcher.enqueueMessage(MessageHandler.wrapMessage(message), timeout, listener);
+		dispatcher.enqueueMessage(message, timeout, listener);
 	}
 
 	/**
@@ -163,7 +247,7 @@ public class TorP2P {
 	 *
 	 * @see Client
 	 */
-	public void SetListener(ReceiveListener listener) {
+	public void setListener(ReceiveListener listener) {
 		// Propagate the receive listener.
 		client.listener(listener);
 	}
@@ -175,7 +259,7 @@ public class TorP2P {
 	 *
 	 * @see Client
 	 */
-	public int GetLocalPort() {
+	public int getLocalPort() {
 		// Get the local port from the client.
 		return client.localPort();
 	}
@@ -185,15 +269,15 @@ public class TorP2P {
 	 *
 	 * @see Client
 	 */
-	public void Exit() {
+	public void exit() {
 		// Close the client.
-		client.exit();
+		client.exit(!reuse);
 		// Close the socket TTL manager.
 		manager.stop();
 		// Close the message dispatcher.
 		dispatcher.stop();
 		// Close the Tor process manager.
-		tor.stop();
+		if (tor != null) tor.stop();
 	}
 
 
@@ -262,7 +346,7 @@ public class TorP2P {
 					return false;
 
 				// Connection is successful, send the message.
-				Client.SendResponse response = client.send(message.identifier.getTorAddress(), message.content);
+				Client.SendResponse response = client.send(message.identifier.getTorAddress(), MessageHandler.wrapMessage(message).content);
 
 				// If the message was sent successfully, set the TTL of the socket opened for the identifier.
 				if (response == Client.SendResponse.SUCCESS) {

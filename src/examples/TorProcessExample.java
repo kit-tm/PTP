@@ -1,7 +1,9 @@
 package examples;
 
 import java.io.IOException;
+import java.net.Socket;
 
+import net.freehaven.tor.control.TorControlConnection;
 import tor.TorManager;
 
 
@@ -19,6 +21,25 @@ public class TorProcessExample {
 		TorManager tor = new TorManager();
 		System.out.println("Starting Tor.");
 		tor.start();
+
+		long waited = 0;
+		while (!tor.ready() && tor.running() && waited < 60 * 1000) {
+			try {
+				final long start = System.currentTimeMillis();
+				Thread.sleep(250);
+				waited += System.currentTimeMillis() - start;
+			} catch (InterruptedException e) {
+				// Waiting was interrupted. Do nothing.
+			}
+		}
+
+		Socket s = new Socket("127.0.0.1", tor.controlport());
+		TorControlConnection conn = TorControlConnection.getConnection(s);
+		conn.authenticate(new byte[0]);
+		System.out.println(conn.getInfo("net/listeners/socks"));
+		System.out.println(conn.getInfo("status/bootstrap-phase"));
+
+
 		System.out.println("Sleeping.");
 		Thread.sleep(10 * 1000);
 		System.out.println("Stopping Tor.");

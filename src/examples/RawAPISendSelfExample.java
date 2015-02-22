@@ -81,7 +81,7 @@ public class RawAPISendSelfExample {
 		System.out.println("Disconnecting.");
 		client.disconnect(identifier);
 		System.out.println("Exiting.");
-		client.exit();
+		client.exit(true);
 		manager.stop();
 	}
 

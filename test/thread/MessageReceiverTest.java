@@ -33,6 +33,8 @@ import utility.RNG;
  */
 public class MessageReceiverTest {
 
+	/** The maximum number of threads to use for the message receiving. */
+	private static final int threads = 1;
 	/** The minimum message length of random messages. */
 	private static final int minimumMessageLength = 10;
 	/** The maximum message length of random messages. */
@@ -99,7 +101,7 @@ public class MessageReceiverTest {
 	public void setUp() {
 		// Create and start the message receiver.
 		try {
-			receiver = new MessageReceiver(dummyListener, Constants.anyport, 2, 250);
+			receiver = new MessageReceiver(dummyListener, Constants.anyport, threads, 250);
 		} catch (IOException e) {
 			fail("Could not create message receiver object.");
 		}

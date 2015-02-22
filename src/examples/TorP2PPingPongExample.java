@@ -78,7 +78,7 @@ public class TorP2PPingPongExample {
 				start = System.currentTimeMillis();
 				// Send the message.
 				final Message m = new Message(message + (response ? " " + counter.get() : ""), identifier);
-				client.SendMessage(m, 1 * 1000);
+				client.sendMessage(m, 1 * 1000);
 				++sent;
 			}
 			// Another PING-PONG initiated, increment counter.
@@ -136,7 +136,7 @@ public class TorP2PPingPongExample {
 
 	        // Set the timer start for the hidden service creation measurement.
 			long start = System.currentTimeMillis();
-			final Identifier identifier = client.GetIdentifier();
+			final Identifier identifier = client.getIdentifier();
 			final long duration = System.currentTimeMillis() - start;
 
 			// Output the created hidden service identifier.
@@ -155,7 +155,7 @@ public class TorP2PPingPongExample {
 			final AtomicBoolean connected = new AtomicBoolean(false);
 			final long timeout = 120 * 1000;
 			final Message m = new Message("", destination);
-			client.SendMessage(m, timeout, new SendListenerAdapter() {
+			client.sendMessage(m, timeout, new SendListenerAdapter() {
 
 				@Override
 				public void sendSuccess(Message message) { connected.set(true); }
@@ -190,7 +190,7 @@ public class TorP2PPingPongExample {
 			final int max = 50;
 			// Create the listener and set it.
 			final MyListener listener = new MyListener(client, destination, max);
-			client.SetListener(listener);
+			client.setListener(listener);
 
 			// Connected, ask if a message should be sent.
 			System.out.println("Connected.");
@@ -240,7 +240,7 @@ public class TorP2PPingPongExample {
 		// Done, exit.
 		System.out.println("Exiting client.");
 		if (client != null)
-			client.Exit();
+			client.exit();
 	}
 
 }

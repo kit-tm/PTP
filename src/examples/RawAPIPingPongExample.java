@@ -149,7 +149,7 @@ public class RawAPIPingPongExample {
 			e.printStackTrace();
 		}
 		System.out.println("Exiting client.");
-		if (client != null) client.exit();
+		if (client != null) client.exit(true);
 		if (manager != null) manager.stop();
 	}
 

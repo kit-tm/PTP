@@ -72,7 +72,7 @@ public class TorP2PDuplexExample {
 			}
 			// Send message back.
 			start = System.currentTimeMillis();
-			client.SendMessage(message, timeout);
+			client.sendMessage(message, timeout);
 			counter.incrementAndGet();
 		}
 
@@ -112,7 +112,7 @@ public class TorP2PDuplexExample {
 
 	        // Set the timer start for the hidden service creation measurement.
 			long start = System.currentTimeMillis();
-			final Identifier identifier1 = client1.GetIdentifier();
+			final Identifier identifier1 = client1.getIdentifier();
 			final long duration = System.currentTimeMillis() - start;
 
 	       	// Connect to the destination hidden service and port by sending a dummy message.
@@ -121,7 +121,7 @@ public class TorP2PDuplexExample {
 			final long timeout = 120 * 1000;
 			final Message m = new Message("Hello.", identifier1);
 
-			client2.SendMessage(m, timeout, new SendListener() {
+			client2.sendMessage(m, timeout, new SendListener() {
 
 				@Override
 				public void connectionSuccess(Message message) { connected.set(true); }
@@ -155,14 +155,14 @@ public class TorP2PDuplexExample {
 			final int max = 50;
 			// Set ping-pong listeners.
 			MyListener listener1 = new MyListener("L1", client1, max, 15000);
-			client1.SetListener(listener1);
+			client1.setListener(listener1);
 			MyListener listener2 = new MyListener("L2", client2, max, 15000);
-			client2.SetListener(listener2);
+			client2.setListener(listener2);
 
 
 			final int shortTimeout = 15 * 1000;
 			// Send the initial message.
-			client2.SendMessage(m, shortTimeout);
+			client2.sendMessage(m, shortTimeout);
 
 			// Wait until the maximum number of PING-PONGs (or the timeout) is reached.
 			System.out.println("Sleeping.");
@@ -194,9 +194,9 @@ public class TorP2PDuplexExample {
 		// Done, exit.
 		System.out.println("Exiting clients.");
 		if (client1 != null)
-			client1.Exit();
+			client1.exit();
 		if (client2 != null)
-			client2.Exit();
+			client2.exit();
 	}
 
 }

@@ -104,8 +104,8 @@ public class ClientTest {
 	@After
 	public void tearDown() {
 		// Clean up the API objects.
-		if (client1 != null) client1.exit();
-		if (client2 != null) client2.exit();
+		if (client1 != null) client1.exit(true);
+		if (client2 != null) client2.exit(true);
 		// Stop the TorManagers.
 		manager1.stop();
 		manager2.stop();
