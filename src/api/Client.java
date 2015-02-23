@@ -3,6 +3,7 @@ package api;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.RandomAccessFile;
@@ -17,6 +18,7 @@ import java.util.logging.Logger;
 
 import receive.MessageReceiver;
 import utility.Constants;
+import utility.IntegerUtils;
 import callback.ConnectionListener;
 import callback.ReceiveListener;
 import net.freehaven.tor.control.TorControlConnection;
@@ -141,8 +143,8 @@ public class Client {
 
 		identifier = configuration.getDefaultIdentifier();
 
-		this.directory = directory != null ? directory : Constants.hiddenserviceprefix + receiver.getPort();
-		logger.log(Level.INFO, "Client object created.");
+		this.directory = directory != null ? Constants.hiddenserviceprefix + directory : Constants.hiddenserviceprefix + receiver.getPort();
+		logger.log(Level.INFO, "Client object created (port: " + receiver.getPort() + ").");
 	}
 
 
@@ -199,6 +201,7 @@ public class Client {
 		RandomAccessFile raf = null;
 		FileChannel channel = null;
 		FileLock lock = null;
+		FileOutputStream stream = null;
 
 		try {
 			// Block until a lock on the raw API lock file is available.
@@ -216,8 +219,15 @@ public class Client {
 			if (fresh && !create)
 				deleteHiddenService();
 
+			// Create the hidden service directory if necessary.
 			if (!dir.exists() && !dir.mkdir())
 				throw new IOException("Unable to create the hidden service directory!");
+
+			// Rewrite the port of the receiver in the port file of the hidden service directory.
+			final int port = receiver.getPort();
+			File portFile = new File(dir + File.separator + Constants.portfile);
+			stream = new FileOutputStream(portFile, false);
+			stream.write(IntegerUtils.intToByteArray(port));
 
 			// If the Tor hostname file does not exist in the Tor hidden service directory, create a hidden service with JTorCtl.
 			if (fresh || create) {
@@ -225,7 +235,7 @@ public class Client {
 				createHiddenService();
 			}
 
-			File hostname = new File(configuration.getHiddenServiceDirectory() + File.separator + directory + File.separator + Constants.hostname);
+			File hostname = new File(dir + File.separator + Constants.hostname);
 
 			// Read the content of the Tor hidden service hostname file.
 			identifier = readIdentifier(hostname);
@@ -242,6 +252,8 @@ public class Client {
 				channel.close();
 				raf.close();
 			}
+
+			if (stream != null) stream.close();
 		}
 	}
 
@@ -398,10 +410,16 @@ public class Client {
 			// Skip over any directories without the hidden service prefix.
 			String name = hiddenService.getName();
 			if (!name.startsWith(Constants.hiddenserviceprefix));
+			// Get the port file.
+			File portFile = new File(hiddenService + File.separator + Constants.portfile);
+			if (!portFile.exists()) continue;
 
-			// Parse the port number from the directory name.
-			String portString = name.substring(Constants.hiddenserviceprefix.length(), name.length());
-			int port = Integer.valueOf(portString).intValue();
+			// Read the port of the hidden service from the port file.
+			FileInputStream stream = new FileInputStream(portFile);
+			final byte bytes[] = new byte[4];
+			stream.read(bytes);
+			stream.close();
+			final int port = IntegerUtils.byteArrayToInt(bytes);
 
 			// Add the hidden service property to the configuration properties so far.
 			properties.add(Constants.hsdirkeyword + " " + hiddenService.getAbsolutePath());
@@ -427,15 +445,18 @@ public class Client {
 		File hostname = new File(configuration.getHiddenServiceDirectory() + File.separator + directory + File.separator + Constants.hostname);
 		File hiddenservice = new File(configuration.getHiddenServiceDirectory() + File.separator + directory);
 		File privatekey = new File(configuration.getHiddenServiceDirectory() + File.separator + directory + File.separator + Constants.prkey);
+		File port = new File(configuration.getHiddenServiceDirectory() + File.separator + directory + File.separator + Constants.portfile);
 
 		boolean hostnameDeleted = hostname.delete();
 		logger.log(Level.INFO, "Deleted hostname file: " + (hostnameDeleted ? "yes" : "no"));
 		boolean prkeyDeleted = privatekey.delete();
 		logger.log(Level.INFO, "Deleted private key file: " + (prkeyDeleted ? "yes" : "no"));
+		boolean portDeleted = port.delete();
+		logger.log(Level.INFO, "Deleted port file: " + (portDeleted ? "yes" : "no"));
 		boolean directoryDeleted = hiddenservice.delete();
 		logger.log(Level.INFO, "Deleted hidden service directory: " + (directoryDeleted ? "yes" : "no"));
 
-		if (!directoryDeleted || !hostnameDeleted || !prkeyDeleted)
+		if (!directoryDeleted || !hostnameDeleted || !prkeyDeleted || !portDeleted)
 			throw new IOException("Client failed to delete hidden service directory: " + hiddenservice.getAbsolutePath());
 	}
 

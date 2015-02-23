@@ -73,6 +73,8 @@ public class Constants {
 	public static final String timestampformat = "yyMMddHHmmss";
 	/** The name of the hidden service root directory. */
 	public static final String hiddenservicedir = "hidden_services";
+	/** The name of the file in which the port of a hidden service is held. */
+	public static final String portfile = "port";
 	/** The prefix of the hidden service directories. */
 	public static final String hiddenserviceprefix = "hs";
 	/** The name of the TorP2P home environment variable. */
