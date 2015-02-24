@@ -213,7 +213,7 @@ public class Client {
 			logger.log(Level.INFO, "Client acquired the lock on raw API lock file.");
 
 			File dir = new File(configuration.getHiddenServiceDirectory() + File.separator + directory);
-			final boolean create = !dir.exists();
+			final boolean create = !dir.exists() || !new File(dir + File.separator + Constants.hostname).exists() || !new File(dir + File.separator + Constants.prkey).exists();
 
 			// If a fresh identifier is requested, delete the current hidden service directory.
 			if (fresh && !create)
