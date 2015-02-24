@@ -173,7 +173,7 @@ public class TorP2P {
 
 		// Set the control ports.
 		config.setTorConfiguration(workingDirectory, controlPort, socksPort);
-		// Create the client with the read configuration and set its receiving listener.
+		// Create the client with the read configuration and set its hidden service directory if given.
 		reuse = directory != null;
 		client = new Client(config, directory);
 		// Create and start the manager with the given TTL.

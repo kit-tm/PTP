@@ -88,6 +88,8 @@ public class ReceiveThread extends Worker<Origin> {
 					}
 				} catch (IOException e) {
 					// Socket was closed. Do nothing.
+				} catch (NullPointerException e) {
+					// Socket was closed. Do nothing.
 				}
 			}
 
@@ -148,11 +150,10 @@ public class ReceiveThread extends Worker<Origin> {
 	 */
 	private synchronized Vector<Origin> getSockets() {
 		// Get the open sockets from the sockets set.
-		Vector<Origin> open = new Vector<Origin>();
-		open.setSize(origins.size());
+		Vector<Origin> open = new Vector<Origin>(origins.size());
 		for (int i = 0; i < origins.size(); ++i) {
-			if (!origins.get(i).socket.isClosed())
-				open.set(i, origins.get(i));
+			if (origins.get(i).socket != null && !origins.get(i).socket.isClosed())
+				open.add(origins.get(i));
 		}
 
 		// Update the sockets set.

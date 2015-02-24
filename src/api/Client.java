@@ -103,6 +103,8 @@ public class Client {
 	private String identifier = null;
 	/** The hidden service sub-directory of this client. */
 	private String directory = null;
+	/** A switch which states whether the Tor hidden service configuration was set so far. */
+	private boolean first = true;
 
 
 	/**
@@ -127,9 +129,41 @@ public class Client {
 	 */
 	public Client(Configuration configuration, String directory) throws IOException {
 		this.configuration = configuration;
-		// Tell the JVM we want any available port.
-		receiver = new MessageReceiver(getConnectionListener(), Constants.anyport, configuration.getReceiverThreadsNumber(), configuration.getSocketReceivePoll());
+
+		// Determine the local port to listen on.
+		int port = Constants.anyport;
+
+		// If the client must use an already existing hidden service we must also use its local port.
+		if (directory != null) {
+			// Set the hidden service directory to use.
+			this.directory = Constants.hiddenserviceprefix + directory;
+			File dir = new File(configuration.getHiddenServiceDirectory() + File.separator + this.directory);
+			File portfile = new File(dir + File.separator + Constants.portfile);
+			logger.log(Level.INFO, "Client set to reuse service: " + directory + " (" + (dir.exists() ? "exists" : "non existant") + ")");
+
+			// If the hidden service directory exists, but not the port file, then we will have to remake the hidden service with the same identifier and another port.
+			if (dir.exists() && !portfile.exists()) {
+				logger.log(Level.INFO, "Client could not find port file: " + portfile.getPath());
+				final boolean deleted = dir.delete();
+				if (!deleted) throw new IOException("Could not delete hidden service directory with missing port file!");
+			}
+
+			// If the hidden service directory and its port file both exist, then we have to listen on the same local port.
+			if (dir.exists()) {
+				FileInputStream stream = new FileInputStream(portfile);
+				byte bytes[] = new byte[4];
+				stream.read(bytes);
+				stream.close();
+				port = IntegerUtils.byteArrayToInt(bytes);
+				logger.log(Level.INFO, "Client will reusing service and will listen on: " + port);
+			}
+		}
+
+		receiver = new MessageReceiver(getConnectionListener(), port, configuration.getReceiverThreadsNumber(), configuration.getSocketReceivePoll());
 		receiver.start();
+
+		// If no hidden service directory is specified, use the / make a hidden service directory for the port we are listening on.
+		if (directory == null) this.directory = Constants.hiddenserviceprefix + receiver.getPort();
 
 		// Check if the hidden service directory exists, if not create it.
 		File hiddenServiceDirectory = new File(configuration.getHiddenServiceDirectory());
@@ -141,9 +175,9 @@ public class Client {
 		if (!lockFile.exists() && !lockFile.createNewFile())
 			throw new IOException("Could not create raw API lock file!");
 
+		// Set a default identifier.
 		identifier = configuration.getDefaultIdentifier();
 
-		this.directory = directory != null ? Constants.hiddenserviceprefix + directory : Constants.hiddenserviceprefix + receiver.getPort();
 		logger.log(Level.INFO, "Client object created (port: " + receiver.getPort() + ").");
 	}
 
@@ -213,7 +247,9 @@ public class Client {
 			logger.log(Level.INFO, "Client acquired the lock on raw API lock file.");
 
 			File dir = new File(configuration.getHiddenServiceDirectory() + File.separator + directory);
-			final boolean create = !dir.exists() || !new File(dir + File.separator + Constants.hostname).exists() || !new File(dir + File.separator + Constants.prkey).exists();
+			File portfile = new File(dir + File.separator + Constants.portfile);
+			File hostname = new File(dir + File.separator + Constants.hostname);
+			boolean create = !dir.exists() || !hostname.exists() || !new File(dir + File.separator + Constants.prkey).exists() || !portfile.exists();
 
 			// If a fresh identifier is requested, delete the current hidden service directory.
 			if (fresh && !create)
@@ -223,19 +259,18 @@ public class Client {
 			if (!dir.exists() && !dir.mkdir())
 				throw new IOException("Unable to create the hidden service directory!");
 
-			// Rewrite the port of the receiver in the port file of the hidden service directory.
-			final int port = receiver.getPort();
-			File portFile = new File(dir + File.separator + Constants.portfile);
-			stream = new FileOutputStream(portFile, false);
-			stream.write(IntegerUtils.intToByteArray(port));
-
 			// If the Tor hostname file does not exist in the Tor hidden service directory, create a hidden service with JTorCtl.
-			if (fresh || create) {
+			if (fresh || create || first) {
+				// Write the port of the receiver to the port file of the hidden service directory.
+				logger.log(Level.INFO, "Writing to port file.");
+				final int port = receiver.getPort();
+				stream = new FileOutputStream(portfile, false);
+				stream.write(IntegerUtils.intToByteArray(port));
+
 				logger.log(Level.INFO, "Creating hidden service.");
 				createHiddenService();
+				first = true;
 			}
-
-			File hostname = new File(dir + File.separator + Constants.hostname);
 
 			// Read the content of the Tor hidden service hostname file.
 			identifier = readIdentifier(hostname);
