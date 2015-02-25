@@ -130,37 +130,12 @@ public class Client {
 	public Client(Configuration configuration, String directory) throws IOException {
 		this.configuration = configuration;
 
-		// Determine the local port to listen on.
-		int port = Constants.anyport;
-
-		// If the client must use an already existing hidden service we must also use its local port.
-		if (directory != null) {
-			// Set the hidden service directory to use.
-			this.directory = Constants.hiddenserviceprefix + directory;
-			File dir = new File(configuration.getHiddenServiceDirectory() + File.separator + this.directory);
-			File portfile = new File(dir + File.separator + Constants.portfile);
-			logger.log(Level.INFO, "Client set to reuse service: " + directory + " (" + (dir.exists() ? "exists" : "non existant") + ")");
-
-			// If the hidden service directory exists, but not the port file, then we will have to remake the hidden service with the same identifier and another port.
-			if (dir.exists() && !portfile.exists()) {
-				logger.log(Level.INFO, "Client could not find port file: " + portfile.getPath());
-				final boolean deleted = dir.delete();
-				if (!deleted) throw new IOException("Could not delete hidden service directory with missing port file!");
-			}
-
-			// If the hidden service directory and its port file both exist, then we have to listen on the same local port.
-			if (dir.exists()) {
-				FileInputStream stream = new FileInputStream(portfile);
-				byte bytes[] = new byte[4];
-				stream.read(bytes);
-				stream.close();
-				port = IntegerUtils.byteArrayToInt(bytes);
-				logger.log(Level.INFO, "Client will reusing service and will listen on: " + port);
-			}
-		}
-
-		receiver = new MessageReceiver(getConnectionListener(), port, configuration.getReceiverThreadsNumber(), configuration.getSocketReceivePoll());
+		// Start the message receiver.
+		receiver = new MessageReceiver(getConnectionListener(), Constants.anyport, configuration.getReceiverThreadsNumber(), configuration.getSocketReceivePoll());
 		receiver.start();
+
+		// Set the hidden service directory.
+		this.directory = directory == null ? Constants.hiddenserviceprefix + receiver.getPort() : Constants.hiddenserviceprefix + directory;
 
 		// If no hidden service directory is specified, use the / make a hidden service directory for the port we are listening on.
 		if (directory == null) this.directory = Constants.hiddenserviceprefix + receiver.getPort();
