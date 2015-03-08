@@ -110,6 +110,8 @@ public class TorP2PDuplexExample {
 			client1 = new TorP2P();
 			client2 = new TorP2P();
 
+			client1.createHiddenService();
+
 	        // Set the timer start for the hidden service creation measurement.
 			long start = System.currentTimeMillis();
 			final Identifier identifier1 = client1.getIdentifier();

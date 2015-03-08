@@ -185,17 +185,26 @@ public class TorP2P {
 
 
 	/**
-	 * Returns the currently used hidden service identifier. Will create a hidden service if none is currently used.
+	 * Returns the currently used hidden service identifier.
 	 *
 	 * @return The hidden service identifier of the used/created hidden service.
+	 *
+	 * @see Client
+	 */
+	public Identifier getIdentifier() {
+		return current;
+	}
+
+	/**
+	 * Creates a hidden service, if possible reuses the hidden service indicated at API wrapper creation.
+	 *
+	 * @return The hidden service identifier of the created service.
 	 * @throws IOException Propagates any IOException the API received while creating the hidden service.
 	 *
 	 * @see Client
 	 */
-	public Identifier getIdentifier() throws IOException {
-		// Create a fresh hidden service identifier.
+	public void reuseHiddenService() throws IOException {
 		if (current == null) current = new Identifier(client.identifier(!reuse));
-		return current;
 	}
 
 	/**

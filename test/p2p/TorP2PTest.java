@@ -78,17 +78,13 @@ public class TorP2PTest {
 		Identifier id2 = null;
 
 		try {
-			id1 = client1.getIdentifier();
+			client1.createHiddenService();
 		} catch (IOException e) {
 			fail("Caught an IOException while creating the hidden service identifier: " + e.getMessage());
 		}
-		assertNotNull(id1);
 
-		try {
-			id2 = client1.getIdentifier();
-		} catch (IOException e) {
-			fail("Caught an IOException while creating the hidden service identifier: " + e.getMessage());
-		}
+		id1 = client1.getIdentifier();
+		id2 = client1.getIdentifier();
 		assertEquals(id1, id2);
 	}
 
@@ -192,10 +188,12 @@ public class TorP2PTest {
 		// Create the hidden service identifier.
 		Identifier identifier = null;
 		try {
-			identifier = client1.getIdentifier();
+			client1.createHiddenService();
 		} catch (IOException e) {
 			fail("Caught an IOException while creating the hidden service identifier: " + e.getMessage());
 		}
+
+		identifier = client1.getIdentifier();
 
 		// Send the message.
 		final AtomicBoolean sendSuccess = new AtomicBoolean(false);
@@ -249,18 +247,15 @@ public class TorP2PTest {
 		final int max = 25;
 
         // Get the hidden service identifiers of the two API wrapper objects.
-
-		Identifier i1 = null;
-		Identifier i2 = null;
 		try {
-			i1 = client1.getIdentifier();
-			i2 = client2.getIdentifier();
+			client1.createHiddenService();
+			client2.createHiddenService();
 		} catch (IOException e) {
 			fail("Caught an IOException while creating the identifiers: " + e.getMessage());
 		}
 		// The listeners need final values.
-		final Identifier identifier1 = i1;
-		final Identifier identifier2 = i2;
+		final Identifier identifier1 = client1.getIdentifier();
+		final Identifier identifier2 = client2.getIdentifier();
 
 		// An atomic counter used to check the number of received messages.
 		final AtomicInteger counter = new AtomicInteger(0);

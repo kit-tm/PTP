@@ -134,6 +134,8 @@ public class TorP2PPingPongExample {
 			// Create an API wrapper object.
 			client = new TorP2P();
 
+			client.createHiddenService();
+
 	        // Set the timer start for the hidden service creation measurement.
 			long start = System.currentTimeMillis();
 			final Identifier identifier = client.getIdentifier();
