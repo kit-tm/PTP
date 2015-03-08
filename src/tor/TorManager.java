@@ -406,7 +406,6 @@ public class TorManager extends Suspendable {
 				logger.log(Level.INFO, "Tor manager ports thread sleeping.");
 				while (!portsFile.exists() && running.get()) {
 					try {
-						// TODO: parameter for this
 						Thread.sleep(2 * 1000);
 					} catch (InterruptedException e) {
 						// Waiting was interrupted, do nothing.

@@ -11,13 +11,19 @@ import utility.Constants;
 
 
 /**
- * Holds the P2P over Tor configuration. This includes: TODO: update
- * 		* directory of the Tor hidden service
- * 		* port of the Tor hidden service
- * 		* Tor control port
- * 		* Tor socks proxy port
- * 		* authentication bytes for the Tor control protocol
- * 		* timeout for connections to hidden service identifiers
+ * Holds the P2P over Tor configuration. This includes:
+ *
+ *		* hidden service port number
+ *		* interval at which a connection to a hidden service identifier is attempted
+ *		* timeout for socket connections
+ *		* socket poll for available data interval
+ *		* connection TTL
+ *		* interval at which socket remaining TTL is checked
+ *		* Tor bootstrapping timeout
+ *		* number of threads to use for message dispatching
+ *		* number of threads to use for message receiving
+ *		* default hidden service identifier
+ *		* logger configuration file
  *
  * @author Simeon Andreev
  *

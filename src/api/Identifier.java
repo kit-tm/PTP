@@ -34,12 +34,9 @@ public class Identifier {
 	 */
 	@Override
 	public boolean equals(Object obj) {
+		if (obj == null || !(obj instanceof Identifier)) return false;
 		if (this == obj) return true;
-
-		// Compare the undelying addresses.
-		if (obj instanceof Identifier) return address.equals(((Identifier) obj).address);
-
-		return false;
+		return address.equals(((Identifier) obj).address);
 	}
 
 	/**

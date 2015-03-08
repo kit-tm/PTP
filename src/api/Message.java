@@ -42,4 +42,16 @@ public class Message {
 		this.identifier = identifier;
 	}
 
+
+	/**
+	 * @see Object
+	 */
+	@Override
+	public boolean equals(Object obj) {
+		if (obj == null || !(obj instanceof Message)) return false;
+		if (obj == this) return true;
+		Message msg = (Message)obj;
+		return id == msg.id && content.equals(msg.content) && identifier.equals(msg.identifier);
+	}
+
 }

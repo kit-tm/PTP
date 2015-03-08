@@ -154,7 +154,6 @@ public class TorP2PTest {
 					fail("Received send success notification.");
 				if (!sendFail.get())
 					fail("No failure notification received");
-				//assertEquals(returnedMessage.content, m.content); // FIXME: how can I compare messages (content, ID, everything?)
 				if (!returnedMessage.content.equals(testString))
 					fail("Notifier message " + returnedMessage.content + " does not equal sent message " + testString);
 			}

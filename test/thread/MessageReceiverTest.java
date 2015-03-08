@@ -24,7 +24,6 @@ import utility.Constants;
 import utility.RNG;
 
 
-// TODO: javadoc, comments
 /**
  * This class offers JUnit testing for the MessageReceiver class.
  *

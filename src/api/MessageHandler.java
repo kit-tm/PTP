@@ -17,9 +17,6 @@ import utility.Constants;
 public class MessageHandler {
 
 
-	// TODO: initial origin message sending/handling
-
-
 	/**
 	 * Removes the meta information from a packet bulk and extracts the messages in the bulk.
 	 *
