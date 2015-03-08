@@ -45,7 +45,7 @@ public class TorP2PSendExample {
 				public void sendSuccess(Message message) { counter.incrementAndGet(); }
 
 				@Override
-				public void connectionTimeout(Message message) { counter.incrementAndGet(); }
+				public void sendFail(Message message, FailState state) { counter.incrementAndGet(); }
 
 			};
 

@@ -4,11 +4,11 @@ import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import adapters.SendListenerAdapter;
 import api.Identifier;
 import api.Message;
 import api.TorP2P;
 import callback.ReceiveListener;
-import callback.SendListener;
 
 /**
  * Duplex connection usage example application for the TorP2P API.
@@ -123,19 +123,10 @@ public class TorP2PDuplexExample {
 			final long timeout = 120 * 1000;
 			final Message m = new Message("Hello.", identifier1);
 
-			client2.sendMessage(m, timeout, new SendListener() {
+			client2.sendMessage(m, timeout, new SendListenerAdapter() {
 
 				@Override
-				public void connectionSuccess(Message message) { connected.set(true); }
-
-				@Override
-				public void connectionTimeout(Message message) {}
-
-				@Override
-				public void sendSuccess(Message message) {}
-
-				@Override
-				public void sendFail(Message message) {}
+				public void sendSuccess(Message message) { connected.set(true); }
 
 			});
 

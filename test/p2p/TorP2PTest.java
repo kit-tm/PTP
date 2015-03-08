@@ -125,13 +125,7 @@ public class TorP2PTest {
 					public void sendSuccess(Message message) { sendSuccess.set(true); }
 
 					@Override
-					public void connectionTimeout(Message message) {
-						sendFail.set(true);
-						returnedMessage = message;
-					}
-
-					@Override
-					public void sendFail(Message message) {
+					public void sendFail(Message message, FailState state) {
 						sendFail.set(true);
 						returnedMessage = message;
 					}

@@ -340,7 +340,7 @@ public class TorP2P {
 				// If the timeout is reached return with the corresponding response.
 				if (elapsed >= timeout) {
 					logger.log(Level.INFO, "Timeout on message expired: " + message.content);
-					listener.connectionTimeout(message);
+					listener.sendFail(message, SendListener.FailState.CONNECTION_TIMEOUT);
 					return true;
 				}
 
@@ -349,7 +349,6 @@ public class TorP2P {
 				// If the connection to the destination hidden service was successful, add the destination identifier to the managed sockets.
 				if (connect == Client.ConnectResponse.SUCCESS) {
 					manager.put(message.identifier);
-					listener.connectionSuccess(message);
 				// Otherwise, check if the connection was not successful.
 				} else if (connect != Client.ConnectResponse.OPEN)
 					return false;
@@ -365,7 +364,7 @@ public class TorP2P {
 				}
 
 				// Otherwise, indicate that the message was not sent successfully.
-				listener.sendFail(message);
+				listener.sendFail(message, SendListener.FailState.SEND_TIMEOUT);
 				return true;
 			}
 		};

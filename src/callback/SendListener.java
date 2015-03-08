@@ -13,18 +13,18 @@ public interface SendListener {
 
 
 	/**
-	 * Indicates that a connection was established.
+	 * A state of sending failure enumeration.
+	 * 		* CONNECTION_TIMEOUT indicates a connection timeout.
+	 * 		* SEND_TIMEOUT  indicates a sending timeout, although a connection was established.
 	 *
-	 * @param message The message with which the sending was initiated.
+	 * @author Simeon Andreev
+	 *
 	 */
-	public void connectionSuccess(Message message);
+	public enum FailState {
+		CONNECTION_TIMEOUT,
+		SEND_TIMEOUT
+	}
 
-	/**
-	 * Indicates that a connection was not established in the given timeout.
-	 *
-	 * @param message The message with which the sending was initiated.
-	 */
-	public void connectionTimeout(Message message);
 
 	/**
 	 * Indicates that the message was sent.
@@ -38,6 +38,6 @@ public interface SendListener {
 	 *
 	 * @param message The message with which the sending was initiated.
 	 */
-	public void sendFail(Message message);
+	public void sendFail(Message message, FailState state);
 
 }
