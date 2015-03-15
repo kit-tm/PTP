@@ -308,7 +308,7 @@ public class Client {
 		} catch (IOException e) {
 			// IOException when getting socket output stream or sending bytes via the stream.
 			logger.log(Level.WARNING, "Received an IOException while sending a message to identifier = " + destination + ": " + e.getMessage());
-			// If something went wrong with the open connection, remove it from the open connections.
+			// If something went wrong with the open connection, remove it from the open connections. E.g. this is a backward channel to some client and the client exited.
 			sockets.remove(destination);
 			return SendResponse.FAIL;
 		}
