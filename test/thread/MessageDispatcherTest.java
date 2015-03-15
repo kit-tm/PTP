@@ -38,6 +38,8 @@ public class MessageDispatcherTest {
 	private static final int maximumMessageLength = 20;
 	/** The number of test messages to dispatch. */
 	private static final int n = 25;
+	/** The time to wait (in milliseconds) between message dispatches. */
+	private static long dispatchInterval = 250;
 
 
 	/**
@@ -94,7 +96,7 @@ public class MessageDispatcherTest {
 	@Before
 	public void setUp() {
 		client = new Client();
-		dispatcher = new MessageDispatcher(client, threads);
+		dispatcher = new MessageDispatcher(client, threads, dispatchInterval);
 		random = new RNG();
 
 		// Wait for the dispatcher thread to enter its execution loop.

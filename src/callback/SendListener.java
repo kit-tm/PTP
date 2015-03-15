@@ -14,8 +14,8 @@ public interface SendListener {
 
 	/**
 	 * A state of sending failure enumeration.
-	 * 		* CONNECTION_TIMEOUT indicates a connection timeout.
-	 * 		* SEND_TIMEOUT  indicates a sending timeout, although a connection was established.
+	 * 		* CONNECTION_TIMEOUT 		indicates a connection timeout.
+	 * 		* SEND_TIMEOUT  			indicates a sending timeout, although a connection was established.
 	 *
 	 * @author Simeon Andreev
 	 *

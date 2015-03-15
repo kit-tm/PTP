@@ -54,15 +54,20 @@ public class DispatchThread extends Worker<Element> {
 	private AtomicInteger counter = new AtomicInteger(0);
 	/** The current load of this thread. */
 	private long load = 0;
+	/** The time to wait (in milliseconds) between message dispatches. */
+	private long dispatchInterval;
 
 	/**
 	 * Constructor method.
 	 *
 	 * @param dispatchListener The listener that should be notified when a message is to be sent.
+	 * @param doneListener The listener that should be notified when a message queue for a destination goes empty.
+	 * @param dispatchInterval The time to wait (in milliseconds) between message dispatches.
 	 */
-	public DispatchThread(DispatchListener dispatchListener, Listener doneListener) {
+	public DispatchThread(DispatchListener dispatchListener, Listener doneListener, long dispatchInterval) {
 		this.dispatchListener = dispatchListener;
 		this.doneListener = doneListener;
+		this.dispatchInterval = dispatchInterval;
 	}
 
 
@@ -118,11 +123,26 @@ public class DispatchThread extends Worker<Element> {
 
 			// Fetch the first messages of the queue.
 			Element element = current.getFirst();
+			// Note the start of the dispatch.
+			final long start = System.currentTimeMillis();
 			// Notify the listener of the message dispatch.
 			final boolean sent = dispatchListener.dispatch(element.message, element.listener, element.timeout, System.currentTimeMillis() - element.timestamp);
 
 			// If the listener does not allow to remove the message from the queue, continue.
-			if (!sent) continue;
+			if (!sent) {
+				// Wait before trying the next dispatch.
+				long elapsed = System.currentTimeMillis() - start;
+				while (elapsed < dispatchInterval) {
+					try {
+						Thread.sleep(dispatchInterval - elapsed);
+						elapsed = System.currentTimeMillis() - start;
+					} catch (InterruptedException e) {
+						// Thread sleeping was interrupted. Do nothing.
+					}
+				}
+
+				continue;
+			}
 
 			// Update the thread load.
 			load -= element.message.content.length();

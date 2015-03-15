@@ -130,7 +130,7 @@ public class TorP2P {
 		manager = new TTLManager(getTTLManagerListener(), config.getTTLPoll());
 		manager.start();
 		// Create and start the message dispatcher.
-		dispatcher = new MessageDispatcher(getMessageDispatcherListener(), config.getDispatcherThreadsNumber());
+		dispatcher = new MessageDispatcher(getMessageDispatcherListener(), config.getDispatcherThreadsNumber(), config.getSocketTimeout());
 	}
 
 	/**
@@ -180,7 +180,7 @@ public class TorP2P {
 		manager = new TTLManager(getTTLManagerListener(), config.getTTLPoll());
 		manager.start();
 		// Create and start the message dispatcher.
-		dispatcher = new MessageDispatcher(getMessageDispatcherListener(), config.getDispatcherThreadsNumber());
+		dispatcher = new MessageDispatcher(getMessageDispatcherListener(), config.getDispatcherThreadsNumber(), config.getSocketTimeout());
 	}
 
 
@@ -349,7 +349,7 @@ public class TorP2P {
 				// If the connection to the destination hidden service was successful, add the destination identifier to the managed sockets.
 				if (connect == Client.ConnectResponse.SUCCESS) {
 					manager.put(message.identifier);
-				// Otherwise, check if the connection was not successful.
+				// Otherwise, if the connection was not successful indicate that sending should be retried.
 				} else if (connect != Client.ConnectResponse.OPEN)
 					return false;
 

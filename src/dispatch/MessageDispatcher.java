@@ -42,11 +42,12 @@ public class MessageDispatcher {
 	 *
 	 * @param dispatchListener The listener to notify on message dispatch.
 	 * @param threads The number of threads this dispatcher may use.
+	 * @param dispatchInterval The time to wait (in milliseconds) between message dispatches within a dispatcher thread.
 	 */
-	public MessageDispatcher(DispatchListener dispatchListener, int threads) {
+	public MessageDispatcher(DispatchListener dispatchListener, int threads, long dispatchInterval) {
 		// Create the thread pool.
 		DispatchThread workers[] = new DispatchThread[threads];
-		for (int i = 0; i < threads; ++i) workers[i] = new DispatchThread(dispatchListener, doneListener);
+		for (int i = 0; i < threads; ++i) workers[i] = new DispatchThread(dispatchListener, doneListener, dispatchInterval);
 		threadPool = new ThreadPool<Element, DispatchThread>(workers);
 
 		logger.log(Level.INFO, "Message dispatcher object created with threads number: " + threads);

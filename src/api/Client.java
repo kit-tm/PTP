@@ -115,8 +115,7 @@ public class Client {
 	 *
 	 * @see Configuration
 	 */
-	public Client(Configuration configuration) throws IOException { this(configuration, null); }
-
+	public Client(Configuration configuration) throws IOException { this(configuration, Constants.anyport, null); }
 
 	/**
 	 * Constructor method.
@@ -127,11 +126,23 @@ public class Client {
 	 *
 	 * @see Configuration
 	 */
-	public Client(Configuration configuration, String directory) throws IOException {
+	public Client(Configuration configuration, String directory) throws IOException { this(configuration, Constants.anyport, directory); }
+
+	/**
+	 * Constructor method.
+	 *
+	 * @param configuration The parameters of this client.
+	 * @param port The port on which the local hidden service should run.
+	 * @param directory The name of the hidden service directory this client will use. If null, the client will use the server socket port for the name.
+	 * @throws IOException Throws an IOException if unable to open a server socket on any port.
+	 *
+	 * @see Configuration
+	 */
+	public Client(Configuration configuration, int port, String directory) throws IOException {
 		this.configuration = configuration;
 
 		// Start the message receiver.
-		receiver = new MessageReceiver(getConnectionListener(), Constants.anyport, configuration.getReceiverThreadsNumber(), configuration.getSocketReceivePoll());
+		receiver = new MessageReceiver(getConnectionListener(), port, configuration.getReceiverThreadsNumber(), configuration.getSocketReceivePoll());
 		receiver.start();
 
 		// Set the hidden service directory.
