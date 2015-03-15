@@ -65,6 +65,8 @@ public class Constants {
 	public static final char messagelengthdelimiter = '.';
 	/** A flag to indicate a message origin. */
 	public static final char messageoriginflag = 'o';
+	/** A flag to indicate a disconnection message. */
+	public static final char messagedisconnectflag = 'd';
 	/** A flag to indicate a standard message. */
 	public static final char messagestandardflag = 's';
 	/** The path to and the name of the configuration file. */

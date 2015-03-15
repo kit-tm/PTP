@@ -331,8 +331,15 @@ public class Client {
 
 		// Check if a socket is already open to the given identifier.
 		if (sockets.containsKey(destination)) {
-			logger.log(Level.INFO, "A socket is already open for the given identifier.");
-			return ConnectResponse.OPEN;
+			Socket socket = sockets.get(destination);
+
+			if (socket.isClosed()) {
+				logger.log(Level.INFO, "Removing closed socket from the open connections list.");
+				sockets.remove(destination);
+			} else {
+				logger.log(Level.INFO, "A socket is already open for the given identifier.");
+				return ConnectResponse.OPEN;
+			}
 		}
 
 		ConnectResponse response = ConnectResponse.SUCCESS;

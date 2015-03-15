@@ -308,6 +308,7 @@ public class TorP2P {
 			 */
 			@Override
 			public void expired(Identifier identifier) throws IOException {
+				client.send(identifier.getTorAddress(), MessageHandler.wrapRaw("", Constants.messagedisconnectflag));
 				client.disconnect(identifier.getTorAddress());
 			}
 
