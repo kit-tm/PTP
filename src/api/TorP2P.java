@@ -146,7 +146,7 @@ public class TorP2P {
 	 * @see Configuration
 	 */
 	public TorP2P(String workingDirectory, int controlPort, int socksPort) throws IllegalArgumentException, IOException {
-		this(workingDirectory, controlPort, socksPort, null);
+		this(workingDirectory, controlPort, socksPort, Constants.anyport, null);
 	}
 
 	/**
@@ -155,6 +155,7 @@ public class TorP2P {
 	 * @param workingDirectory The working directory of the Tor process.
 	 * @param controlPort The control port of the Tor process.
 	 * @param socksPort The SOCKS port of the Tor process.
+	 * @param socksPort The port of the local hidden service.
 	 * @param directory The name of the hidden service to reuse. May be null to indicate no specific reuse request.
 	 * @throws IllegalArgumentException Propagates any IllegalArgumentException thrown by the reading of the configuration.
 	 * @throws IOException Propagates any IOException thrown by the construction of the raw API, the configuration, or the Tor process manager.
@@ -162,7 +163,7 @@ public class TorP2P {
 	 * @see Client
 	 * @see Configuration
 	 */
-	public TorP2P(String workingDirectory, int controlPort, int socksPort, String directory) throws IllegalArgumentException, IOException {
+	public TorP2P(String workingDirectory, int controlPort, int socksPort, int localPort, String directory) throws IllegalArgumentException, IOException {
 		// Read the configuration.
 		config = new Configuration(workingDirectory + "/" + Constants.configfile);
 		// Create the logger after the configuration sets the logger properties file.
@@ -175,7 +176,7 @@ public class TorP2P {
 		config.setTorConfiguration(workingDirectory, controlPort, socksPort);
 		// Create the client with the read configuration and set its hidden service directory if given.
 		reuse = directory != null;
-		client = new Client(config, directory);
+		client = new Client(config, localPort, directory);
 		// Create and start the manager with the given TTL.
 		manager = new TTLManager(getTTLManagerListener(), config.getTTLPoll());
 		manager.start();
