@@ -103,8 +103,6 @@ public class Client {
 	private String identifier = null;
 	/** The hidden service sub-directory of this client. */
 	private String directory = null;
-	/** A switch which states whether the Tor hidden service configuration was set so far. */
-	private boolean first = true;
 
 
 	/**
@@ -207,7 +205,6 @@ public class Client {
 		return ExitResponse.SUCCESS;
 	}
 
-
 	/**
 	 * Returns the local Tor hidden service identifier. Will create a hidden service if none is present by using JTorCtl.
 	 *
@@ -245,18 +242,15 @@ public class Client {
 			if (!dir.exists() && !dir.mkdir())
 				throw new IOException("Unable to create the hidden service directory!");
 
-			// If the Tor hostname file does not exist in the Tor hidden service directory, create a hidden service with JTorCtl.
-			if (fresh || create || first) {
-				// Write the port of the receiver to the port file of the hidden service directory.
-				logger.log(Level.INFO, "Writing to port file.");
-				final int port = receiver.getPort();
-				stream = new FileOutputStream(portfile, false);
-				stream.write(IntegerUtils.intToByteArray(port));
+			// Create a hidden service with JTorCtl.
+			// Write the port of the receiver to the port file of the hidden service directory.
+			logger.log(Level.INFO, "Writing to port file.");
+			final int port = receiver.getPort();
+			stream = new FileOutputStream(portfile, false);
+			stream.write(IntegerUtils.intToByteArray(port));
 
-				logger.log(Level.INFO, "Creating hidden service.");
-				createHiddenService();
-				first = true;
-			}
+			logger.log(Level.INFO, "Creating hidden service.");
+			createHiddenService();
 
 			// Read the content of the Tor hidden service hostname file.
 			identifier = readIdentifier(hostname);

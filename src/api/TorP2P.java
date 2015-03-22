@@ -186,6 +186,15 @@ public class TorP2P {
 
 
 	/**
+	 * Returns the currently used API configuration.
+	 *
+	 * @return The currently used API configuration.
+	 */
+	public Configuration getConfiguration() {
+		return config;
+	}
+
+	/**
 	 * Returns the currently used hidden service identifier.
 	 *
 	 * @return The hidden service identifier of the used/created hidden service.
@@ -199,13 +208,15 @@ public class TorP2P {
 	/**
 	 * Creates a hidden service, if possible reuses the hidden service indicated at API wrapper creation.
 	 *
+	 * @param renew A switch stating whether the Tor process should be contacted for the hidden service creation.
+	 * 				Set to true if the Tor server was restarted without closing the client.
 	 * @return The hidden service identifier of the created service.
 	 * @throws IOException Propagates any IOException the API received while creating the hidden service.
 	 *
 	 * @see Client
 	 */
-	public void reuseHiddenService() throws IOException {
-		if (current == null) current = new Identifier(client.identifier(!reuse));
+	public void reuseHiddenService(boolean renew) throws IOException {
+		if (renew || current == null) current = new Identifier(client.identifier(!reuse));
 	}
 
 	/**
