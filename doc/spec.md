@@ -1,5 +1,8 @@
 # Tor-based P2P Library Specification (early draft)
 
+**WARNING: this is heavily outdated!** Please refer to the examples,
+the JUnit test cases, javadoc and the sources themselves...
+
 ## 0. Scope
 
 This document describes the API and functionality of a Peer-to-Peer (P2P)
