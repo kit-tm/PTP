@@ -7,6 +7,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import edu.kit.tm.torp2p.Identifier;
 import edu.kit.tm.torp2p.Message;
+import edu.kit.tm.torp2p.ReceiveListener;
 import edu.kit.tm.torp2p.SendListener;
 import edu.kit.tm.torp2p.SendListenerAdapter;
 import edu.kit.tm.torp2p.TorP2P;
@@ -29,11 +30,23 @@ public class TorP2PSendExample {
 			// Create an API wrapper object.
 			System.out.println("Initializing API.");
 			client = new TorP2P();
+			
+			// Setup Identifier
+			client.createHiddenService();
+			System.out.println("Own identifier: " + client.getIdentifier().toString());
 
+	        // Setup ReceiveListener
+	        client.setListener(new ReceiveListener() {
+				@Override
+				public void receivedMessage(Message m) {
+					System.out.println("Received message: " + m.content);
+				}
+			});
+	        
 			// Create a reader for the console input.
 			BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 			// Ask for the destination hidden service identifier.
-	        System.out.print("Enter hidden service identifier:");
+	        System.out.print("Enter destination identifier: ");
 	        final String destinationAddress = br.readLine();
 	        final Identifier destination = new Identifier(destinationAddress);
 			final long timeout = 60 * 1000;
