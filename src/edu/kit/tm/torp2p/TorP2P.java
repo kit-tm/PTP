@@ -204,13 +204,23 @@ public class TorP2P {
 	public Identifier getIdentifier() {
 		return current;
 	}
+	
+	/**
+	 * Creates a hidden service, if possible reuses the hidden service indicated at API wrapper creation.
+	 *
+	 * @throws IOException Propagates any IOException the API received while creating the hidden service.
+	 *
+	 * @see Client
+	 */
+	public void reuseHiddenService() throws IOException {
+		reuseHiddenService(false);
+	}
 
 	/**
 	 * Creates a hidden service, if possible reuses the hidden service indicated at API wrapper creation.
 	 *
 	 * @param renew A switch stating whether the Tor process should be contacted for the hidden service creation.
 	 * 				Set to true if the Tor server was restarted without closing the client.
-	 * @return The hidden service identifier of the created service.
 	 * @throws IOException Propagates any IOException the API received while creating the hidden service.
 	 *
 	 * @see Client
@@ -222,7 +232,6 @@ public class TorP2P {
 	/**
 	 * Creates a fresh hidden service.
 	 *
-	 * @return The hidden service identifier of the created service.
 	 * @throws IOException Propagates any IOException the API received while creating the hidden service.
 	 *
 	 * @see Client
