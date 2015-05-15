@@ -145,7 +145,7 @@ public class TorManager extends Suspendable {
 					try {
 						logger.log(Level.INFO, "Tor manager attempting to connect to the Tor process.");
 						Socket s = new Socket(Constants.localhost, torControlPort);
-						TorControlConnection conn = TorControlConnection.getConnection(s);
+						TorControlConnection conn = new TorControlConnection(s);
 						conn.authenticate(new byte[0]);
 					} catch (IOException e) {
 						logger.log(Level.INFO, "Tor manager could not connect to the Tor process, the file lock counter is broken.");
@@ -368,7 +368,7 @@ public class TorManager extends Suspendable {
 					logger.log(Level.INFO, "Using control port: " + torControlPort);
 					Socket s = new Socket(Constants.localhost, torControlPort);
 					logger.log(Level.INFO, "Tor manager attempting to shutdown Tor process.");
-					TorControlConnection conn = TorControlConnection.getConnection(s);
+					TorControlConnection conn = new TorControlConnection(s);
 					conn.authenticate(new byte[0]);
 					conn.shutdownTor(Constants.shutdownsignal);
 					logger.log(Level.INFO, "Tor manager sent shutdown signal.");

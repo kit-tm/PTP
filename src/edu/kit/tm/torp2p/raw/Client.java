@@ -417,7 +417,7 @@ public class Client {
 		// Connect to the Tor control port.
 		Socket s = new Socket(Constants.localhost, configuration.getTorControlPort());
 		logger.log(Level.INFO, "Fetching JTorCtl connection.");
-		TorControlConnection conn = TorControlConnection.getConnection(s);
+		TorControlConnection conn = new TorControlConnection(s);
 		logger.log(Level.INFO, "Authenticating the connection.");
 		// Authenticate the connection.
 		conn.authenticate(configuration.getAuthenticationBytes());

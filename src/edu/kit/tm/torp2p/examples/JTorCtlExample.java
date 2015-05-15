@@ -17,7 +17,7 @@ public class JTorCtlExample {
 	public static void main(String[] args) {
 		try {
 			Socket s = new Socket("127.0.0.1", 9051);
-			TorControlConnection conn = TorControlConnection.getConnection(s);
+			TorControlConnection conn = new TorControlConnection(s);
 			conn.authenticate(new byte[0]);
 
 			conn.setConf(Arrays.asList(new String[]{

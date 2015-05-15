@@ -157,7 +157,7 @@ public class TorManagerTest {
 	public void testControlport() {
 		try {
 			Socket s = new Socket(localhost, readyManager.controlport());
-			TorControlConnection conn = TorControlConnection.getConnection(s);
+			TorControlConnection conn = new TorControlConnection(s);
 			conn.authenticate(new byte[]{});
 		} catch (IOException e) {
 			fail("Caught an IOException while connecting to Tors control port: " + e.getMessage());

@@ -35,7 +35,7 @@ public class TorProcessExample {
 		}
 
 		Socket s = new Socket("127.0.0.1", tor.controlport());
-		TorControlConnection conn = TorControlConnection.getConnection(s);
+		TorControlConnection conn = new TorControlConnection(s);
 		conn.authenticate(new byte[0]);
 		System.out.println(conn.getInfo("net/listeners/socks"));
 		System.out.println(conn.getInfo("status/bootstrap-phase"));
