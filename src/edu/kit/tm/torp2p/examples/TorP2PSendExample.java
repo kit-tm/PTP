@@ -11,7 +11,6 @@ import edu.kit.tm.torp2p.ReceiveListener;
 import edu.kit.tm.torp2p.SendListener;
 import edu.kit.tm.torp2p.SendListenerAdapter;
 import edu.kit.tm.torp2p.TorP2P;
-import edu.kit.tm.torp2p.utility.DateUtils;
 
 
 /**
@@ -59,18 +58,15 @@ public class TorP2PSendExample {
 
 				@Override
 				public void sendFail(Message message, FailState state) { counter.incrementAndGet(); }
-
 			};
 
-			final DateUtils.Time current = DateUtils.getAtomicTime();
 			int sent = 0;
 
 			while (true) {
 				System.out.println("Enter message to send (or exit to stop):");
 				String content = br.readLine();
 				if (content.equals("exit")) break;
-				String timestamped = (current.internet  + System.currentTimeMillis() - current.local) + " " + content;
-				Message message = new Message(timestamped, destination);
+				Message message = new Message(content, destination);
 				client.sendMessage(message, timeout, listener);
 				++sent;
 			}
