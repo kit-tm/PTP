@@ -316,4 +316,73 @@ public class PTPTest {
 			fail("Maximum number of received messages not reached.");
 	}
 	
+	/**
+	 * Tests sending a 16 MB message between two PTP instances.
+	 *
+	 * Fails if the sent message was not received within a time interval, or if the received message does not match the sent message.
+	 * Warning: better deactivate logging of messages <WARNING for this test.
+	 */
+	@Test
+	public void testSendBig() {
+
+        // Make sure both instances have hidden service identifiers. 
+		try {
+			client1.reuseHiddenService();
+			client2.reuseHiddenService();
+		} catch (IOException e) {
+			fail("Caught an IOException while creating the identifiers: " + e.getMessage());
+		}
+
+		// Atomic flags for testing
+		final AtomicBoolean sendSuccess = new AtomicBoolean(false);
+		final AtomicBoolean receiveSuccess = new AtomicBoolean(false);
+		
+		// create a ~16mb string
+		StringBuilder sb = new StringBuilder(2^24);
+		sb.append("x");
+		for(int i=0; i < 24; i++) {
+			sb.append(sb.toString());
+		}
+		final String bigString = sb.toString();
+		
+		final Message m = new Message(bigString, client2.getIdentifier());
+		final long timeout = 300 * 1000;
+		
+		// Set the listener.
+		client2.setListener(new ReceiveListener() {
+
+			@Override
+			public void receivedMessage(Message m) {
+				if (!m.content.equals(bigString))
+					fail("Received message (length " + Integer.toString(m.content.length()) + "does not match sent message!");
+				else receiveSuccess.set(true);
+			}
+		});
+		
+		// send the big message
+		client1.sendMessage(m, timeout, new SendListenerAdapter() {
+
+			@Override
+			public void sendSuccess(Message message) { sendSuccess.set(true); }
+			
+			@Override
+			public void sendFail(Message message, FailState state) {
+				fail("Sending failed: FailState " + state.toString());
+			}
+		});
+
+		// Wait for the sending result
+		long waitStart = System.currentTimeMillis();
+		while (System.currentTimeMillis() - waitStart <= timeout + (5 * 1000) && !sendSuccess.get()) {
+			try {
+				Thread.sleep(1 * 1000);
+			} catch (InterruptedException e) {
+				// Sleeping was interrupted. Do nothing.
+			}
+		}
+		if (!sendSuccess.get())
+			fail("Sending timed out and this wasn't detected by sendListener.");
+		else if(!receiveSuccess.get())
+			fail("SendingListener reported success but message not yet received.");
+	}
 }
