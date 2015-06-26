@@ -154,7 +154,7 @@ public class PTPTest {
 	}
 
 	/**
-	 * Test the API wrapper by sending a message to the local port, and then testing if the same message was received.
+	 * Test sending a message to an address managed by the same PTP instance, and receiving it.
 	 *
 	 * Fails iff the sent message was not received within a time interval, or if the received message does not match the sent message.
 	 */
@@ -178,10 +178,10 @@ public class PTPTest {
 
 		});
 
-		// Create the hidden service identifier.
+		// Make sure there is a hidden service identifier.
 		Identifier identifier = null;
 		try {
-			client1.createHiddenService();
+			client1.reuseHiddenService();
 		} catch (IOException e) {
 			fail("Caught an IOException while creating the hidden service identifier: " + e.getMessage());
 		}
@@ -232,70 +232,38 @@ public class PTPTest {
 	/**
 	 * Tests the API wrapper with a ping-pong between two API objects.
 	 *
-	 * Fails iff a received message does not match the first sent message, or if the number of received message does not reach the maximum number of messages to receive.
+	 * Fails iff a received message does not match the first sent message, or if there is no real ping-pong, 
+	 * or if the number of received message does not reach the maximum number of messages to receive.
 	 */
 	@Test
 	public void testPingPong() {
 		// The maximum number of received messages during the ping-pong.
 		final int max = 25;
 
-        // Get the hidden service identifiers of the two API wrapper objects.
+        // Make sure there are hidden service identifiers for both instances.
 		try {
-			client1.createHiddenService();
-			client2.createHiddenService();
+			client1.reuseHiddenService();
+			client2.reuseHiddenService();
 		} catch (IOException e) {
 			fail("Caught an IOException while creating the identifiers: " + e.getMessage());
 		}
-		// The listeners need final values.
-		final Identifier identifier1 = client1.getIdentifier();
-		final Identifier identifier2 = client2.getIdentifier();
 
-		// An atomic counter used to check the number of received messages.
-		final AtomicInteger counter = new AtomicInteger(0);
-
-		// Send a message to the second identifier and wait to ensure it is available.
-		final AtomicBoolean sendSuccess1 = new AtomicBoolean(false);
-		final AtomicBoolean sendSuccess2 = new AtomicBoolean(false);
-		final Message m1 = new Message(testString, identifier2);
-		final Message m2 = new Message(testString, identifier1);
-		final long timeout = 180 * 1000;
-		client1.sendMessage(m1, timeout, new SendListenerAdapter() {
-
-			@Override
-			public void sendSuccess(Message message) { sendSuccess1.set(true); }
-
-		});
-		// Wait for the sending result, to ensure second identifier is available.
-		long waitStart = System.currentTimeMillis();
-		while (System.currentTimeMillis() - waitStart <= timeout + (5 * 1000) && !sendSuccess1.get()) {
-			try {
-				Thread.sleep(1 * 1000);
-			} catch (InterruptedException e) {
-				// Sleeping was interrupted. Do nothing.
-			}
-		}
-		if (!sendSuccess1.get())
-			fail("Second hidden service identifier not available after timeout.");
-
-		// Wait some extra time until the greeting message is propagated to the current listener.
-		waitStart = System.currentTimeMillis();
-		while (System.currentTimeMillis() - waitStart <= 2 * 1000) {
-			try {
-				Thread.sleep(1 * 1000);
-			} catch (InterruptedException e) {
-				// Sleeping was interrupted. Do nothing.
-			}
-		}
+		// Atomic variable for testing.
+		final AtomicInteger counter1 = new AtomicInteger(0);
+		final AtomicInteger counter2 = new AtomicInteger(0);
+		final AtomicBoolean sendSuccess = new AtomicBoolean(false);
 
 		// Set the listeners.
 		client1.setListener(new ReceiveListener() {
 
 			@Override
 			public void receivedMessage(Message m) {
-				counter.incrementAndGet();
+				counter1.incrementAndGet();
 				if (!m.content.equals(testString))
 					fail("First API object received message does not match sent message: " + m.content + " != " + testString);
-				final Message msg = new Message(m.content, identifier2);
+				if(counter1.get() - counter2.get() > 1)
+					fail("Something is very wrong: client1 received more messages than client2");
+				final Message msg = new Message(m.content, m.identifier);
 				client1.sendMessage(msg, 10 * 1000);
 			}
 
@@ -304,44 +272,39 @@ public class PTPTest {
 
 			@Override
 			public void receivedMessage(Message m) {
-				counter.incrementAndGet();
+				counter2.incrementAndGet();
 				if (!m.content.equals(testString))
 					fail("Second API object received message does not match sent message: " + m.content + " != " + testString);
-				final Message msg = new Message(m.content, identifier1);
+				if(counter2.get() - counter1.get() > 1)
+					fail("Something is very wrong: client2 received more messages than client1");
+				final Message msg = new Message(m.content, m.identifier);
 				client2.sendMessage(msg, 10 * 1000);
 			}
 
 		});
 
 		// Send the initial ping-pong message.
-		client2.sendMessage(m2, timeout, new SendListenerAdapter() {
+		client1.sendMessage(new Message(testString, client2.getIdentifier()), 180 * 1000, new SendListenerAdapter() {
 
 			@Override
-			public void sendSuccess(Message message) { sendSuccess2.set(true); }
-
-		});
-		client1.sendMessage(m1, timeout, new SendListenerAdapter() {
-
-			@Override
-			public void sendSuccess(Message message) { sendSuccess1.set(true); }
-
+			public void sendSuccess(Message message) { sendSuccess.set(true); }
 		});
 
 		// Wait for the sending result, to ensure first identifier is available.
-		waitStart = System.currentTimeMillis();
-		while (System.currentTimeMillis() - waitStart <= timeout + (5 * 1000) && !sendSuccess2.get()) {
+		Long waitStart = System.currentTimeMillis();
+		while (System.currentTimeMillis() - waitStart <= 185 * 1000 && !sendSuccess.get()) {
 			try {
 				Thread.sleep(1 * 1000);
 			} catch (InterruptedException e) {
 				// Sleeping was interrupted. Do nothing.
 			}
 		}
-		if (!sendSuccess2.get())
+		if (!sendSuccess.get())
 			fail("Sending initial ping-pong message failed.");
 
 		// Wait for all ping-pong messages to arrive.
 		final long start = System.currentTimeMillis();
-		while (counter.get() < max && System.currentTimeMillis() - start < 300 * 1000) {
+		while (counter1.get() + counter2.get() < max && System.currentTimeMillis() - start < 300 * 1000) {
 			try {
 				Thread.sleep(5 * 1000);
 			} catch (InterruptedException e) {
@@ -349,8 +312,8 @@ public class PTPTest {
 			}
 		}
 
-		if (counter.get() < max)
+		if (counter1.get() + counter2.get() < max)
 			fail("Maximum number of received messages not reached.");
 	}
-
+	
 }
