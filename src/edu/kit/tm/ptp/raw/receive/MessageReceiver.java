@@ -100,9 +100,11 @@ public class MessageReceiver extends Suspendable {
 	 * @param socket The socket connection to poll for incoming data.
 	 */
 	public synchronized void addConnection(String address, Socket socket) {
+		logger.log(Level.INFO, "Adding new connection.");
+		
 		// Add the connection handling to the thread.
 		ReceiveThread worker = threadPool.getWorker();
-		// Enqueue the socket.
+		// Enqueue the socket
 		worker.enqueue(new Origin(address, socket));
 		logger.log(Level.INFO, "Message receiver accepted connection.");
 	}

@@ -160,33 +160,29 @@ public class PTPTest {
 	 */
 	@Test
 	public void testSelfSend() {
+		
+		// Make sure there is a hidden service identifier.
+		try {
+			client1.reuseHiddenService();
+		} catch (IOException e) {
+			fail("Caught an IOException while creating the hidden service identifier: " + e.getMessage());
+		}
+		Identifier identifier = client1.getIdentifier();
+		
 		// An atomic boolean used to check whether the sent message was received yet.
 		final AtomicBoolean received = new AtomicBoolean(false);
 		final AtomicBoolean matches = new AtomicBoolean(false);
-
+		
 		// Set the listener.
 		client1.setListener(new ReceiveListener() {
 
 			@Override
 			public void receivedMessage(Message m) {
 				System.out.println("Received message: " + m.content);
-				if (!m.content.equals(testString))
-					fail("Received message does not match sent message: " + testString + " != " + m.content);
 				received.set(true);
 				matches.set(m.content.equals(testString));
 			}
-
 		});
-
-		// Make sure there is a hidden service identifier.
-		Identifier identifier = null;
-		try {
-			client1.reuseHiddenService();
-		} catch (IOException e) {
-			fail("Caught an IOException while creating the hidden service identifier: " + e.getMessage());
-		}
-
-		identifier = client1.getIdentifier();
 
 		// Send the message.
 		final AtomicBoolean sendSuccess = new AtomicBoolean(false);
@@ -252,6 +248,8 @@ public class PTPTest {
 		final AtomicInteger counter1 = new AtomicInteger(0);
 		final AtomicInteger counter2 = new AtomicInteger(0);
 		final AtomicBoolean sendSuccess = new AtomicBoolean(false);
+		final AtomicBoolean matchFail = new AtomicBoolean(false);
+		final AtomicBoolean countingFail = new AtomicBoolean(false);
 
 		// Set the listeners.
 		client1.setListener(new ReceiveListener() {
@@ -259,28 +257,22 @@ public class PTPTest {
 			@Override
 			public void receivedMessage(Message m) {
 				counter1.incrementAndGet();
-				if (!m.content.equals(testString))
-					fail("First API object received message does not match sent message: " + m.content + " != " + testString);
-				if(counter1.get() - counter2.get() > 1)
-					fail("Something is very wrong: client1 received more messages than client2");
+				matchFail.set(!m.content.equals(testString));
+				if(counter1.get() - counter2.get() > 1) countingFail.set(true);
 				final Message msg = new Message(m.content, m.identifier);
 				client1.sendMessage(msg, 10 * 1000);
 			}
-
 		});
 		client2.setListener(new ReceiveListener() {
 
 			@Override
 			public void receivedMessage(Message m) {
 				counter2.incrementAndGet();
-				if (!m.content.equals(testString))
-					fail("Second API object received message does not match sent message: " + m.content + " != " + testString);
-				if(counter2.get() - counter1.get() > 1)
-					fail("Something is very wrong: client2 received more messages than client1");
+				matchFail.set(!m.content.equals(testString));
+				if(counter2.get() - counter1.get() > 1) countingFail.set(true);
 				final Message msg = new Message(m.content, m.identifier);
 				client2.sendMessage(msg, 10 * 1000);
 			}
-
 		});
 
 		// Send the initial ping-pong message.
@@ -304,16 +296,21 @@ public class PTPTest {
 
 		// Wait for all ping-pong messages to arrive.
 		final long start = System.currentTimeMillis();
-		while (counter1.get() + counter2.get() < max && System.currentTimeMillis() - start < 300 * 1000) {
+		while (counter1.get() + counter2.get() < max && System.currentTimeMillis() - start < 300 * 1000 && !matchFail.get() && !countingFail.get()) {
 			try {
 				Thread.sleep(5 * 1000);
 			} catch (InterruptedException e) {
 				// Waiting was interrupted. Do nothing.
 			}
 		}
-
 		if (counter1.get() + counter2.get() < max)
 			fail("Maximum number of received messages not reached.");
+		
+		if (matchFail.get())
+			fail("An instance received a message that did not match the sent message.");
+					
+		if (countingFail.get())
+			fail("Weird ordering fail: one of the instances was 2 messages ahead.");
 	}
 	
 	/**
@@ -336,6 +333,8 @@ public class PTPTest {
 		// Atomic flags for testing
 		final AtomicBoolean sendSuccess = new AtomicBoolean(false);
 		final AtomicBoolean receiveSuccess = new AtomicBoolean(false);
+		final AtomicBoolean matches = new AtomicBoolean(false);
+		final AtomicInteger failState = new AtomicInteger(-1);
 		
 		// create a ~16mb string
 		StringBuilder sb = new StringBuilder(2^24);
@@ -353,9 +352,8 @@ public class PTPTest {
 
 			@Override
 			public void receivedMessage(Message m) {
-				if (!m.content.equals(bigString))
-					fail("Received message (length " + Integer.toString(m.content.length()) + "does not match sent message!");
-				else receiveSuccess.set(true);
+				matches.set(m.content.equals(bigString));
+				receiveSuccess.set(true);
 			}
 		});
 		
@@ -367,32 +365,36 @@ public class PTPTest {
 			
 			@Override
 			public void sendFail(Message message, FailState state) {
-				fail("Sending failed: FailState " + state.toString());
+				failState.set(state.ordinal());
 			}
 		});
 
 		// Wait for the sending result
 		long waitStart = System.currentTimeMillis();
-		while (System.currentTimeMillis() - waitStart <= timeout + (5 * 1000) && !sendSuccess.get()) {
+		while (System.currentTimeMillis() - waitStart <= timeout + (5 * 1000) && !sendSuccess.get() && (failState.get() < 0)) {
 			try {
 				Thread.sleep(1 * 1000);
 			} catch (InterruptedException e) {
 				// Sleeping was interrupted. Do nothing.
 			}
 		}
+		if(failState.get() >= 0)
+			fail("Sending failed: " + SendListenerAdapter.FailState.values()[failState.get()].toString());
 		if (!sendSuccess.get())
 			fail("Sending timed out and this wasn't detected by sendListener.");
 		
-		// Wait (no more than 30 seconds) until the message was received.
+		// Wait (no more than 2 minutes) until the message was received.
 		waitStart = System.currentTimeMillis();
 		while (!receiveSuccess.get()) {
 			try {
 				Thread.sleep(3 * 1000);
-				if (System.currentTimeMillis() - waitStart > 30 * 1000)
-					fail("SendingListener reported success but message not received after 30 seconds.");
+				if (System.currentTimeMillis() - waitStart > 120 * 1000)
+					fail("SendingListener reported success but message not received after 2 minutes.");
 			} catch (InterruptedException e) {
 				// Waiting was interrupted. Do nothing.
 			}
 		}
+		if (!matches.get())
+			fail("Received message does not match sent message.");
 	}
 }

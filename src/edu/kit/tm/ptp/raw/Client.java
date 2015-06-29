@@ -6,6 +6,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.ObjectOutputStream;
 import java.io.RandomAccessFile;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
@@ -97,8 +98,8 @@ public class Client {
 	private final File lockFile;
 	/** The server socket receiving messages. */
 	private final MessageReceiver receiver;
-	/** The open socket connections to Tor hidden services. */
-	private final ConcurrentHashMap<String, Socket> sockets = new ConcurrentHashMap<String, Socket>();
+	/** The open object output streams to Tor hidden services. */
+	private final ConcurrentHashMap<String, ObjectOutputStream> outStreams = new ConcurrentHashMap<String, ObjectOutputStream>();
 	/** The current hidden service identifier. */
 	private String identifier = null;
 	/** The hidden service sub-directory of this client. */
@@ -286,25 +287,29 @@ public class Client {
 	public SendResponse send(String destination, String message) {
 		logger.log(Level.INFO, "Sending a message to identifier " + destination + " on port " + configuration.getHiddenServicePort() + ".");
 		// Check if a socket is open for the specified identifier.
-		if (!sockets.containsKey(destination)) {
-			logger.log(Level.INFO, "No socket is open for identifier: " + destination);
+		if (!outStreams.containsKey(destination)) {
+			logger.log(Level.INFO, "No stream is open for identifier: " + destination);
 			return SendResponse.CLOSED;
 		}
 
-		// Get the socket for the specified identifier.
-		logger.log(Level.INFO, "Getting socket from map.");
-		Socket socket = sockets.get(destination);
+		// Get the stream for the specified identifier.
+		logger.log(Level.INFO, "Getting stream from map.");
+		ObjectOutputStream oOut = outStreams.get(destination);
 
-		try {
-			// Send the message and close the socket connection.
-			logger.log(Level.INFO, "Sending message: " + message);
-			socket.getOutputStream().write(message.getBytes());
-		} catch (IOException e) {
-			// IOException when getting socket output stream or sending bytes via the stream.
-			logger.log(Level.WARNING, "Received an IOException while sending a message to identifier = " + destination + ": " + e.getMessage());
-			// If something went wrong with the open connection, remove it from the open connections. E.g. this is a backward channel to some client and the client exited.
-			sockets.remove(destination);
-			return SendResponse.FAIL;
+		synchronized(oOut) {
+			try {
+				logger.log(Level.INFO, "Sending message: " + message.substring(0, message.length()%25));
+				
+				// Send the message.
+				oOut.writeObject(message);
+				oOut.flush();
+			} catch (IOException e) {
+				// IOException when getting socket output stream or sending bytes via the stream.
+				logger.log(Level.WARNING, "Received an IOException while sending a message to identifier = " + destination + ": " + e.getMessage());
+				// If something went wrong with the open connection, remove it from the open connections. E.g. this is a backward channel to some client and the client exited.
+				outStreams.remove(destination);
+				return SendResponse.FAIL;
+			}
 		}
 
 		logger.log(Level.INFO, "Sending done.");
@@ -312,30 +317,23 @@ public class Client {
 	}
 
 	/**
-	 * Opens a socket connection to the specified Tor hidden service.
+	 * Opens a connection to the specified Tor hidden service.
 	 *
 	 * @param identifier The Tor hidden service identifier of the destination.
 	 * @param socketTimeout The socket connect timeout.
 	 * @param port The port number of the destination Tor hidden service.
-	 * @return  ConnectResponse.OPEN    if a socket connection is already open for the identifier.
+	 * @return  ConnectResponse.OPEN    if a connection is already open for the identifier.
 	 * 			ConnectResponse.FAIL    if an IOException occured while opening the socket connection for the identifier.
-	 * 			ConnectResponse.SUCCESS if a socket connection is now open for the identifier.
-	 * 			ConnectResponse.TIMEOUT if the socket connection timeout was reached upon opening the connection to the identifier.
+	 * 			ConnectResponse.SUCCESS if a connection is now open for the identifier.
+	 * 			ConnectResponse.TIMEOUT if the connection timeout was reached upon opening the connection to the identifier.
 	 */
 	public ConnectResponse connect(String destination, int socketTimeout) {
 		logger.log(Level.INFO, "Opening a socket for identifier " + destination + " on port " + configuration.getHiddenServicePort() + ".");
 
 		// Check if a socket is already open to the given identifier.
-		if (sockets.containsKey(destination)) {
-			Socket socket = sockets.get(destination);
-
-			if (socket.isClosed()) {
-				logger.log(Level.INFO, "Removing closed socket from the open connections list.");
-				sockets.remove(destination);
-			} else {
-				logger.log(Level.INFO, "A socket is already open for the given identifier.");
-				return ConnectResponse.OPEN;
-			}
+		if (outStreams.containsKey(destination)) {
+			logger.log(Level.INFO, "A socket is already open for the given identifier.");
+			return ConnectResponse.OPEN;
 		}
 
 		ConnectResponse response = ConnectResponse.SUCCESS;
@@ -344,27 +342,50 @@ public class Client {
 			// Open a socket implementing the SOCKS4a protocol.
 			logger.log(Level.INFO, "Opening socket using the Tor SOCKS proxy, timeout: " + socketTimeout);
 			Socket socket = SOCKS.socks4aSocketConnection(destination, configuration.getHiddenServicePort(), Constants.localhost, configuration.getTorSOCKSProxyPort(), socketTimeout);
-			logger.log(Level.INFO, "Adding socket to open sockets.");
-			sockets.put(destination, socket);
-			logger.log(Level.INFO, "Opened socket for identifier: " + destination);
+			
+			// Create output stream and add it to the map
+			initOutputStream(destination, socket);
+			
 			// Send the current identifier as the first message.
 			send(destination, MessageHandler.wrapRaw(identifier, Constants.messageoriginflag));
+			
 			// Add the new connection to the message receiver.
 			receiver.addConnection(destination, socket);
+
 		} catch (SocketTimeoutException e) {
 			// Socket connection timeout reached.
 			logger.log(Level.WARNING, "Timeout reached for connection to identifier: " + destination);
 			response = ConnectResponse.TIMEOUT;
 		} catch (IOException e) {
-			logger.log(Level.WARNING, "Received an IOException while connecting the socket to identifier = " + destination + ": " + e.getMessage());
+			logger.log(Level.WARNING, "Received an IOException while connecting to identifier = " + destination + ": " + e.getMessage());
 			response = ConnectResponse.FAIL;
 		}
 
 		return response;
 	}
+	
+	/**
+	 * Creates {@link ObjectOutputStream} and adds it to the map.
+	 * 
+	 * @param destination
+	 * @param socket
+	 * @throws IOException
+	 */
+	private void initOutputStream(String destination, Socket socket)
+			throws IOException {
+		
+		logger.log(Level.INFO, "Creating object output stream.");
+		ObjectOutputStream oOut = new ObjectOutputStream(socket.getOutputStream());
+		oOut.flush();
+		
+		logger.log(Level.INFO, "Adding stream to list of open output streams.");
+		outStreams.put(destination, oOut);
+		
+		logger.log(Level.INFO, "Opened stream for identifier: " + destination);
+	}
 
 	/**
-	 * Closes the socket connection for the specified Tor hidden service identifier.
+	 * Closes the connection for the specified Tor hidden service identifier.
 	 *
 	 * @param identifier The identifier of the Tor hidden service.
 	 * @return  DisconnectResponse.CLOSED  if no socket connection for the identifier.
@@ -372,27 +393,28 @@ public class Client {
 	 * 			DisconnectResponse.SUCCESS if the socket connection for the identifier was closed.
 	 */
 	public DisconnectResponse disconnect(String identifier) {
-		logger.log(Level.INFO, "Closing socket for identifier: " + identifier);
+		logger.log(Level.INFO, "Closing output stream for identifier: " + identifier);
 
-		// Check if the socket is open.
-		if (!sockets.containsKey(identifier)) {
-			logger.log(Level.INFO, "Socket not open.");
+		// Check if the stream is open.
+		if (!outStreams.containsKey(identifier)) {
+			logger.log(Level.INFO, "No such stream.");
 			return DisconnectResponse.CLOSED;
 		}
+		
+		// Get the stream from the map.
+		ObjectOutputStream oOut = outStreams.get(identifier);
 
-		try {
-			// Get the socket from the map.
-			Socket socket = sockets.get(identifier);
-			logger.log(Level.INFO, "Closing socket.");
-			// Close the socket.
-			socket.close();
-			sockets.remove(identifier);
-		} catch (IOException e) {
-			// Closing the socket failed due to an IOException.
-			logger.log(Level.WARNING, "Received an IOException while closing the socket for identifier = " + identifier + ": " + e.getMessage());
-			return DisconnectResponse.FAIL;
+		synchronized(oOut) {
+			try {
+				logger.log(Level.INFO, "Closing output stream.");
+				oOut.close();
+				outStreams.remove(identifier);
+			} catch (IOException e) {
+				// Closing the stream failed due to an IOException.
+				logger.log(Level.WARNING, "Received an IOException while closing the output stream for identifier = " + identifier + ": " + e.getMessage());
+				return DisconnectResponse.FAIL;
+			}
 		}
-
 		return DisconnectResponse.SUCCESS;
 	}
 
@@ -522,7 +544,13 @@ public class Client {
 			@Override
 			public void ConnectionOpen(Identifier origin, Socket socket) {
 				// Add the connection to the socket set.
-				sockets.put(origin.getTorAddress(), socket);
+				/*
+				try {
+					initOutputStream(origin.getTorAddress(), socket);
+				} catch (IOException e) {
+					logger.log(Level.WARNING, "Received IOException while establishing output stream over incoming connection: " + e.getMessage());
+				}
+				*/
 			}
 
 		};

@@ -357,7 +357,7 @@ public class PTP {
 			 */
 			@Override
 			public boolean dispatch(Message message, SendListener listener, long timeout, long elapsed) {
-				logger.log(Level.INFO, "Attempting to send message: " + "timeout = " + timeout + ", wait = " + elapsed + ", message = " + message.content + ", destination = " + message.identifier.getTorAddress());
+				logger.log(Level.INFO, "Attempting to send message: " + "timeout = " + timeout + ", wait = " + elapsed + ", message = " + message.content.substring(0, message.content.length()%25) + ", destination = " + message.identifier.getTorAddress());
 
 				// If the timeout is reached return with the corresponding response.
 				if (elapsed >= timeout) {
