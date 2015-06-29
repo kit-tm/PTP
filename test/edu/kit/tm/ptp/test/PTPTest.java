@@ -210,12 +210,12 @@ public class PTPTest {
 		if (!sendSuccess.get())
 			fail("Sending the message via the client to the created identifier was not successful.");
 
-		// Wait (no more than 3 minutes) until the message was received.
+		// Wait (no more than 30 seconds) until the message was received.
 		final long start = System.currentTimeMillis();
 		while (!received.get()) {
 			try {
-				Thread.sleep(5 * 1000);
-				if (System.currentTimeMillis() - start > 180 * 1000)
+				Thread.sleep(3 * 1000);
+				if (System.currentTimeMillis() - start > 30 * 1000)
 					fail("Connecting to the created identifier took too long.");
 			} catch (InterruptedException e) {
 				// Waiting was interrupted. Do nothing.
@@ -382,7 +382,17 @@ public class PTPTest {
 		}
 		if (!sendSuccess.get())
 			fail("Sending timed out and this wasn't detected by sendListener.");
-		else if(!receiveSuccess.get())
-			fail("SendingListener reported success but message not yet received.");
+		
+		// Wait (no more than 30 seconds) until the message was received.
+		waitStart = System.currentTimeMillis();
+		while (!receiveSuccess.get()) {
+			try {
+				Thread.sleep(3 * 1000);
+				if (System.currentTimeMillis() - waitStart > 30 * 1000)
+					fail("SendingListener reported success but message not received after 30 seconds.");
+			} catch (InterruptedException e) {
+				// Waiting was interrupted. Do nothing.
+			}
+		}
 	}
 }
