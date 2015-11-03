@@ -80,7 +80,7 @@ public class MessageDispatcher {
 		} else
 			map.get(destination).enqueue(element);
 
-		logger.log(Level.INFO, "Message enqueued: " + message.content + " (" + message.identifier + ")");
+		logger.log(Level.INFO, "Message enqueued: " + message.content.substring(0, message.content.length()%25) + " (" + message.identifier + ")");
 	}
 
 	/**

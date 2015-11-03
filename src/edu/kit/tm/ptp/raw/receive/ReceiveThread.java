@@ -1,7 +1,7 @@
 package edu.kit.tm.ptp.raw.receive;
 
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.ObjectInputStream;
 import java.util.Vector;
 
 import edu.kit.tm.ptp.Identifier;
@@ -13,6 +13,9 @@ import edu.kit.tm.ptp.raw.MessageHandler;
 import edu.kit.tm.ptp.raw.Packet;
 import edu.kit.tm.ptp.raw.thread.Worker;
 import edu.kit.tm.ptp.utility.Constants;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 /**
@@ -26,6 +29,8 @@ import edu.kit.tm.ptp.utility.Constants;
  */
 public class ReceiveThread extends Worker<Origin> {
 
+	/** The logger for this class. */
+	private final Logger logger = Logger.getLogger(Constants.receivethreadlogger);
 	/** The set of sockets on which this thread listens. */
 	private final Vector<Origin> origins = new Vector<Origin>();
 	/** The listener to notify on newly opened connections. */
@@ -58,23 +63,26 @@ public class ReceiveThread extends Worker<Origin> {
 			// Get the open sockets.
 			Vector<Origin> open = getSockets();
 			boolean read = false;
-
+			
 			// Iterate the open sockets.
 			for (Origin origin : open) {
 				try {
-					// Get the input stream of the current socket and check availability.
-					InputStream stream = origin.socket.getInputStream();
-					final int available = stream.available();
-
-					if (available == 0) continue;
-
+					if (origin.socket.getInputStream().available() == 0) continue;
+					
+					if (origin.inStream == null) {
+						logger.log(Level.INFO, "Initializing input stream.");
+						
+						// initialize input stream
+						origin.inStream = new ObjectInputStream(origin.socket.getInputStream());
+						
+						logger.log(Level.INFO, "Input stream initialized.");
+						if(origin.inStream.available() == 0) continue;
+					}
+					ObjectInputStream oIn = origin.inStream;
+					
 					read = true;
-
-					// Read the received messages.
-					byte[] buffer = new byte[available];
-					stream.read(buffer, 0, available);
-					String bulk = new String(buffer);
-
+					String bulk = (String) oIn.readObject();
+					
 					// Unwrap messages.
 					Packet[] packets = MessageHandler.unwrapBulk(bulk);
 					for (int i = 0; i < packets.length; ++i) {
@@ -84,7 +92,7 @@ public class ReceiveThread extends Worker<Origin> {
 							connectionListener.ConnectionOpen(origin.identifier, origin.socket);
 						// Otherwise check if the received message indicates a disconnection.
 						} else if (packets[i].flags == Constants.messagedisconnectflag) {
-							origin.socket.close();
+							origin.inStream.close();
 						// Otherwise notify listener.
 						} else if (packets[i].flags == Constants.messagestandardflag)
 							receiveListener.receivedMessage(new Message(packets[i].message.content, origin.identifier));
@@ -93,6 +101,9 @@ public class ReceiveThread extends Worker<Origin> {
 					// Socket was closed. Do nothing.
 				} catch (NullPointerException e) {
 					// Socket was closed. Do nothing.
+				} catch (ClassNotFoundException e) {
+					// Should never happen
+					e.printStackTrace();
 				}
 			}
 
