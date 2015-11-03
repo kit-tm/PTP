@@ -430,6 +430,14 @@ public class Client {
 		for (File hiddenService : hiddenServiceDirectory.listFiles()) {
 			// Skip over any files in the directory.
 			if (!hiddenService.isDirectory()) continue;
+			
+			// Fix directory permissions so that Tor doesn't complain
+			hiddenService.setReadable(false, false);
+			hiddenService.setReadable(true, true);
+			hiddenService.setWritable(false, false);
+			hiddenService.setWritable(true, true);
+			hiddenService.setExecutable(false, false);
+			hiddenService.setExecutable(true, true);
 
 			// Skip over any directories without the hidden service prefix.
 			String name = hiddenService.getName();
