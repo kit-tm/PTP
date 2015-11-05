@@ -2,7 +2,6 @@ package edu.kit.tm.ptp;
 
 
 
-
 /**
  * A convenience adapter for the SendListener class.
  *
@@ -13,14 +12,14 @@ package edu.kit.tm.ptp;
 public class SendListenerAdapter implements SendListener {
 
 
-	/**
-	 * @see SendListener
-	 */
-	public void sendSuccess(Message message) {}
+  /**
+   * @see SendListener
+   */
+  public void sendSuccess(Message message) {}
 
-	/**
-	 * @see SendListener
-	 */
-	public void sendFail(Message message, FailState state) {}
+  /**
+   * @see SendListener
+   */
+  public void sendFail(Message message, FailState state) {}
 
 }

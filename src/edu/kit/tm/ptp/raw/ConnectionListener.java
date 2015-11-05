@@ -6,7 +6,6 @@ import edu.kit.tm.ptp.Identifier;
 
 
 
-
 /**
  * A listener interface to notify whenever a connection to the local Hidden Service is made.
  *
@@ -16,6 +15,6 @@ import edu.kit.tm.ptp.Identifier;
 public interface ConnectionListener {
 
 
-	public void ConnectionOpen(Identifier identifier, Socket socket);
+  public void ConnectionOpen(Identifier identifier, Socket socket);
 
 }

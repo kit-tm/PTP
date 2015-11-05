@@ -12,10 +12,10 @@ package edu.kit.tm.ptp;
 public class ReceiveListenerAdapter implements ReceiveListener {
 
 
-	/**
-	 * @see ReceiveListener
-	 */
-	@Override
-	public void receivedMessage(Message message) { }
+  /**
+   * @see ReceiveListener
+   */
+  @Override
+  public void receivedMessage(Message message) {}
 
 }

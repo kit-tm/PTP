@@ -11,11 +11,11 @@ package edu.kit.tm.ptp;
 public interface ReceiveListener {
 
 
-	/**
-	 * Indicates that a message was received over the Tor Hidden Service.
-	 *
-	 * @param message The received message.
-	 */
-	public void receivedMessage(Message message);
+  /**
+   * Indicates that a message was received over the Tor Hidden Service.
+   *
+   * @param message The received message.
+   */
+  public void receivedMessage(Message message);
 
 }

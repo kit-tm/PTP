@@ -11,9 +11,9 @@ import edu.kit.tm.ptp.utility.Constants;
  */
 public class EnvVarExample {
 
-	public static void main(String[] args) {
-		String ptphome = System.getenv(Constants.ptphome);
-		System.out.println(Constants.ptphome + " is set to " + ptphome);
-	}
+  public static void main(String[] args) {
+    String ptphome = System.getenv(Constants.ptphome);
+    System.out.println(Constants.ptphome + " is set to " + ptphome);
+  }
 
 }

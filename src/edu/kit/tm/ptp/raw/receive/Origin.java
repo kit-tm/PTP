@@ -17,23 +17,23 @@ import edu.kit.tm.ptp.Identifier;
 public class Origin {
 
 
-	/** The socket. */
-	public final Socket socket;
-	/** The identifier of the socket. */
-	public Identifier identifier = null;
-	/** The input stream for the socket. */
-	public ObjectInputStream inStream;
+  /** The socket. */
+  public final Socket socket;
+  /** The identifier of the socket. */
+  public Identifier identifier = null;
+  /** The input stream for the socket. */
+  public ObjectInputStream inStream;
 
 
-	/**
-	 * Constructor method.
-	 *
-	 * @param address The Tor hidden service identifier of the pair.
-	 * @param socket The socket of the pair.
-	 * @throws IOException 
-	 */
-	public Origin(String address, Socket socket) {
-		this.identifier = new Identifier(address);
-		this.socket = socket;
-	}
+  /**
+   * Constructor method.
+   *
+   * @param address The Tor hidden service identifier of the pair.
+   * @param socket The socket of the pair.
+   * @throws IOException
+   */
+  public Origin(String address, Socket socket) {
+    this.identifier = new Identifier(address);
+    this.socket = socket;
+  }
 }
