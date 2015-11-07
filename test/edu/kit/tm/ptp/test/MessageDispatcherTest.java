@@ -1,17 +1,6 @@
-/**
- *
- */
 package edu.kit.tm.ptp.test;
 
-import static org.junit.Assert.*;
-
-import java.util.HashMap;
-import java.util.Random;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.Assert.fail;
 
 import edu.kit.tm.ptp.Identifier;
 import edu.kit.tm.ptp.Message;
@@ -20,6 +9,13 @@ import edu.kit.tm.ptp.SendListenerAdapter;
 import edu.kit.tm.ptp.raw.DispatchListener;
 import edu.kit.tm.ptp.raw.dispatch.MessageDispatcher;
 
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.HashMap;
+import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * This class offers JUnit testing for the MessageDispatcher class.
@@ -61,11 +57,13 @@ public class MessageDispatcherTest {
      */
     @Override
     public boolean dispatch(Message message, SendListener lisener, long timeout, long elapsed) {
-      if (random.nextDouble() < 0.25)
+      if (random.nextDouble() < 0.25) {
         return false;
+      }
 
-      if (!map.containsKey(message.content))
+      if (!map.containsKey(message.content)) {
         map.put(message.content, 0);
+      }
       map.put(message.content, map.get(message.content) + 1);
 
       counter.incrementAndGet();
@@ -77,7 +75,7 @@ public class MessageDispatcherTest {
 
 
   /** Dummy destinations for the sending test. */
-  private final String destinations[] = {"d1", "d2", "d3", "d4", "d5"};
+  private final String[] destinations = {"d1", "d2", "d3", "d4", "d5"};
 
   /** A dummy listener to receive dispatcher notifications. */
   private final SendListener listener = new SendListenerAdapter();
@@ -119,10 +117,10 @@ public class MessageDispatcherTest {
   }
 
   /**
-   * Tests the functionality of the MessageDispatcher class. Dispatches a number of messages with
+   * Tests the functionality of the MessageDispatcher class. 
+   * Dispatches a number of messages with
    * random flags and checks if all messages are dispatched.
-   *
-   * Fails iff a message was not dispatched. Check is done based on message flags.
+   * Fails if a message was not dispatched. Check is done based on message flags.
    */
   @Test
   public void test() {
@@ -133,18 +131,20 @@ public class MessageDispatcherTest {
     for (int i = 0; i < n; ++i) {
       generated[i] = random.string(minimumMessageLength, maximumMessageLength);
 
-      if (!map.containsKey(generated[i]))
+      if (!map.containsKey(generated[i])) {
         map.put(generated[i], 0);
+      }
       map.put(generated[i], map.get(generated[i]) + 1);
     }
 
     // Sent messages with the random flags, check if they are all dispatched before a timeout (based
     // on flags).
-    for (int i = 0; i < n; ++i)
+    for (int i = 0; i < n; ++i) {
       dispatcher.enqueueMessage(
           new Message(generated[i],
               new Identifier(destinations[random.integer(0, destinations.length - 1)])),
           5 * 1000, listener);
+    }
 
     // Wait for some time.
     final long start = System.currentTimeMillis();
@@ -159,8 +159,9 @@ public class MessageDispatcherTest {
     // Check if all flags were dispatched.
     for (int i = 0; i < n; ++i) {
       if (!client.map.containsKey(generated[i])
-          || map.get(generated[i]).intValue() != client.map.get(generated[i]).intValue())
+          || map.get(generated[i]).intValue() != client.map.get(generated[i]).intValue()) {
         fail("Message was not dispatched: " + generated[i]);
+      }
     }
   }
 

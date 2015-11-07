@@ -1,14 +1,15 @@
 package edu.kit.tm.ptp.examples;
 
+import edu.kit.tm.ptp.Identifier;
+import edu.kit.tm.ptp.Message;
+import edu.kit.tm.ptp.PTP;
+import edu.kit.tm.ptp.ReceiveListener;
+import edu.kit.tm.ptp.SendListenerAdapter;
+
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import edu.kit.tm.ptp.Identifier;
-import edu.kit.tm.ptp.Message;
-import edu.kit.tm.ptp.ReceiveListener;
-import edu.kit.tm.ptp.SendListenerAdapter;
-import edu.kit.tm.ptp.PTP;
 
 /**
  * Duplex connection usage example application for the PTP API.
@@ -65,8 +66,9 @@ public class PTPDuplexExample {
     public void receivedMessage(Message message) {
       System.out.println("Listener " + name + " received: " + message.content);
       // No more sending if maximum was reached.
-      if (counter.get() > max)
+      if (counter.get() > max) {
         return;
+      }
       // Measure sending RTT time.
       if (counter.get() > 0) {
         duration += System.currentTimeMillis() - start;
@@ -148,8 +150,9 @@ public class PTPDuplexExample {
           // Sleeping was interrupted. Do nothing.
         }
       }
-      if (!connected.get())
+      if (!connected.get()) {
         throw new IOException("Could not send greeting message in the given timeout.");
+      }
       // Set the timer start for the hidden service availability measurement.
       final long available = System.currentTimeMillis() - start;
 
@@ -179,8 +182,9 @@ public class PTPDuplexExample {
         }
       }
 
-      if (listener1.sent() < max || listener2.sent() < max)
+      if (listener1.sent() < max || listener2.sent() < max) {
         throw new IOException("Maximum number of ping-pongs not reached!");
+      }
 
       // Show time measurements.
       System.out.println("Displaying running time statistics.");
@@ -198,10 +202,12 @@ public class PTPDuplexExample {
 
     // Done, exit.
     System.out.println("Exiting clients.");
-    if (client1 != null)
+    if (client1 != null) {
       client1.exit();
-    if (client2 != null)
+    }
+    if (client2 != null) {
       client2.exit();
+    }
   }
 
 }

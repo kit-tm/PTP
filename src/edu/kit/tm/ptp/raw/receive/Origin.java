@@ -1,11 +1,10 @@
 package edu.kit.tm.ptp.raw.receive;
 
+import edu.kit.tm.ptp.Identifier;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.Socket;
-
-import edu.kit.tm.ptp.Identifier;
-
 
 
 /**

@@ -1,14 +1,7 @@
 package edu.kit.tm.ptp.test;
 
-import static org.junit.Assert.*;
-
-import java.io.IOException;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import edu.kit.tm.ptp.Message;
 import edu.kit.tm.ptp.ReceiveListener;
@@ -18,6 +11,13 @@ import edu.kit.tm.ptp.raw.MessageHandler;
 import edu.kit.tm.ptp.raw.TorManager;
 import edu.kit.tm.ptp.utility.Constants;
 
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * This class offers JUnit testing for the Client class.
@@ -92,8 +92,9 @@ public class ClientTest {
       }
     }
 
-    if (!manager1.ready() || !manager2.ready())
+    if (!manager1.ready() || !manager2.ready()) {
       assertTrue(false);
+    }
 
     configuration1.setTorConfiguration(manager1.directory(), manager1.controlport(),
         manager1.socksport());
@@ -107,10 +108,12 @@ public class ClientTest {
   @After
   public void tearDown() {
     // Clean up the API objects.
-    if (client1 != null)
+    if (client1 != null) {
       client1.exit(true);
-    if (client2 != null)
+    }
+    if (client2 != null) {
       client2.exit(true);
+    }
     // Stop the TorManagers.
     manager1.stop();
     manager2.stop();
@@ -120,8 +123,8 @@ public class ClientTest {
    * Test the raw API by sending a message to the local port, and then testing if the same message
    * was received.
    *
-   * Fails iff the sent message was not received within a time interval, or if the received message
-   * does not match the sent message.
+   * <p>Fails iff the sent message was not received within a time interval,
+   * or if the received message does not match the sent message.
    */
   @Test
   public void testSelfSend() {
@@ -140,12 +143,14 @@ public class ClientTest {
     client1.listener(new ReceiveListener() {
 
       @Override
-      public void receivedMessage(Message m) {
-        System.out.println("Received message: " + m.content);
-        if (!m.content.equals(message))
-          fail("Received message does not match sent message: " + message + " != " + m.content);
+      public void receivedMessage(Message receivedMsg) {
+        System.out.println("Received message: " + receivedMsg.content);
+        if (!receivedMsg.content.equals(message)) {
+          fail("Received message does not match sent message: "
+              + message + " != " + receivedMsg.content);
+        }
         received.set(true);
-        matches.set(m.content.equals(message));
+        matches.set(receivedMsg.content.equals(message));
       }
 
     });
@@ -165,8 +170,9 @@ public class ClientTest {
       try {
         connect = client1.connect(identifier, configuration1.getSocketTimeout());
         Thread.sleep(5 * 1000);
-        if (System.currentTimeMillis() - start > 180 * 1000)
+        if (System.currentTimeMillis() - start > 180 * 1000) {
           fail("Connecting to the created identifier took too long.");
+        }
       } catch (InterruptedException e) {
         // Waiting was interrupted. Do nothing.
       }
@@ -175,37 +181,42 @@ public class ClientTest {
     // Send the message.
     Client.SendResponse sendResponse =
         client1.send(identifier, MessageHandler.wrapRaw(message, Constants.messagestandardflag));
-    if (sendResponse != Client.SendResponse.SUCCESS)
+    if (sendResponse != Client.SendResponse.SUCCESS) {
       fail("Sending the message via the client to the created identifier was not successful.");
+    }
 
     // Wait (no more than 3 minutes) until the message was received.
     start = System.currentTimeMillis();
     while (!received.get()) {
       try {
         Thread.sleep(5 * 1000);
-        if (System.currentTimeMillis() - start > 180 * 1000)
+        if (System.currentTimeMillis() - start > 180 * 1000) {
           fail("Connecting to the created identifier took too long.");
+        }
       } catch (InterruptedException e) {
         // Waiting was interrupted. Do nothing.
       }
     }
 
-    if (!received.get())
+    if (!received.get()) {
       fail("Message not received.");
+    }
 
-    if (!matches.get())
+    if (!matches.get()) {
       fail("Received message does not match sent message.");
+    }
 
     // Disconnect the API from the created identifier.
     Client.DisconnectResponse disconnectResponse = client1.disconnect(identifier);
-    if (disconnectResponse != Client.DisconnectResponse.SUCCESS)
+    if (disconnectResponse != Client.DisconnectResponse.SUCCESS) {
       fail("Disconncting the client from the created identifier was not successful.");
+    }
   }
 
   /**
    * Tests the raw API with a ping-pong between two API objects.
    *
-   * Fails iff a received message does not match the first sent message, or if the number of
+   * <p>Fails iff a received message does not match the first sent message, or if the number of
    * received message does not reach the maximum number of messages to receive.
    */
   @Test
@@ -242,8 +253,9 @@ public class ClientTest {
       try {
         connect = client1.connect(identifier2, configuration1.getSocketTimeout());
         Thread.sleep(5 * 1000);
-        if (System.currentTimeMillis() - start > 180 * 1000)
+        if (System.currentTimeMillis() - start > 180 * 1000) {
           fail("Connecting first API object to second timed out.");
+        }
       } catch (InterruptedException e) {
         // Waiting was interrupted. Do nothing.
       }
@@ -254,8 +266,9 @@ public class ClientTest {
       try {
         connect = client2.connect(identifier1, configuration2.getSocketTimeout());
         Thread.sleep(5 * 1000);
-        if (System.currentTimeMillis() - start > 180 * 1000)
+        if (System.currentTimeMillis() - start > 180 * 1000) {
           fail("Connecting second API object to first timed out.");
+        }
       } catch (InterruptedException e) {
         // Waiting was interrupted. Do nothing.
       }
@@ -268,31 +281,36 @@ public class ClientTest {
     client1.listener(new ReceiveListener() {
 
       @Override
-      public void receivedMessage(Message m) {
+      public void receivedMessage(Message receivedMsg) {
         counter.incrementAndGet();
-        if (!m.content.equals(message))
-          fail("First API object received message does not match sent message: " + m.content
-              + " != " + message);
-        client1.send(identifier2, MessageHandler.wrapRaw(m.content, Constants.messagestandardflag));
+        if (!receivedMsg.content.equals(message)) {
+          fail("First API object received message does not match sent message: "
+              + receivedMsg.content + " != " + message);
+        }
+        client1.send(identifier2,
+            MessageHandler.wrapRaw(receivedMsg.content, Constants.messagestandardflag));
       }
 
     });
     client2.listener(new ReceiveListener() {
 
       @Override
-      public void receivedMessage(Message m) {
-        if (!m.content.equals(message))
-          fail("Second API object received message does not match sent message: " + m.content
-              + " != " + message);
-        client2.send(identifier1, MessageHandler.wrapRaw(m.content, Constants.messagestandardflag));
+      public void receivedMessage(Message receivedMsg) {
+        if (!receivedMsg.content.equals(message)) {
+          fail("Second API object received message does not match sent message: "
+              + receivedMsg.content + " != " + message);
+        }
+        client2.send(identifier1,
+            MessageHandler.wrapRaw(receivedMsg.content, Constants.messagestandardflag));
       }
 
     });
     // Initiate the ping-pong.
     Client.SendResponse sendResponse =
         client1.send(identifier2, MessageHandler.wrapRaw(message, Constants.messagestandardflag));
-    if (sendResponse != Client.SendResponse.SUCCESS)
+    if (sendResponse != Client.SendResponse.SUCCESS) {
       fail("Sending first message failed.");
+    }
 
     // Wait (no more than 3 minutes) until the maximum number of received messages is reached.
     start = System.currentTimeMillis();
@@ -304,16 +322,19 @@ public class ClientTest {
       }
     }
 
-    if (counter.get() < max)
+    if (counter.get() < max) {
       fail("Maximum number of received messages not reached.");
+    }
 
     Client.DisconnectResponse disconnectResponse1 = client1.disconnect(identifier2);
-    if (disconnectResponse1 != Client.DisconnectResponse.SUCCESS)
+    if (disconnectResponse1 != Client.DisconnectResponse.SUCCESS) {
       fail("Disconnecting first API object failed.");
+    }
 
     Client.DisconnectResponse disconnectResponse2 = client2.disconnect(identifier1);
-    if (disconnectResponse2 != Client.DisconnectResponse.SUCCESS)
+    if (disconnectResponse2 != Client.DisconnectResponse.SUCCESS) {
       fail("Disconnecting second API object failed.");
+    }
   }
 
 }

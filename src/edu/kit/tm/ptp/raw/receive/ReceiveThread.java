@@ -1,9 +1,5 @@
 package edu.kit.tm.ptp.raw.receive;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.util.Vector;
-
 import edu.kit.tm.ptp.Identifier;
 import edu.kit.tm.ptp.Message;
 import edu.kit.tm.ptp.ReceiveListener;
@@ -14,6 +10,9 @@ import edu.kit.tm.ptp.raw.Packet;
 import edu.kit.tm.ptp.raw.thread.Worker;
 import edu.kit.tm.ptp.utility.Constants;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -67,8 +66,9 @@ public class ReceiveThread extends Worker<Origin> {
       // Iterate the open sockets.
       for (Origin origin : open) {
         try {
-          if (origin.socket.getInputStream().available() == 0)
+          if (origin.socket.getInputStream().available() == 0) {
             continue;
+          }
 
           if (origin.inStream == null) {
             logger.log(Level.INFO, "Initializing input stream.");
@@ -77,8 +77,9 @@ public class ReceiveThread extends Worker<Origin> {
             origin.inStream = new ObjectInputStream(origin.socket.getInputStream());
 
             logger.log(Level.INFO, "Input stream initialized.");
-            if (origin.inStream.available() == 0)
+            if (origin.inStream.available() == 0) {
               continue;
+            }
           }
           ObjectInputStream oIn = origin.inStream;
 
@@ -96,9 +97,10 @@ public class ReceiveThread extends Worker<Origin> {
             } else if (packets[i].flags == Constants.messagedisconnectflag) {
               origin.inStream.close();
               // Otherwise notify listener.
-            } else if (packets[i].flags == Constants.messagestandardflag)
+            } else if (packets[i].flags == Constants.messagestandardflag) {
               receiveListener
                   .receivedMessage(new Message(packets[i].message.content, origin.identifier));
+            }
           }
         } catch (IOException e) {
           // Socket was closed. Do nothing.
@@ -145,8 +147,9 @@ public class ReceiveThread extends Worker<Origin> {
       running.set(true);
       start();
       // Otherwise, notify the thread if it is sleeping.
-    } else
+    } else {
       thread.interrupt();
+    }
   }
 
   /**
@@ -168,15 +171,17 @@ public class ReceiveThread extends Worker<Origin> {
     // Get the open sockets from the sockets set.
     Vector<Origin> open = new Vector<Origin>(origins.size());
     for (int i = 0; i < origins.size(); ++i) {
-      if (origins.get(i).socket != null && !origins.get(i).socket.isClosed())
+      if (origins.get(i).socket != null && !origins.get(i).socket.isClosed()) {
         open.add(origins.get(i));
+      }
     }
 
     // Update the sockets set.
     origins.clear();
     origins.setSize(open.size());
-    for (int i = 0; i < open.size(); ++i)
+    for (int i = 0; i < open.size(); ++i) {
       origins.set(i, open.get(i));
+    }
 
     // If no origins remain, stop the thread.
     if (origins.isEmpty()) {

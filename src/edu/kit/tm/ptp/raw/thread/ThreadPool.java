@@ -11,7 +11,7 @@ package edu.kit.tm.ptp.raw.thread;
 public class ThreadPool<Item, PoolWorker extends Worker<Item>> {
 
   /** The workers in the thread pool which will handle the message queues. */
-  private final PoolWorker workers[];
+  private final PoolWorker[] workers;
 
 
   /**
@@ -19,7 +19,7 @@ public class ThreadPool<Item, PoolWorker extends Worker<Item>> {
    *
    * @param workers The workers of this thread pool.
    */
-  public ThreadPool(PoolWorker workers[]) {
+  public ThreadPool(PoolWorker[] workers) {
     this.workers = workers;
   }
 
@@ -58,8 +58,9 @@ public class ThreadPool<Item, PoolWorker extends Worker<Item>> {
    * Stops the workers of this thread pool.
    */
   public void stop() {
-    for (int i = 0; i < workers.length; ++i)
+    for (int i = 0; i < workers.length; ++i) {
       workers[i].stop();
+    }
   }
 
 }

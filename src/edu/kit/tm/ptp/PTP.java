@@ -1,9 +1,5 @@
 package edu.kit.tm.ptp;
 
-import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import edu.kit.tm.ptp.raw.Client;
 import edu.kit.tm.ptp.raw.Configuration;
 import edu.kit.tm.ptp.raw.DispatchListener;
@@ -13,6 +9,10 @@ import edu.kit.tm.ptp.raw.TorManager;
 import edu.kit.tm.ptp.raw.connection.TTLManager;
 import edu.kit.tm.ptp.raw.dispatch.MessageDispatcher;
 import edu.kit.tm.ptp.utility.Constants;
+
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 /**
@@ -113,8 +113,9 @@ public class PTP {
     }
 
     // Check if Tor is not running.
-    if (!tor.running())
+    if (!tor.running()) {
       throw new IllegalArgumentException("Starting Tor failed!");
+    }
 
     // Check if we reached the timeout without a finished boostrapping.
     if (!tor.ready()) {
@@ -159,7 +160,6 @@ public class PTP {
    * @param workingDirectory The working directory of the Tor process.
    * @param controlPort The control port of the Tor process.
    * @param socksPort The SOCKS port of the Tor process.
-   * @param socksPort The port of the local hidden service.
    * @param directory The name of the hidden service to reuse. May be null to indicate no specific
    *        reuse request.
    * @throws IllegalArgumentException Propagates any IllegalArgumentException thrown by the reading
@@ -240,8 +240,9 @@ public class PTP {
    * @see Client
    */
   public void reuseHiddenService(boolean renew) throws IOException {
-    if (renew || current == null)
+    if (renew || current == null) {
       current = new Identifier(client.identifier(!reuse));
+    }
   }
 
   /**
@@ -323,8 +324,9 @@ public class PTP {
     // Close the message dispatcher.
     dispatcher.stop();
     // Close the Tor process manager.
-    if (tor != null)
+    if (tor != null) {
       tor.stop();
+    }
   }
 
 
@@ -397,8 +399,9 @@ public class PTP {
           manager.put(message.identifier);
           // Otherwise, if the connection was not successful indicate that sending should be
           // retried.
-        } else if (connect != Client.ConnectResponse.OPEN)
+        } else if (connect != Client.ConnectResponse.OPEN) {
           return false;
+        }
 
         // Connection is successful, send the message.
         Client.SendResponse response = client.send(message.identifier.getTorAddress(),

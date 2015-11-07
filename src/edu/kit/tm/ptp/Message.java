@@ -21,7 +21,7 @@ public class Message {
    * Constructor method.
    *
    * @param content The content of the message.
-   * @param destination The Tor hidden service destination identifier.
+   * @param identifier The Tor hidden service destination identifier.
    */
   public Message(String content, Identifier identifier) {
     this.id = 0;
@@ -34,7 +34,7 @@ public class Message {
    *
    * @param id The id of the message.
    * @param content The content of the message.
-   * @param destination The Tor hidden service destination identifier.
+   * @param identifier The Tor hidden service destination identifier.
    */
   public Message(long id, String content, Identifier identifier) {
     this.id = id;
@@ -48,10 +48,12 @@ public class Message {
    */
   @Override
   public boolean equals(Object obj) {
-    if (obj == null || !(obj instanceof Message))
+    if (obj == null || !(obj instanceof Message)) {
       return false;
-    if (obj == this)
+    }
+    if (obj == this) {
       return true;
+    }
     Message msg = (Message) obj;
     return id == msg.id && content.equals(msg.content) && identifier.equals(msg.identifier);
   }

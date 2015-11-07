@@ -1,16 +1,16 @@
 package edu.kit.tm.ptp.raw.connection;
 
+import edu.kit.tm.ptp.Identifier;
+import edu.kit.tm.ptp.raw.ExpireListener;
+import edu.kit.tm.ptp.raw.thread.Suspendable;
+import edu.kit.tm.ptp.utility.Constants;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import edu.kit.tm.ptp.Identifier;
-import edu.kit.tm.ptp.raw.ExpireListener;
-import edu.kit.tm.ptp.raw.thread.Suspendable;
-import edu.kit.tm.ptp.utility.Constants;
 
 
 /**
@@ -133,8 +133,9 @@ public class TTLManager extends Suspendable {
    */
   public synchronized void set(Identifier identifier, int timer) {
     logger.log(Level.INFO, "Setting timeout (" + timer + "ms) for identifier: " + identifier);
-    if (!map.containsKey(identifier))
+    if (!map.containsKey(identifier)) {
       return;
+    }
 
     map.get(identifier).timer = timer;
     logger.log(Level.INFO, "Timeout set.");
@@ -154,8 +155,9 @@ public class TTLManager extends Suspendable {
     for (Entry<Identifier, Timeout> entry : map.entrySet()) {
       entry.getValue().timer -= step;
       // Check if the TTL expired after the substraction.
-      if (entry.getValue().timer >= 0)
+      if (entry.getValue().timer >= 0) {
         continue;
+      }
 
       logger.log(Level.INFO, "TTL expired for identifier: " + entry.getKey());
       // Disconnect the socket.
@@ -164,8 +166,9 @@ public class TTLManager extends Suspendable {
       closed.add(entry.getKey());
     }
 
-    for (Identifier identifier : closed)
+    for (Identifier identifier : closed) {
       map.remove(identifier);
+    }
   }
 
   /**

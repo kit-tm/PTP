@@ -1,12 +1,12 @@
 package edu.kit.tm.ptp.raw.dispatch;
 
+import edu.kit.tm.ptp.raw.DispatchListener;
+import edu.kit.tm.ptp.raw.thread.Worker;
+
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import edu.kit.tm.ptp.raw.DispatchListener;
-import edu.kit.tm.ptp.raw.thread.Worker;
 
 
 /**
@@ -155,8 +155,9 @@ public class DispatchThread extends Worker<Element> {
         remove(element.message.identifier.getTorAddress());
 
         // If there are more destination queues, no need to check for execution stop.
-        if (!queues.isEmpty())
+        if (!queues.isEmpty()) {
           continue;
+        }
         stopCheck();
       }
     }
@@ -169,8 +170,9 @@ public class DispatchThread extends Worker<Element> {
    */
   private synchronized void stopCheck() {
     // Check if we have more messages to send.
-    if (!undistributed.isEmpty())
+    if (!undistributed.isEmpty()) {
       return;
+    }
 
     // Otherwise, exit the execution loop.
     condition.set(false);

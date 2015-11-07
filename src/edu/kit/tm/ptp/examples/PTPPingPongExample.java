@@ -1,16 +1,16 @@
 package edu.kit.tm.ptp.examples;
 
+import edu.kit.tm.ptp.Identifier;
+import edu.kit.tm.ptp.Message;
+import edu.kit.tm.ptp.PTP;
+import edu.kit.tm.ptp.ReceiveListener;
+import edu.kit.tm.ptp.SendListenerAdapter;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import edu.kit.tm.ptp.Identifier;
-import edu.kit.tm.ptp.Message;
-import edu.kit.tm.ptp.ReceiveListener;
-import edu.kit.tm.ptp.SendListenerAdapter;
-import edu.kit.tm.ptp.PTP;
 
 
 /**
@@ -121,10 +121,11 @@ public class PTPPingPongExample {
     @Override
     public void receivedMessage(Message received) {
       System.out.println("Client received message: " + received.content);
-      if (message == null)
+      if (message == null) {
         message = received.content;
-      else
+      } else {
         duration += System.currentTimeMillis() - start;
+      }
       send(message, true);
     }
 
@@ -187,8 +188,9 @@ public class PTPPingPongExample {
           // Sleeping was interrupted. Do nothing.
         }
       }
-      if (!connected.get())
+      if (!connected.get()) {
         throw new IOException("Could not send greeting message in the given timeout.");
+      }
 
       // Wait some extra time until the greeting message is propagated to the current listener.
       waitStart = System.currentTimeMillis();
@@ -226,9 +228,10 @@ public class PTPPingPongExample {
           listener.send(message, false);
           break;
           // If the input is "no" proceed without sending a message.
-        } else if (line.equals("no"))
+        } else if (line.equals("no"))          {
           break;
         // Only accept "yes" or "no".
+        }
       }
 
       // Wait until the maximum number of PING-PONGs is reached.
@@ -246,9 +249,10 @@ public class PTPPingPongExample {
       System.out.println("Displaying running time statistics.");
       System.out.println("\t To create HS         : " + duration + " ms.");
       System.out.println("\t Wait until reachable : " + available + " ms.");
-      if (listener.sent() > 0)
+      if (listener.sent() > 0) {
         System.out
             .println("\t RTT                  : " + listener.duration() / listener.sent() + " ms.");
+      }
     } catch (IOException e) {
       e.printStackTrace();
     } catch (IllegalArgumentException e) {
@@ -257,8 +261,9 @@ public class PTPPingPongExample {
 
     // Done, exit.
     System.out.println("Exiting client.");
-    if (client != null)
+    if (client != null) {
       client.exit();
+    }
   }
 
 }

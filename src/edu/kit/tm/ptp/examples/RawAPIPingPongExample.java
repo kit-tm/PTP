@@ -1,10 +1,5 @@
 package edu.kit.tm.ptp.examples;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import edu.kit.tm.ptp.Message;
 import edu.kit.tm.ptp.ReceiveListener;
 import edu.kit.tm.ptp.raw.Client;
@@ -12,6 +7,11 @@ import edu.kit.tm.ptp.raw.Configuration;
 import edu.kit.tm.ptp.raw.MessageHandler;
 import edu.kit.tm.ptp.raw.TorManager;
 import edu.kit.tm.ptp.utility.Constants;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.concurrent.atomic.AtomicInteger;
 
 
 /**
@@ -51,7 +51,7 @@ public class RawAPIPingPongExample {
 
     public void receive() {
       duration += System.currentTimeMillis() - start;
-    };
+    }
 
   }
 
@@ -86,10 +86,11 @@ public class RawAPIPingPongExample {
         @Override
         public void receivedMessage(Message message) {
           System.out.println("Client received message: " + message.content);
-          if (holder.message == null)
+          if (holder.message == null) {
             holder.message = message.content;
-          else
+          } else {
             holder.receive();
+          }
           holder.send(true);
         }
 
@@ -131,8 +132,9 @@ public class RawAPIPingPongExample {
           System.out.println("Sending first message.");
           holder.send(false);
           break;
-        } else if (line.equals("no"))
+        } else if (line.equals("no")) {
           break;
+        }
       }
 
       System.out.println("Sleeping.");
@@ -147,16 +149,19 @@ public class RawAPIPingPongExample {
       System.out.println("Displaying running time statistics.");
       System.out.println("\t To create HS         : " + duration + " ms.");
       System.out.println("\t Wait until reachable : " + available + " ms.");
-      if (holder.sent > 0)
+      if (holder.sent > 0) {
         System.out.println("\t RTT                  : " + holder.duration / holder.sent + " ms.");
+      }
     } catch (IOException e) {
       e.printStackTrace();
     }
     System.out.println("Exiting client.");
-    if (client != null)
+    if (client != null) {
       client.exit(true);
-    if (manager != null)
+    }
+    if (manager != null) {
       manager.stop();
+    }
   }
 
 }

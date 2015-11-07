@@ -1,18 +1,15 @@
-/**
- *
- */
 package edu.kit.tm.ptp.test;
 
-import static org.junit.Assert.*;
-
-import java.util.Vector;
-
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.Assert.fail;
 
 import edu.kit.tm.ptp.Message;
 import edu.kit.tm.ptp.raw.MessageHandler;
 import edu.kit.tm.ptp.raw.Packet;
+
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.Vector;
 
 
 /**
@@ -47,15 +44,15 @@ public class MessageHandlerTest {
   /**
    * Generates random messages and cuts them into random fragments, checks if the original messages
    * are property assembled.
-   *
-   * Fails iff a message is not properly assembled.
+   * Fails if a message is not properly assembled.
    */
   @Test
   public void test() {
     // Generate random strings.
     final String[] messages = new String[m];
-    for (int i = 0; i < m; ++i)
+    for (int i = 0; i < m; ++i) {
       messages[i] = random.string(minMessageLength, maxMessageLength);
+    }
 
     // Glue the messages into random bulks.
     final Vector<StringBuilder> bulks = new Vector<StringBuilder>();
@@ -63,8 +60,9 @@ public class MessageHandlerTest {
     for (int i = 0; i < m; ++i) {
       bulks.lastElement()
           .append(MessageHandler.wrapMessage(new Message(messages[i], null)).content);
-      if (random.floating() > 0.5)
+      if (random.floating() > 0.5) {
         bulks.add(new StringBuilder(""));
+      }
     }
 
     Vector<Message> received = new Vector<Message>(m);
@@ -72,14 +70,16 @@ public class MessageHandlerTest {
     // Send the fragments.
     for (int i = 0; i < bulks.size(); ++i) {
       Packet[] packets = MessageHandler.unwrapBulk(bulks.get(i).toString());
-      for (Packet packet : packets)
+      for (Packet packet : packets) {
         received.add(packet.message);
+      }
     }
 
     for (int i = 0; i < messages.length; ++i) {
-      if (!received.get(i).content.equals(messages[i]))
+      if (!received.get(i).content.equals(messages[i])) {
         fail("Received message " + i + " [" + received.get(i).content
             + "] does not match sent message [" + messages[i] + "].");
+      }
     }
   }
 

@@ -1,16 +1,16 @@
 package edu.kit.tm.ptp.test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.fail;
 
-import java.util.concurrent.atomic.AtomicBoolean;
+import edu.kit.tm.ptp.Identifier;
+import edu.kit.tm.ptp.raw.ExpireListener;
+import edu.kit.tm.ptp.raw.connection.TTLManager;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import edu.kit.tm.ptp.Identifier;
-import edu.kit.tm.ptp.raw.ExpireListener;
-import edu.kit.tm.ptp.raw.connection.TTLManager;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 
 /**
@@ -113,11 +113,9 @@ public class TTLManagerTest {
 
   /**
    * Test method for {@link edu.kit.tm.ptp.raw.connection.TTLManager#Remove(java.lang.String)}.
-   *
-   * Removes the identifier from the running TTLManager and checks whether an expire notification is
-   * still sent.
-   *
-   * Fails iff the notififaction is received.
+   * Removes the identifier from the running TTLManager
+   * and checks whether an expire notification is still sent.
+   * Fails if the notififaction is received.
    */
   @Test
   public void testRemove() {
@@ -136,15 +134,14 @@ public class TTLManagerTest {
     }
 
     // Check if the listener was notified of the expiration.
-    if (client.disconnected.get())
+    if (client.disconnected.get()) {
       fail("Listener was not notified of the expired TTL.");
+    }
   }
 
   /**
    * Test method for {@link edu.kit.tm.ptp.raw.connection.TTLManager#set(java.lang.String, int)}.
-   *
    * Checks whether an expire notification is sent for the random identifier by the TTLManager.
-   *
    * Fails iff the notififaction is not received shorty after the expiration time.
    */
   @Test
@@ -164,34 +161,36 @@ public class TTLManagerTest {
     }
 
     // Check if the listener was notified of the expiration.
-    if (!client.disconnected.get())
+    if (!client.disconnected.get()) {
       fail("Listener was not notified of the expired TTL.");
+    }
   }
 
   /**
    * Test method for {@link edu.kit.tm.ptp.raw.thread.Suspendable#running()}.
-   *
    * Checks whether the running TTLManager, the not started TTLManager and the stopped running
    * TTLManager tell their states correctly.
-   *
    * Fails iff any of the returned states are incorrect.
    */
   @Test
   public void testRunning() {
     // Check if the running TTLManager tells its state correctly.
-    if (!runningManager.running())
+    if (!runningManager.running()) {
       fail("Started TTLManager running check returns false.");
+    }
 
     // Check if the not started TTLManager tells its state correctly.
-    if (manager.running())
+    if (manager.running()) {
       fail("Not started TTLManager running check returns true.");
+    }
 
     // Stop the running manager.
     runningManager.stop();
 
     // Check if the stopped running TTLManager tells its state correctly.
-    if (runningManager.running())
+    if (runningManager.running()) {
       fail("Stopped TTLManager running check returns true.");
+    }
   }
 
 }

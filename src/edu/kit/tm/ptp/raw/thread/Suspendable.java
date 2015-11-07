@@ -1,11 +1,10 @@
 package edu.kit.tm.ptp.raw.thread;
 
+import edu.kit.tm.ptp.utility.Constants;
+
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import edu.kit.tm.ptp.utility.Constants;
-
 
 
 /**

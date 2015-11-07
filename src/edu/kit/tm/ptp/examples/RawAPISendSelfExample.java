@@ -1,8 +1,5 @@
 package edu.kit.tm.ptp.examples;
 
-import java.io.IOException;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import edu.kit.tm.ptp.Message;
 import edu.kit.tm.ptp.ReceiveListener;
 import edu.kit.tm.ptp.raw.Client;
@@ -10,6 +7,9 @@ import edu.kit.tm.ptp.raw.Configuration;
 import edu.kit.tm.ptp.raw.MessageHandler;
 import edu.kit.tm.ptp.raw.TorManager;
 import edu.kit.tm.ptp.utility.Constants;
+
+import java.io.IOException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 
 /**
@@ -45,12 +45,13 @@ public class RawAPISendSelfExample {
     client.listener(new ReceiveListener() {
 
       @Override
-      public void receivedMessage(Message m) {
-        System.out.println("Received message: " + m.content);
-        if (m.content.equals(message))
+      public void receivedMessage(Message receivedMsg) {
+        System.out.println("Received message: " + receivedMsg.content);
+        if (receivedMsg.content.equals(message)) {
           System.out.println("Received message matches sent message.");
-        else
+        } else {
           System.out.println("Received message does not match sent message.");
+        }
         received.set(true);
       }
 

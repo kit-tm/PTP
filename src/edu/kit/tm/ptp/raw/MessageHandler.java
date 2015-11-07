@@ -1,10 +1,9 @@
 package edu.kit.tm.ptp.raw;
 
-import java.util.Vector;
-
 import edu.kit.tm.ptp.Message;
 import edu.kit.tm.ptp.utility.Constants;
 
+import java.util.Vector;
 
 
 /**
@@ -34,8 +33,9 @@ public class MessageHandler {
       // Get the position of the next wrapped message length delimiter.
       final int position = bulk.indexOf(Constants.messagelengthdelimiter, index);
       // If no length delimiter is found we are done.
-      if (position == -1)
+      if (position == -1) {
         break;
+      }
       // Fetch the message length.
       final int length = Integer.valueOf(bulk.substring(index, position));
       // Fetch the message flag.
@@ -49,8 +49,9 @@ public class MessageHandler {
     }
 
     Packet[] packets = new Packet[buffer.size()];
-    for (int i = 0; i < buffer.size(); ++i)
+    for (int i = 0; i < buffer.size(); ++i) {
       packets[i] = buffer.get(i);
+    }
 
     return packets;
   }

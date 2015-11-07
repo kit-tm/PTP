@@ -1,12 +1,9 @@
 package edu.kit.tm.ptp.test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.fail;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.Proxy;
-import java.net.Socket;
+import edu.kit.tm.ptp.raw.TorManager;
+import edu.kit.tm.ptp.utility.Constants;
 
 import net.freehaven.tor.control.TorControlConnection;
 
@@ -14,10 +11,11 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import edu.kit.tm.ptp.raw.TorManager;
-import edu.kit.tm.ptp.utility.Constants;
-
-
+import java.io.File;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.Socket;
 
 /**
  * This class offers JUnit testing for the TorManager class.
@@ -91,11 +89,9 @@ public class TorManagerTest {
 
   /**
    * Test method for {@link edu.kit.tm.ptp.raw.TorManager#stop()}.
-   *
    * Checks whether the ready TorManager returns a non-running state after being stopped and deletes
    * its working directory.
-   *
-   * Fails iff the ready TorManager returns a running state after being stopped, or if the ready
+   * Fails if the ready TorManager returns a running state after being stopped, or if the ready
    * TorManager working directory still exists.
    */
   @Test
@@ -103,66 +99,69 @@ public class TorManagerTest {
     // Stop the concurrent TorManager.
     concurrentManager.stop();
     // Check whether the concurrent TorManager is still running.
-    if (concurrentManager.running())
+    if (concurrentManager.running()) {
       fail("Concurrent TorManager is returning a running state after being stopped.");
-    if (!concurrentManager.torrunning())
+    }
+    if (!concurrentManager.torrunning()) {
       fail("Concurrent TorManager is returning a stopped Tor process state after being stopped.");
+    }
     // Check whether the ready TorManager is still running.
-    if (!readyManager.running())
+    if (!readyManager.running()) {
       fail("Ready TorManager is returning a stopped state before being stopped.");
-    if (!readyManager.torrunning())
+    }
+    if (!readyManager.torrunning()) {
       fail("Ready TorManager is returning a stopped Tor process state after being stopped.");
+    }
     // Stop the ready TorManager.
     readyManager.stop();
     // Check whether the ready TorManager is still running.
-    if (readyManager.running())
+    if (readyManager.running()) {
       fail("Ready TorManager is returning a running state after being stopped.");
-    if (readyManager.torrunning())
+    }
+    if (readyManager.torrunning()) {
       fail("Ready TorManager is returning a running Tor process state after being stopped.");
+    }
   }
 
   /**
    * Test method for {@link edu.kit.tm.ptp.raw.TorManager#directory()}.
-   *
    * Checks whether the working directory indicated by the ready TorManager exists.
-   *
    * Fails iff the working directory indicated by the ready TorManager does not exist.
    */
   @Test
   public void testDirectory() {
-    if (!new File(readyManager.directory()).exists())
+    if (!new File(readyManager.directory()).exists()) {
       fail("Ready TorManager directory does not exist.");
+    }
   }
 
   /**
    * Test method for {@link edu.kit.tm.ptp.raw.TorManager#ready()}.
-   *
    * Checks whether the ready TorManager returns a ready state and if the TorManager returns a
    * non-ready state.
-   *
    * Fails iff the ready TorManager returns a non-ready states, or if the TorManager returns a ready
    * state.
    */
   @Test
   public void testReady() {
-    if (!readyManager.ready())
+    if (!readyManager.ready()) {
       fail("Ready TorManager returns a non-ready state.");
-    if (manager.ready())
+    }
+    if (manager.ready()) {
       fail("TorManager returns a ready state.");
+    }
   }
 
   /**
    * Test method for {@link edu.kit.tm.ptp.raw.TorManager#controlport()}.
-   *
    * Attempts to connect to the control port of the Tor process started by the ready TorManager.
-   *
-   * Fails iff the connection to the control port failed.
+   * Fails if the connection to the control port failed.
    */
   @Test
   public void testControlport() {
     try {
-      Socket s = new Socket(localhost, readyManager.controlport());
-      TorControlConnection conn = new TorControlConnection(s);
+      Socket socket = new Socket(localhost, readyManager.controlport());
+      TorControlConnection conn = new TorControlConnection(socket);
       conn.authenticate(new byte[] {});
     } catch (IOException e) {
       fail("Caught an IOException while connecting to Tors control port: " + e.getMessage());
@@ -171,10 +170,8 @@ public class TorManagerTest {
 
   /**
    * Test method for {@link edu.kit.tm.ptp.raw.TorManager#socksport()}.
-   *
    * Attempts to use the SOCKS proxy of the Tor process (started by the ready TorManager) to connect
    * to a destination address.
-   *
    * Fails iff connecting to the destination fails.
    */
   @Test
@@ -183,10 +180,10 @@ public class TorManagerTest {
     InetSocketAddress midpoint = new InetSocketAddress(localhost, readyManager.socksport());
     Proxy proxy = new Proxy(Proxy.Type.SOCKS, midpoint);
     Socket socket = new Socket(proxy);
-    InetSocketAddress d = new InetSocketAddress(destination, port);
+    InetSocketAddress address = new InetSocketAddress(destination, port);
 
     try {
-      socket.connect(d);
+      socket.connect(address);
     } catch (IOException e) {
       fail("Using the proxy to connect to destination failed: " + destination + ":" + port);
     }
@@ -200,19 +197,19 @@ public class TorManagerTest {
 
   /**
    * Test method for {@link edu.kit.tm.ptp.raw.thread.Suspendable#running()}.
-   *
    * Checks whether the ready TorManager returns a running state and if the TorManager returns a
    * non-running state.
-   *
-   * Fails iff the ready TorManager returns a non-running states, or if the TorManager returns a
+   * Fails if the ready TorManager returns a non-running states, or if the TorManager returns a
    * running state.
    */
   @Test
   public void testRunning() {
-    if (!readyManager.running())
+    if (!readyManager.running()) {
       fail("Ready TorManager returns a non-running state.");
-    if (manager.running())
+    }
+    if (manager.running()) {
       fail("TorManager returns a running state.");
+    }
   }
 
 }

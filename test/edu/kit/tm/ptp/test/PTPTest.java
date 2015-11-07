@@ -1,21 +1,21 @@
 package edu.kit.tm.ptp.test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
-import java.io.IOException;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
+import edu.kit.tm.ptp.Identifier;
+import edu.kit.tm.ptp.Message;
+import edu.kit.tm.ptp.PTP;
+import edu.kit.tm.ptp.ReceiveListener;
+import edu.kit.tm.ptp.SendListenerAdapter;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import edu.kit.tm.ptp.Identifier;
-import edu.kit.tm.ptp.Message;
-import edu.kit.tm.ptp.ReceiveListener;
-import edu.kit.tm.ptp.SendListenerAdapter;
-import edu.kit.tm.ptp.PTP;
-
+import java.io.IOException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * This class offers JUnit testing for the PTP class.
@@ -89,7 +89,7 @@ public class PTPTest {
   }
 
   /**
-   * Test for fail handlers in SendListenerAdapter
+   * Test for fail handlers in SendListenerAdapter.
    */
   @Test
   public void testSendFail() {
@@ -103,9 +103,6 @@ public class PTPTest {
     // two invalid identifiers
     Identifier invalidId1 = new Identifier("12345");
     Identifier invalidId2 = new Identifier("1234567812345678.onion");
-
-    // a random valid address
-    Identifier offlineId = new Identifier("bwehoflnshqul42e.onion");
 
     // helper class as we will be testing different addresses
     class TestSendFailHelper {
@@ -143,15 +140,22 @@ public class PTPTest {
           }
         }
 
-        if (sendSuccess.get())
+        if (sendSuccess.get()) {
           fail("Received send success notification.");
-        if (!sendFail.get())
+        }
+        if (!sendFail.get()) {
           fail("No failure notification received");
-        if (!returnedMessage.content.equals(testString))
+        }
+        if (!returnedMessage.content.equals(testString)) {
           fail("Notifier message " + returnedMessage.content + " does not equal sent message "
               + testString);
+        }
       }
     }
+    
+    // a random valid address
+    Identifier offlineId = new Identifier("bwehoflnshqul42e.onion");
+    
     TestSendFailHelper helper = new TestSendFailHelper();
     helper.run(invalidId1);
     helper.run(invalidId2);
@@ -160,8 +164,7 @@ public class PTPTest {
 
   /**
    * Test sending a message to an address managed by the same PTP instance, and receiving it.
-   *
-   * Fails iff the sent message was not received within a time interval, or if the received message
+   * Fails if the sent message was not received within a time interval, or if the received message
    * does not match the sent message.
    */
   @Test
@@ -183,10 +186,10 @@ public class PTPTest {
     client1.setListener(new ReceiveListener() {
 
       @Override
-      public void receivedMessage(Message m) {
-        System.out.println("Received message: " + m.content);
+      public void receivedMessage(Message message) {
+        System.out.println("Received message: " + message.content);
         received.set(true);
-        matches.set(m.content.equals(testString));
+        matches.set(message.content.equals(testString));
       }
     });
 
@@ -211,32 +214,35 @@ public class PTPTest {
         // Sleeping was interrupted. Do nothing.
       }
     }
-    if (!sendSuccess.get())
+    if (!sendSuccess.get()) {
       fail("Sending the message via the client to the created identifier was not successful.");
+    }
 
     // Wait (no more than 30 seconds) until the message was received.
     final long start = System.currentTimeMillis();
     while (!received.get()) {
       try {
         Thread.sleep(3 * 1000);
-        if (System.currentTimeMillis() - start > 30 * 1000)
+        if (System.currentTimeMillis() - start > 30 * 1000) {
           fail("Connecting to the created identifier took too long.");
+        }
       } catch (InterruptedException e) {
         // Waiting was interrupted. Do nothing.
       }
     }
 
-    if (!received.get())
+    if (!received.get()) {
       fail("Message not received.");
+    }
 
-    if (!matches.get())
+    if (!matches.get()) {
       fail("Received message does not match sent message.");
+    }
   }
 
   /**
    * Tests the API wrapper with a ping-pong between two API objects.
-   *
-   * Fails iff a received message does not match the first sent message, or if there is no real
+   * Fails if a received message does not match the first sent message, or if there is no real
    * ping-pong, or if the number of received message does not reach the maximum number of messages
    * to receive.
    */
@@ -264,25 +270,27 @@ public class PTPTest {
     client1.setListener(new ReceiveListener() {
 
       @Override
-      public void receivedMessage(Message m) {
+      public void receivedMessage(Message message) {
         counter1.incrementAndGet();
-        matchFail.set(!m.content.equals(testString));
-        if (counter1.get() - counter2.get() > 1)
+        matchFail.set(!message.content.equals(testString));
+        if (counter1.get() - counter2.get() > 1) {
           countingFail.set(true);
-        final Message msg = new Message(m.content, m.identifier);
-        client1.sendMessage(msg, 10 * 1000);
+        }
+        final Message response = new Message(message.content, message.identifier);
+        client1.sendMessage(response, 10 * 1000);
       }
     });
     client2.setListener(new ReceiveListener() {
 
       @Override
-      public void receivedMessage(Message m) {
+      public void receivedMessage(Message message) {
         counter2.incrementAndGet();
-        matchFail.set(!m.content.equals(testString));
-        if (counter2.get() - counter1.get() > 1)
+        matchFail.set(!message.content.equals(testString));
+        if (counter2.get() - counter1.get() > 1) {
           countingFail.set(true);
-        final Message msg = new Message(m.content, m.identifier);
-        client2.sendMessage(msg, 10 * 1000);
+        }
+        final Message response = new Message(message.content, message.identifier);
+        client2.sendMessage(response, 10 * 1000);
       }
     });
 
@@ -305,8 +313,9 @@ public class PTPTest {
         // Sleeping was interrupted. Do nothing.
       }
     }
-    if (!sendSuccess.get())
+    if (!sendSuccess.get()) {
       fail("Sending initial ping-pong message failed.");
+    }
 
     // Wait for all ping-pong messages to arrive.
     final long start = System.currentTimeMillis();
@@ -318,21 +327,23 @@ public class PTPTest {
         // Waiting was interrupted. Do nothing.
       }
     }
-    if (counter1.get() + counter2.get() < max)
+    if (counter1.get() + counter2.get() < max) {
       fail("Maximum number of received messages not reached.");
+    }
 
-    if (matchFail.get())
+    if (matchFail.get()) {
       fail("An instance received a message that did not match the sent message.");
+    }
 
-    if (countingFail.get())
+    if (countingFail.get()) {
       fail("Weird ordering fail: one of the instances was 2 messages ahead.");
+    }
   }
 
   /**
    * Tests sending a 16 MB message between two PTP instances.
-   *
    * Fails if the sent message was not received within a time interval, or if the received message
-   * does not match the sent message. Warning: better deactivate logging of messages <WARNING for
+   * does not match the sent message. Warning: better deactivate logging of messages &lt;WARNING for
    * this test.
    */
   @Test
@@ -367,8 +378,8 @@ public class PTPTest {
     client2.setListener(new ReceiveListener() {
 
       @Override
-      public void receivedMessage(Message m) {
-        matches.set(m.content.equals(bigString));
+      public void receivedMessage(Message message) {
+        matches.set(message.content.equals(bigString));
         receiveSuccess.set(true);
       }
     });
@@ -397,23 +408,27 @@ public class PTPTest {
         // Sleeping was interrupted. Do nothing.
       }
     }
-    if (failState.get() >= 0)
+    if (failState.get() >= 0) {
       fail("Sending failed: " + SendListenerAdapter.FailState.values()[failState.get()].toString());
-    if (!sendSuccess.get())
+    }
+    if (!sendSuccess.get()) {
       fail("Sending timed out and this wasn't detected by sendListener.");
+    }
 
     // Wait (no more than 2 minutes) until the message was received.
     waitStart = System.currentTimeMillis();
     while (!receiveSuccess.get()) {
       try {
         Thread.sleep(3 * 1000);
-        if (System.currentTimeMillis() - waitStart > 120 * 1000)
+        if (System.currentTimeMillis() - waitStart > 120 * 1000) {
           fail("SendingListener reported success but message not received after 2 minutes.");
+        }
       } catch (InterruptedException e) {
         // Waiting was interrupted. Do nothing.
       }
     }
-    if (!matches.get())
+    if (!matches.get()) {
       fail("Received message does not match sent message.");
+    }
   }
 }

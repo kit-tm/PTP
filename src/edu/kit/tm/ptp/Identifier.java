@@ -38,10 +38,12 @@ public class Identifier {
    */
   @Override
   public boolean equals(Object obj) {
-    if (obj == null || !(obj instanceof Identifier))
+    if (obj == null || !(obj instanceof Identifier)) {
       return false;
-    if (this == obj)
+    }
+    if (this == obj) {
       return true;
+    }
     return address.equals(((Identifier) obj).address);
   }
 

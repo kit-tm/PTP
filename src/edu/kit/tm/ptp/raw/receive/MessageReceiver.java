@@ -1,16 +1,16 @@
 package edu.kit.tm.ptp.raw.receive;
 
-import java.io.IOException;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import edu.kit.tm.ptp.ReceiveListener;
 import edu.kit.tm.ptp.raw.ConnectionListener;
 import edu.kit.tm.ptp.raw.thread.Suspendable;
 import edu.kit.tm.ptp.raw.thread.ThreadPool;
 import edu.kit.tm.ptp.utility.Constants;
+
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 /**
@@ -27,7 +27,7 @@ public class MessageReceiver extends Suspendable {
   /** The server socket attended by this waiter. */
   private final ServerSocket server;
   /** The thread pool workers to use. */
-  private final ReceiveThread workers[];
+  private final ReceiveThread[] workers;
   /** The thread pool to use when receiving from multiple origins. */
   private final ThreadPool<Origin, ReceiveThread> threadPool;
 
@@ -48,8 +48,9 @@ public class MessageReceiver extends Suspendable {
     server = new ServerSocket(port);
     // Create the thread pool.
     workers = new ReceiveThread[threads];
-    for (int i = 0; i < threads; ++i)
+    for (int i = 0; i < threads; ++i) {
       workers[i] = new ReceiveThread(listener, pollInterval);
+    }
     threadPool = new ThreadPool<Origin, ReceiveThread>(workers);
 
     logger.log(Level.INFO, "Message receiver object created with threads number: " + threads);
@@ -71,10 +72,11 @@ public class MessageReceiver extends Suspendable {
         logger.log(Level.INFO, "Message receiver accepted connection.");
       } catch (IOException e) {
         // Stopping the message receiver causes an IOException here, otherwise something went wrong.
-        if (condition.get())
+        if (condition.get()) {
           logger.log(Level.WARNING,
               "Message receiver caught an IOException while listening for connections: "
                   + e.getMessage());
+        }
       }
     }
     running.set(false);
@@ -86,8 +88,9 @@ public class MessageReceiver extends Suspendable {
   @Override
   public void stop() {
     logger.log(Level.INFO, "Stopping message dispatcher.");
-    if (!running.get())
+    if (!running.get()) {
       return;
+    }
     condition.set(false);
     threadPool.stop();
 
@@ -123,8 +126,9 @@ public class MessageReceiver extends Suspendable {
    * @param listener The listener to notify on received messages.
    */
   public void setListener(ReceiveListener listener) {
-    for (int i = 0; i < workers.length; ++i)
+    for (int i = 0; i < workers.length; ++i) {
       workers[i].setListener(listener);
+    }
   }
 
   /**

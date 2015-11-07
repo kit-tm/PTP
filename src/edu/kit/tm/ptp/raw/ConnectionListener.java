@@ -1,9 +1,8 @@
 package edu.kit.tm.ptp.raw;
 
-import java.net.Socket;
-
 import edu.kit.tm.ptp.Identifier;
 
+import java.net.Socket;
 
 
 /**

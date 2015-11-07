@@ -1,5 +1,10 @@
 package edu.kit.tm.ptp.raw;
 
+import edu.kit.tm.ptp.raw.thread.Suspendable;
+import edu.kit.tm.ptp.utility.Constants;
+
+import net.freehaven.tor.control.TorControlConnection;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -16,11 +21,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import edu.kit.tm.ptp.raw.thread.Suspendable;
-import edu.kit.tm.ptp.utility.Constants;
-
-import net.freehaven.tor.control.TorControlConnection;
 
 
 /**
@@ -53,7 +53,7 @@ public class TorManager extends Suspendable {
   /** The control port number of the Tor process. */
   private int torControlPort;
   /** The SOCKS proxy port number of the Tor process. */
-  private int torSOCKSProxyPort;
+  private int torSocksProxyPort;
   /** Used to check whether the Tor control port is known. */
   private boolean controlPortRead = false;
   /** Used to check whether the Tor SOCKS port is known. */
@@ -71,21 +71,24 @@ public class TorManager extends Suspendable {
     // Read the PTP home directory from the system environment variable/passed property at runtime.
     // Or use default if neither is set.
     String ptphome = System.getenv(Constants.ptphome);
-    if (ptphome == null)
+    if (ptphome == null) {
       ptphome = Constants.ptphomedefault;
+    }
     workingDirectory = ptphome;
 
     // Check if the home directory exists, if not try to create it.
     File directory = new File(workingDirectory);
-    if (!directory.exists() && !directory.mkdirs())
+    if (!directory.exists() && !directory.mkdirs()) {
       // Home directory does not exist and was not created.
       throw new IOException("Unable to create missing PTP home directory.");
+    }
 
     // Check if the lock file exists, if not create it.
     lockFile = new File(workingDirectory + File.separator + Constants.tormanagerlockfile);
-    if (!lockFile.exists() && !lockFile.createNewFile())
+    if (!lockFile.exists() && !lockFile.createNewFile()) {
       // Lock file does not exist and was not created.
       throw new IOException("Unable to create missing PTP Tor manager lock file.");
+    }
 
     // Get a handle on the Tor manager ports file.
     portsFile = new File(workingDirectory + File.separator + Constants.tormanagerportsfile);
@@ -152,8 +155,8 @@ public class TorManager extends Suspendable {
             TorControlConnection conn = new TorControlConnection(s);
             conn.authenticate(new byte[0]);
           } catch (IOException e) {
-            logger.log(Level.INFO,
-                "Tor manager could not connect to the Tor process, the file lock counter is broken.");
+            logger.log(Level.INFO, "Tor manager could not connect to the Tor process,"
+                + "the file lock counter is broken.");
             noTor = true;
           }
         }
@@ -163,10 +166,9 @@ public class TorManager extends Suspendable {
           // Run the Tor process.
           final boolean success = runtor();
           // Check if the Tor process failed to start.
-          if (!success)
+          if (!success) {
             running.set(false);
-          // If not, set the number of APIs using Tor to one.
-          else {
+          } else {
             raf.seek(0);
             raf.writeInt(1);
             logger.log(Level.INFO, "Tor manager set lock file counter to: " + 1);
@@ -175,10 +177,10 @@ public class TorManager extends Suspendable {
           // the Tor process.
         } else {
           raf.seek(0);
-          final int numberOfAPIs = raf.readInt();
+          final int numberOfApis = raf.readInt();
           raf.seek(0);
-          raf.writeInt(numberOfAPIs + 1);
-          logger.log(Level.INFO, "Tor manager set lock file counter to: " + (numberOfAPIs + 1));
+          raf.writeInt(numberOfApis + 1);
+          logger.log(Level.INFO, "Tor manager set lock file counter to: " + (numberOfApis + 1));
         }
 
         // Release the lock.
@@ -197,8 +199,9 @@ public class TorManager extends Suspendable {
             "Tor manager caught an IOException during Tor process initialization: "
                 + e.getMessage());
       }
-    } else
+    } else {
       running.set(false);
+    }
 
     logger.log(Level.INFO, "Tor manager thread exiting.");
   }
@@ -226,14 +229,17 @@ public class TorManager extends Suspendable {
     logger.log(Level.INFO, "Interrupting Tor manager thread.");
     thread.interrupt();
     logger.log(Level.INFO, "Closing output thread.");
-    if (output != null)
+    if (output != null) {
       output.interrupt();
+    }
     logger.log(Level.INFO, "Closing error thread.");
-    if (error != null)
+    if (error != null) {
       error.interrupt();
+    }
     logger.log(Level.INFO, "Interrupting ports thread.");
-    if (ports != null)
+    if (ports != null) {
       ports.interrupt();
+    }
     logger.log(Level.INFO, "Stopped Tor manager thread.");
 
     // Stop Tor, if no other API is using the process.
@@ -268,8 +274,9 @@ public class TorManager extends Suspendable {
    *         Tor process is not yet done.
    */
   public int controlport() {
-    if (!ready.get())
+    if (!ready.get()) {
       throw new IllegalArgumentException("Bootstrapping not done!");
+    }
 
     return torControlPort;
   }
@@ -282,10 +289,11 @@ public class TorManager extends Suspendable {
    *         Tor process is not yet done.
    */
   public int socksport() {
-    if (!ready.get())
+    if (!ready.get()) {
       throw new IllegalArgumentException("Bootstrapping not done!");
+    }
 
-    return torSOCKSProxyPort;
+    return torSocksProxyPort;
   }
 
   public boolean torrunning() {
@@ -337,8 +345,9 @@ public class TorManager extends Suspendable {
    * Kills the Tor process if started.
    */
   public void killtor() {
-    if (process != null)
+    if (process != null) {
       process.destroy();
+    }
   }
 
 
@@ -347,8 +356,9 @@ public class TorManager extends Suspendable {
    */
   private void stoptor() {
     // Check if the Tor manager is still running.
-    if (!running.get())
+    if (!running.get()) {
       return;
+    }
 
     logger.log(Level.INFO, "Tor manager checking if Tor process should be closed.");
     try {
@@ -373,20 +383,20 @@ public class TorManager extends Suspendable {
       // If the lock file does not contain a single integer, something is wrong.
       if (length == Integer.SIZE / 8) {
 
-        final int numberOfAPIs = raf.readInt();
+        final int numberOfApis = raf.readInt();
         logger.log(Level.INFO,
-            "Tor manager read the number of APIs from the Tor manager lock file: " + numberOfAPIs);
+            "Tor manager read the number of APIs from the Tor manager lock file: " + numberOfApis);
 
         raf.seek(0);
-        raf.writeInt(Math.max(0, numberOfAPIs - 1));
+        raf.writeInt(Math.max(0, numberOfApis - 1));
 
         // Check if this is the only API using the Tor process, if so stop the Tor process.
-        if (numberOfAPIs == 1) {
+        if (numberOfApis == 1) {
           logger.log(Level.INFO, "Tor manager stopping Tor process.");
           logger.log(Level.INFO, "Using control port: " + torControlPort);
-          Socket s = new Socket(Constants.localhost, torControlPort);
+          Socket socket = new Socket(Constants.localhost, torControlPort);
           logger.log(Level.INFO, "Tor manager attempting to shutdown Tor process.");
-          TorControlConnection conn = new TorControlConnection(s);
+          TorControlConnection conn = new TorControlConnection(socket);
           conn.authenticate(new byte[0]);
           conn.shutdownTor(Constants.shutdownsignal);
           logger.log(Level.INFO, "Tor manager sent shutdown signal.");
@@ -394,8 +404,9 @@ public class TorManager extends Suspendable {
           portsFile.delete();
           logger.log(Level.INFO, "Deleted Tor manager ports file.");
         }
-      } else
+      } else {
         logger.log(Level.WARNING, "Tor manager file lock is broken!");
+      }
 
       // Release the lock.
       logger.log(Level.INFO, "Tor manager releasing the lock on the Tor manager lock file.");
@@ -437,8 +448,9 @@ public class TorManager extends Suspendable {
 
         logger.log(Level.INFO, "Tor manager ports thread done waiting.");
         // Check if the Tor Manager is still running.
-        if (!running.get())
+        if (!running.get()) {
           return;
+        }
 
         logger.log(Level.INFO, "Tor manager ports thread reading ports file.");
         try {
@@ -515,8 +527,9 @@ public class TorManager extends Suspendable {
                 String line = errorOut.readLine();
                 logger.log(Level.INFO, "Error thread read Tor output line:\n" + line);
                 // If we read null we are done with the process output.
-                if (line == null)
+                if (line == null) {
                   break;
+                }
               } else {
                 try {
                   Thread.sleep(10 * 1000);
@@ -550,18 +563,19 @@ public class TorManager extends Suspendable {
                 String line = standardOut.readLine();
                 logger.log(Level.INFO, "Output thread read Tor output line:\n" + line);
                 // If we read null we are done with the process output.
-                if (line == null)
+                if (line == null) {
                   break;
+                }
                 // if not, check if we read that the bootstrapping is complete.
                 if (line.contains(Constants.bootstrapdone) && controlPortRead && socksPortRead) {
                   logger.log(Level.INFO, "Output thread Tor ports to Tor manager ports file.");
                   BufferedWriter writer = new BufferedWriter(new FileWriter(portsFile));
 
                   writer.write(torControlPort + Constants.newline);
-                  writer.write(torSOCKSProxyPort + Constants.newline);
+                  writer.write(torSocksProxyPort + Constants.newline);
 
                   logger.log(Level.INFO, "Output thread writing wrote: " + torControlPort);
-                  logger.log(Level.INFO, "Output thread writing wrote: " + torSOCKSProxyPort);
+                  logger.log(Level.INFO, "Output thread writing wrote: " + torSocksProxyPort);
 
                   writer.close();
                   logger.log(Level.INFO, "Output thread wrote Tor manager ports file.");
@@ -576,17 +590,18 @@ public class TorManager extends Suspendable {
                   controlPortRead = true;
                   // If not, check whether the SOCKS proxy port is open.
                 } else if (line.contains(Constants.socksportopen)) {
-                  torSOCKSProxyPort = readport(Constants.socksportopen, line);
+                  torSocksProxyPort = readport(Constants.socksportopen, line);
                   socksPortRead = true;
                 }
               } else {
                 try {
                   // If the Tor process bootstrapping is not done, sleep less. Otherwise sleep for a
                   // longer interval.
-                  if (bootstrapped)
+                  if (bootstrapped) {
                     Thread.sleep(5 * 1000);
-                  else
+                  } else {
                     Thread.sleep(1 * 1000);
+                  }
                 } catch (InterruptedException e) {
                   // Waiting was interrupted. Do nothing.
                 }
@@ -618,8 +633,9 @@ public class TorManager extends Suspendable {
    * @throws IOException Propagates any IOException thrown when reading the Tor manager ports file.
    */
   private void readports() throws IOException {
-    if (controlPortRead && socksPortRead)
+    if (controlPortRead && socksPortRead) {
       return;
+    }
 
     BufferedReader reader = new BufferedReader(new FileReader(portsFile));
 
@@ -627,12 +643,12 @@ public class TorManager extends Suspendable {
     String socksPortLine = reader.readLine();
 
     torControlPort = Integer.valueOf(controlPortLine).intValue();
-    torSOCKSProxyPort = Integer.valueOf(socksPortLine).intValue();
+    torSocksProxyPort = Integer.valueOf(socksPortLine).intValue();
 
     reader.close();
 
     logger.log(Level.INFO, "Ports thread read Tor control port from file: " + torControlPort);
-    logger.log(Level.INFO, "Ports thread r read Tor SOCKS port from file: " + torSOCKSProxyPort);
+    logger.log(Level.INFO, "Ports thread r read Tor SOCKS port from file: " + torSocksProxyPort);
   }
 
   /**
@@ -650,8 +666,9 @@ public class TorManager extends Suspendable {
     Pattern pattern = Pattern.compile(regex);
     Matcher matcher = pattern.matcher(output);
 
-    if (!matcher.find())
+    if (!matcher.find()) {
       throw new IllegalArgumentException("Port number not found in line: " + line);
+    }
 
     String port = matcher.group();
 

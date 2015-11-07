@@ -1,18 +1,6 @@
-/**
- *
- */
 package edu.kit.tm.ptp.test;
 
-import static org.junit.Assert.*;
-
-import java.io.IOException;
-import java.net.Socket;
-import java.util.HashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.Assert.fail;
 
 import edu.kit.tm.ptp.Identifier;
 import edu.kit.tm.ptp.Message;
@@ -22,6 +10,14 @@ import edu.kit.tm.ptp.raw.MessageHandler;
 import edu.kit.tm.ptp.raw.receive.MessageReceiver;
 import edu.kit.tm.ptp.utility.Constants;
 
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.net.Socket;
+import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * This class offers JUnit testing for the MessageReceiver class.
@@ -64,8 +60,9 @@ public class MessageReceiverTest {
     public void receivedMessage(Message message) {
       String m = message.content;
 
-      if (!map.containsKey(m))
+      if (!map.containsKey(m)) {
         map.put(m, 0);
+      }
       map.put(m, map.get(m) + 1);
 
       counter.incrementAndGet();
@@ -134,15 +131,15 @@ public class MessageReceiverTest {
   /**
    * Tests the functionality of the MessageReceiver class. Send a number of random messages and
    * check if all are received.
-   *
-   * Fails iff not all sent messages are received.
+   * Fails if not all sent messages are received.
    */
   @Test
   public void test() {
     // Generate random messages.
     String[] messages = new String[n];
-    for (int i = 0; i < n; ++i)
+    for (int i = 0; i < n; ++i) {
       messages[i] = random.string(minimumMessageLength, maximumMessageLength);
+    }
 
     // Get the server socket port.
     final int port = receiver.getPort();
@@ -162,8 +159,9 @@ public class MessageReceiverTest {
     // Send the random messages.
     for (int i = 0; i < n; ++i) {
       // Add the message to the reference.
-      if (!map.containsKey(messages[i]))
+      if (!map.containsKey(messages[i])) {
         map.put(messages[i], 0);
+      }
       map.put(messages[i], map.get(messages[i]) + 1);
 
       // Send the message via a random socket.
@@ -188,8 +186,9 @@ public class MessageReceiverTest {
 
     for (int i = 0; i < n; ++i) {
       if (!listener.map.containsKey(messages[i])
-          || map.get(messages[i]).intValue() != listener.map.get(messages[i]))
+          || map.get(messages[i]).intValue() != listener.map.get(messages[i])) {
         fail("Received message count does not match reference: " + messages[i]);
+      }
     }
   }
 

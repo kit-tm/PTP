@@ -1,12 +1,12 @@
 package edu.kit.tm.ptp.utility;
 
-import java.io.IOException;
-import java.net.InetAddress;
-import java.util.Date;
-
 import org.apache.commons.net.ntp.NTPUDPClient;
 import org.apache.commons.net.ntp.NtpV3Packet;
 import org.apache.commons.net.ntp.TimeInfo;
+
+import java.io.IOException;
+import java.net.InetAddress;
+import java.util.Date;
 
 
 /**
@@ -35,7 +35,7 @@ public final class DateUtils {
   public static final String TIME_SERVER = "0.de.pool.ntp.org";
 
 
-  public final static Time getAtomicTime() throws IOException {
+  public static final Time getAtomicTime() throws IOException {
     NTPUDPClient timeClient = new NTPUDPClient();
     InetAddress inetAddress = InetAddress.getByName(TIME_SERVER);
     TimeInfo timeInfo = timeClient.getTime(inetAddress);
@@ -45,7 +45,7 @@ public final class DateUtils {
   }
 
 
-  public static void main(String args[]) throws IOException {
+  public static void main(String[] args) throws IOException {
     System.out.println(new Date(DateUtils.getAtomicTime().internet));
   }
 

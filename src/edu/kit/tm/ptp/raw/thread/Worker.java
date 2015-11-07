@@ -37,8 +37,9 @@ public abstract class Worker<Item> extends Suspendable {
    */
   @Override
   public void stop() {
-    if (!running.get())
+    if (!running.get()) {
       return;
+    }
     condition.set(false);
   }
 

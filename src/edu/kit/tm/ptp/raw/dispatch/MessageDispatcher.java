@@ -1,15 +1,15 @@
 package edu.kit.tm.ptp.raw.dispatch;
 
-import java.util.HashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import edu.kit.tm.ptp.Message;
 import edu.kit.tm.ptp.SendListener;
 import edu.kit.tm.ptp.raw.DispatchListener;
 import edu.kit.tm.ptp.raw.thread.ThreadPool;
 import edu.kit.tm.ptp.utility.Constants;
+
+import java.util.HashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 /**
@@ -50,9 +50,10 @@ public class MessageDispatcher {
    */
   public MessageDispatcher(DispatchListener dispatchListener, int threads, long dispatchInterval) {
     // Create the thread pool.
-    DispatchThread workers[] = new DispatchThread[threads];
-    for (int i = 0; i < threads; ++i)
+    DispatchThread[] workers = new DispatchThread[threads];
+    for (int i = 0; i < threads; ++i) {
       workers[i] = new DispatchThread(dispatchListener, doneListener, dispatchInterval);
+    }
     threadPool = new ThreadPool<Element, DispatchThread>(workers);
 
     logger.log(Level.INFO, "Message dispatcher object created with threads number: " + threads);
@@ -82,8 +83,9 @@ public class MessageDispatcher {
       // Add the message to the chosen worker and map the destination to that worker.
       worker.enqueue(element);
       map.put(destination, worker);
-    } else
+    } else {
       map.get(destination).enqueue(element);
+    }
 
     logger.log(Level.INFO,
         "Message enqueued: " + message.content.substring(0, message.content.length() % 25) + " ("

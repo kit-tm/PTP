@@ -1,5 +1,7 @@
 package edu.kit.tm.ptp.raw;
 
+import edu.kit.tm.ptp.utility.Constants;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -7,13 +9,11 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
-import edu.kit.tm.ptp.utility.Constants;
-
-
 
 /**
- * Holds the PeerTorPeer (PTP) configuration. This includes:
- *
+ * Holds the PeerTorPeer (PTP) configuration.
+ * 
+ * <p>This includes:
  * * hidden service port number * interval at which a connection to a hidden service identifier is
  * attempted * timeout for socket connections * socket poll for available data interval * connection
  * TTL * interval at which socket remaining TTL is checked * Tor bootstrapping timeout * number of
@@ -69,7 +69,7 @@ public class Configuration {
   /** The interval (in milliseconds) at which the open sockets are polled for incoming data. */
   private final int receivePoll;
   /** The TTL (in milliseconds) for a socket connection to a hidden service identifier. */
-  private final int socketTTL;
+  private final int socketTtl;
   /** The interval (in milliseconds) at each the TTL of all sockets is checked. */
   private final int ttlPoll;
 
@@ -80,7 +80,7 @@ public class Configuration {
   /** The port number of the Tor control socket. */
   private int torControlPort;
   /** The port number of the Tor SOCKS proxy. */
-  private int torSOCKSProxyPort;
+  private int torSocksProxyPort;
 
 
   /**
@@ -95,9 +95,10 @@ public class Configuration {
   public Configuration(String configurationFilename) throws IllegalArgumentException, IOException {
     File configuration = new File(configurationFilename);
 
-    if (!configuration.exists())
+    if (!configuration.exists()) {
       throw new IllegalArgumentException(
           "Configuration file does not exist: " + configurationFilename);
+    }
 
     FileReader reader = new FileReader(configuration);
     BufferedReader buffer = new BufferedReader(reader);
@@ -110,11 +111,13 @@ public class Configuration {
       ++n;
 
       // Skip empty lines.
-      if (line.isEmpty())
+      if (line.isEmpty()) {
         continue;
+      }
       // Skip commented lines.
-      if (line.startsWith(comment))
+      if (line.startsWith(comment)) {
         continue;
+      }
 
       String[] pair = line.split(delimiter);
 
@@ -135,8 +138,9 @@ public class Configuration {
     if (properties.containsKey(LoggerConfigFile)) {
       loggerConfiguration = properties.get(LoggerConfigFile);
       System.setProperty(Constants.loggerconfig, loggerConfiguration);
-    } else
+    } else {
       loggerConfiguration = "";
+    }
     // Create the logger AFTER its configuration file has been set.
     logger = Logger.getLogger(Constants.configlogger);
     logger.info("Set the logger properties file to: " + loggerConfiguration);
@@ -175,8 +179,8 @@ public class Configuration {
     receivePoll = parse(properties, SocketReceivePoll);
     logger.info("Read " + SocketReceivePoll + " = " + receivePoll);
 
-    socketTTL = parse(properties, SocketTTL);
-    logger.info("Read " + SocketTTL + " = " + socketTTL);
+    socketTtl = parse(properties, SocketTTL);
+    logger.info("Read " + SocketTTL + " = " + socketTtl);
 
     ttlPoll = parse(properties, SocketTTLPoll);
     logger.info("Read " + SocketTTLPoll + " = " + ttlPoll);
@@ -234,7 +238,7 @@ public class Configuration {
     sb.append("\n");
 
     sb.append("\tsocket connection TTL = ");
-    sb.append(socketTTL);
+    sb.append(socketTtl);
     sb.append("\n");
 
     sb.append("\tTTL poll = ");
@@ -262,8 +266,8 @@ public class Configuration {
     torControlPort = controlPort;
     logger.info("Set the Tor control port to: " + torControlPort);
 
-    torSOCKSProxyPort = socksPort;
-    logger.info("Set the Tor SOCKS port to: " + torSOCKSProxyPort);
+    torSocksProxyPort = socksPort;
+    logger.info("Set the Tor SOCKS port to: " + torSocksProxyPort);
 
     workingDirectory = directory;
     logger.info("Set the working directory to: " + this.workingDirectory);
@@ -343,7 +347,7 @@ public class Configuration {
    * @return The Tor control sockert port.
    */
   public int getTorSOCKSProxyPort() {
-    return torSOCKSProxyPort;
+    return torSocksProxyPort;
   }
 
   /**
@@ -389,7 +393,7 @@ public class Configuration {
    * @return The socket TTL of a connection to a hidden service identifier.
    */
   public int getSocketTTL() {
-    return socketTTL;
+    return socketTtl;
   }
 
   /**
@@ -412,9 +416,10 @@ public class Configuration {
    */
   private void check(HashMap<String, String> map, String key) throws IllegalArgumentException {
     logger.info("Checking if the configuration file contains the " + key + " property.");
-    if (!map.containsKey(key))
+    if (!map.containsKey(key)) {
       throw new IllegalArgumentException(
           "Configuration file does not contain the " + key + " property.");
+    }
   }
 
   /**

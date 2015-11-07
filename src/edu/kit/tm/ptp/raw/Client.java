@@ -1,5 +1,13 @@
 package edu.kit.tm.ptp.raw;
 
+import edu.kit.tm.ptp.Identifier;
+import edu.kit.tm.ptp.ReceiveListener;
+import edu.kit.tm.ptp.raw.network.SOCKS;
+import edu.kit.tm.ptp.raw.receive.MessageReceiver;
+import edu.kit.tm.ptp.utility.Constants;
+import edu.kit.tm.ptp.utility.IntegerUtils;
+import net.freehaven.tor.control.TorControlConnection;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -16,14 +24,6 @@ import java.util.LinkedList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import edu.kit.tm.ptp.Identifier;
-import edu.kit.tm.ptp.ReceiveListener;
-import edu.kit.tm.ptp.raw.network.SOCKS;
-import edu.kit.tm.ptp.raw.receive.MessageReceiver;
-import edu.kit.tm.ptp.utility.Constants;
-import edu.kit.tm.ptp.utility.IntegerUtils;
-import net.freehaven.tor.control.TorControlConnection;
 
 
 /**
@@ -144,19 +144,22 @@ public class Client {
 
     // If no hidden service directory is specified, use the / make a hidden service directory for
     // the port we are listening on.
-    if (directory == null)
+    if (directory == null) {
       this.directory = Constants.hiddenserviceprefix + receiver.getPort();
+    }
 
     // Check if the hidden service directory exists, if not create it.
     File hiddenServiceDirectory = new File(configuration.getHiddenServiceDirectory());
-    if (!hiddenServiceDirectory.exists() && !hiddenServiceDirectory.mkdirs())
+    if (!hiddenServiceDirectory.exists() && !hiddenServiceDirectory.mkdirs()) {
       throw new IOException("Could not create hidden service directory!");
+    }
 
     // Check if the lock file exists, if not create it.
     lockFile =
         new File(configuration.getWorkingDirectory() + File.separator + Constants.rawapilockfile);
-    if (!lockFile.exists() && !lockFile.createNewFile())
+    if (!lockFile.exists() && !lockFile.createNewFile()) {
       throw new IOException("Could not create raw API lock file!");
+    }
 
     // Set a default identifier.
     identifier = configuration.getDefaultIdentifier();
@@ -241,12 +244,14 @@ public class Client {
           || !new File(dir + File.separator + Constants.prkey).exists() || !portfile.exists();
 
       // If a fresh identifier is requested, delete the current hidden service directory.
-      if (fresh && !create)
+      if (fresh && !create) {
         deleteHiddenService();
+      }
 
       // Create the hidden service directory if necessary.
-      if (!dir.exists() && !dir.mkdir())
+      if (!dir.exists() && !dir.mkdir()) {
         throw new IOException("Unable to create the hidden service directory!");
+      }
 
       // Create a hidden service with JTorCtl.
       // Write the port of the receiver to the port file of the hidden service directory.
@@ -274,8 +279,9 @@ public class Client {
         raf.close();
       }
 
-      if (stream != null)
+      if (stream != null) {
         stream.close();
+      }
     }
   }
 
@@ -328,9 +334,8 @@ public class Client {
   /**
    * Opens a connection to the specified Tor hidden service.
    *
-   * @param identifier The Tor hidden service identifier of the destination.
+   * @param destination The Tor hidden service identifier of the destination.
    * @param socketTimeout The socket connect timeout.
-   * @param port The port number of the destination Tor hidden service.
    * @return ConnectResponse.OPEN if a connection is already open for the identifier.
    *         ConnectResponse.FAIL if an IOException occured while opening the socket connection for
    *         the identifier. ConnectResponse.SUCCESS if a connection is now open for the identifier.
@@ -471,8 +476,9 @@ public class Client {
     // new hidden service configuration.
     for (File hiddenService : hiddenServiceDirectory.listFiles()) {
       // Skip over any files in the directory.
-      if (!hiddenService.isDirectory())
+      if (!hiddenService.isDirectory()) {
         continue;
+      }
 
       // Fix directory permissions so that Tor doesn't complain
       hiddenService.setReadable(false, false);
@@ -484,16 +490,18 @@ public class Client {
 
       // Skip over any directories without the hidden service prefix.
       String name = hiddenService.getName();
-      if (!name.startsWith(Constants.hiddenserviceprefix))
+      if (!name.startsWith(Constants.hiddenserviceprefix)) {
         ;
+      }
       // Get the port file.
       File portFile = new File(hiddenService + File.separator + Constants.portfile);
-      if (!portFile.exists())
+      if (!portFile.exists()) {
         continue;
+      }
 
       // Read the port of the hidden service from the port file.
       FileInputStream stream = new FileInputStream(portFile);
-      final byte bytes[] = new byte[4];
+      final byte[] bytes = new byte[4];
       stream.read(bytes);
       stream.close();
       final int port = IntegerUtils.byteArrayToInt(bytes);
@@ -517,8 +525,9 @@ public class Client {
    */
   private void deleteHiddenService() throws IOException {
     // If the hidden service was not created, there is nothing to delete.
-    if (directory == null)
+    if (directory == null) {
       return;
+    }
 
     logger.log(Level.INFO, "Deleting hidden service directory.");
     File hostname = new File(configuration.getHiddenServiceDirectory() + File.separator + directory
@@ -540,9 +549,10 @@ public class Client {
     logger.log(Level.INFO,
         "Deleted hidden service directory: " + (directoryDeleted ? "yes" : "no"));
 
-    if (!directoryDeleted || !hostnameDeleted || !prkeyDeleted || !portDeleted)
+    if (!directoryDeleted || !hostnameDeleted || !prkeyDeleted || !portDeleted) {
       throw new IOException(
           "Client failed to delete hidden service directory: " + hiddenservice.getAbsolutePath());
+    }
   }
 
   /**
