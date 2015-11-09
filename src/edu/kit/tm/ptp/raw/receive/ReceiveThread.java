@@ -51,10 +51,6 @@ public class ReceiveThread extends Worker<Origin> {
     load = 0;
   }
 
-
-  /**
-   * @see Worker
-   */
   @Override
   public void run() {
     running.set(true);
@@ -124,9 +120,6 @@ public class ReceiveThread extends Worker<Origin> {
     running.set(false);
   }
 
-  /**
-   * @see Worker
-   */
   @Override
   public synchronized void enqueue(Origin socket) {
     // Add the socket to the socket queue.

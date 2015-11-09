@@ -69,7 +69,7 @@ public class PTPTest {
   }
 
   /**
-   * Test for GetIdentifier()
+   * Test for GetIdentifier().
    */
   @Test
   public void testGetIdentifier() {

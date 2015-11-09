@@ -35,6 +35,12 @@ public final class DateUtils {
   public static final String TIME_SERVER = "0.de.pool.ntp.org";
 
 
+  /**
+   * Uses NTP to get the current time.
+   * 
+   * @return The time received through NTP.
+   * @throws IOException If an error occurs while retrieving the time.
+   */
   public static final Time getAtomicTime() throws IOException {
     NTPUDPClient timeClient = new NTPUDPClient();
     InetAddress inetAddress = InetAddress.getByName(TIME_SERVER);

@@ -2,7 +2,6 @@ package edu.kit.tm.ptp.raw.receive;
 
 import edu.kit.tm.ptp.Identifier;
 
-import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.Socket;
 
@@ -29,7 +28,6 @@ public class Origin {
    *
    * @param address The Tor hidden service identifier of the pair.
    * @param socket The socket of the pair.
-   * @throws IOException
    */
   public Origin(String address, Socket socket) {
     this.identifier = new Identifier(address);

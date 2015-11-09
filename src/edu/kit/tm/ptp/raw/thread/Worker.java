@@ -31,10 +31,6 @@ public abstract class Worker<Item> extends Suspendable {
     return load;
   }
 
-
-  /**
-   * @see Suspendable
-   */
   @Override
   public void stop() {
     if (!running.get()) {

@@ -37,7 +37,7 @@ public class ConfigurationTest {
   private File file = null;
   /** The configuration used for the test. */
   private Configuration configuration = null;
-  /** The properties used for the test */
+  /** The properties used for the test. */
   private String defaultIdentifier = null;
   private String hiddenServiceDirectory = null;
   private int hiddenServicePort = -1;

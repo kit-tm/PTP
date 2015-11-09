@@ -12,14 +12,10 @@ package edu.kit.tm.ptp;
 public class SendListenerAdapter implements SendListener {
 
 
-  /**
-   * @see SendListener
-   */
+  @Override
   public void sendSuccess(Message message) {}
 
-  /**
-   * @see SendListener
-   */
+  @Override
   public void sendFail(Message message, FailState state) {}
 
 }

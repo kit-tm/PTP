@@ -9,7 +9,7 @@ package edu.kit.tm.ptp;
  */
 public class Message {
 
-  /** The id of the message */
+  /** The id of the message. */
   public final long id;
   /** The content of the message. */
   public final String content;
@@ -42,10 +42,6 @@ public class Message {
     this.identifier = identifier;
   }
 
-
-  /**
-   * @see Object
-   */
   @Override
   public boolean equals(Object obj) {
     if (obj == null || !(obj instanceof Message)) {

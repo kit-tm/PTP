@@ -57,9 +57,6 @@ public class MessageReceiver extends Suspendable {
   }
 
 
-  /**
-   * @see Suspendable
-   */
   @Override
   public void run() {
     running.set(true);
@@ -82,9 +79,6 @@ public class MessageReceiver extends Suspendable {
     running.set(false);
   }
 
-  /**
-   * @see Suspendable
-   */
   @Override
   public void stop() {
     logger.log(Level.INFO, "Stopping message dispatcher.");

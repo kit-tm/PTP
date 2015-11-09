@@ -114,7 +114,7 @@ public class Constants {
 
   /** The port number which tells the JVM to pick any available port for a server socket. */
   public static final int anyport = 0;
-  /** The localhost address */
+  /** The localhost address. */
   public static final String localhost = "127.0.0.1";
   /** The working directory Java system property keyword. */
   public static final String userdir = "user.dir";

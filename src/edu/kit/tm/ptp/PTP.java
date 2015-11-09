@@ -45,7 +45,7 @@ public class PTP {
   private final Client client;
   /** The manager that closes sockets when their TTL expires. */
   private final TTLManager manager;
-  /** The message dispatcher which sends the messages */
+  /** The message dispatcher which sends the messages. */
   private final MessageDispatcher dispatcher;
   /** A dummy sending listener to use when no listener is specified upon message sending. */
   private final SendListener dummyListener = new SendListenerAdapter();

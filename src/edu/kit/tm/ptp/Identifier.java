@@ -32,10 +32,6 @@ public class Identifier {
     return address;
   }
 
-
-  /**
-   * @see Object
-   */
   @Override
   public boolean equals(Object obj) {
     if (obj == null || !(obj instanceof Identifier)) {
@@ -59,9 +55,6 @@ public class Identifier {
     return address.hashCode();
   }
 
-  /**
-   * @see Object
-   */
   @Override
   public String toString() {
     return address;

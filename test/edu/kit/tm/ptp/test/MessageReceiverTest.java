@@ -52,18 +52,14 @@ public class MessageReceiverTest {
     /** A counter for received messages. */
     public final AtomicInteger counter = new AtomicInteger(0);
 
-
-    /**
-     * @see ReceiveListener
-     */
     @Override
     public void receivedMessage(Message message) {
-      String m = message.content;
+      String content = message.content;
 
-      if (!map.containsKey(m)) {
-        map.put(m, 0);
+      if (!map.containsKey(content)) {
+        map.put(content, 0);
       }
-      map.put(m, map.get(m) + 1);
+      map.put(content, map.get(content) + 1);
 
       counter.incrementAndGet();
     }
@@ -73,9 +69,6 @@ public class MessageReceiverTest {
   /** A dummy listener which is notified on newly opened connections. */
   private final ConnectionListener dummyListener = new ConnectionListener() {
 
-    /**
-     * @see ConnectionListener
-     */
     @Override
     public void ConnectionOpen(Identifier identifier, Socket socket) { /* Do nothing. */ }
 
@@ -167,8 +160,8 @@ public class MessageReceiverTest {
       // Send the message via a random socket.
       final int index = random.integer(0, c - 1);
       try {
-        Message m = MessageHandler.wrapMessage(new Message(messages[i], null));
-        sockets[index].getOutputStream().write(m.content.getBytes());
+        Message message = MessageHandler.wrapMessage(new Message(messages[i], null));
+        sockets[index].getOutputStream().write(message.content.getBytes());
       } catch (IOException e) {
         fail("Could not send the " + i + "th random message.");
       }

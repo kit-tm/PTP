@@ -115,9 +115,6 @@ public class PTPPingPongExample {
       return sent;
     }
 
-    /**
-     * @see ReceiveListener
-     */
     @Override
     public void receivedMessage(Message received) {
       System.out.println("Client received message: " + received.content);

@@ -108,10 +108,6 @@ public class TorManager extends Suspendable {
     });
   }
 
-
-  /**
-   * @see Runnable
-   */
   @Override
   public void run() {
     logger.log(Level.INFO, "Tor manager thread started.");
@@ -151,8 +147,8 @@ public class TorManager extends Suspendable {
           // will not succeed.
           try {
             logger.log(Level.INFO, "Tor manager attempting to connect to the Tor process.");
-            Socket s = new Socket(Constants.localhost, torControlPort);
-            TorControlConnection conn = new TorControlConnection(s);
+            Socket socket = new Socket(Constants.localhost, torControlPort);
+            TorControlConnection conn = new TorControlConnection(socket);
             conn.authenticate(new byte[0]);
           } catch (IOException e) {
             logger.log(Level.INFO, "Tor manager could not connect to the Tor process,"
@@ -207,9 +203,7 @@ public class TorManager extends Suspendable {
   }
 
 
-  /**
-   * @see Suspendable
-   */
+  @Override
   public void start() {
     running.set(true);
     condition.set(true);
@@ -219,9 +213,6 @@ public class TorManager extends Suspendable {
     logger.log(Level.INFO, "Waiter thread started.");
   }
 
-  /**
-   * @see Suspendable
-   */
   @Override
   public void stop() {
     logger.log(Level.INFO, "Stopping Tor manager thread.");
@@ -296,6 +287,9 @@ public class TorManager extends Suspendable {
     return torSocksProxyPort;
   }
 
+  /**
+   * Returns true if Tor is running, false otherwise.
+   */
   public boolean torrunning() {
     boolean torRunning = false;
 

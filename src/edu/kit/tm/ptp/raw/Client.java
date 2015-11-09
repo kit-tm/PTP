@@ -386,9 +386,9 @@ public class Client {
   /**
    * Creates {@link ObjectOutputStream} and adds it to the map.
    * 
-   * @param destination
-   * @param socket
-   * @throws IOException
+   * @param destination The Tor hidden service identifier of the destination.
+   * @param socket Socket whose OutputStream should be added to the map.
+   * @throws IOException If an error occurs when creating the {@link ObjectOutputStream}.
    */
   private void initOutputStream(String destination, Socket socket) throws IOException {
 
@@ -461,9 +461,9 @@ public class Client {
     logger.log(Level.INFO, "Opening socket on " + Constants.localhost + ":"
         + configuration.getTorControlPort() + " to control Tor.");
     // Connect to the Tor control port.
-    Socket s = new Socket(Constants.localhost, configuration.getTorControlPort());
+    Socket socket = new Socket(Constants.localhost, configuration.getTorControlPort());
     logger.log(Level.INFO, "Fetching JTorCtl connection.");
-    TorControlConnection conn = new TorControlConnection(s);
+    TorControlConnection conn = new TorControlConnection(socket);
     logger.log(Level.INFO, "Authenticating the connection.");
     // Authenticate the connection.
     conn.authenticate(configuration.getAuthenticationBytes());
@@ -588,9 +588,6 @@ public class Client {
   private ConnectionListener getConnectionListener() {
     return new ConnectionListener() {
 
-      /**
-       * @see ConnectionListener
-       */
       @Override
       public void ConnectionOpen(Identifier origin, Socket socket) {
         // Add the connection to the socket set.

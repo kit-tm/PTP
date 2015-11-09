@@ -58,10 +58,6 @@ public class PTPDuplexExample {
       this.timeout = timeout;
     }
 
-
-    /**
-     * @see ReceiveListener
-     */
     @Override
     public void receivedMessage(Message message) {
       System.out.println("Listener " + name + " received: " + message.content);

@@ -107,10 +107,6 @@ public class DispatchThread extends Worker<Element> {
     return load;
   }
 
-
-  /**
-   * @see Worker
-   */
   @Override
   public void run() {
     // Loop and dispatch a message from each queue in rounds.

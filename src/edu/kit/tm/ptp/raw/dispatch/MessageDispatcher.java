@@ -73,8 +73,8 @@ public class MessageDispatcher {
 
     // Update the destination set by removing destinations with empty queues.
     while (!removed.isEmpty()) {
-      String d = removed.poll();
-      map.remove(d);
+      String entry = removed.poll();
+      map.remove(entry);
     }
 
     // Find a worker for the message.

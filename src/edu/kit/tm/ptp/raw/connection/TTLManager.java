@@ -58,10 +58,6 @@ public class TTLManager extends Suspendable {
     logger.log(Level.INFO, "TTLManager object created.");
   }
 
-
-  /**
-   * @see Runnable
-   */
   @Override
   public void run() {
     logger.log(Level.INFO, "TTLManager entering execution loop.");
@@ -82,9 +78,6 @@ public class TTLManager extends Suspendable {
     logger.log(Level.INFO, "TTLManager exiting execution loop.");
   }
 
-  /**
-   * @see Suspendable
-   */
   @Override
   public void stop() {
     logger.log(Level.INFO, "Stopping TTLManager.");
