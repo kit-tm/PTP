@@ -15,6 +15,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -138,9 +139,11 @@ public class MessageReceiverTest {
     final int port = receiver.getPort();
     // Open some connections to the server socket.
     Socket[] sockets = new Socket[c];
+    ObjectOutputStream[] objectStreams = new ObjectOutputStream[c];
     for (int i = 0; i < c; ++i) {
       try {
         sockets[i] = new Socket(Constants.localhost, port);
+        objectStreams[i] = new ObjectOutputStream(sockets[i].getOutputStream());
       } catch (IOException e) {
         fail("Could not connect socket " + i + " to the local server socket.");
       }
@@ -148,6 +151,8 @@ public class MessageReceiverTest {
 
     // A reference hash map of the sent message counts.
     HashMap<String, Integer> map = new HashMap<String, Integer>();
+    
+    ObjectOutputStream tmpStream;
 
     // Send the random messages.
     for (int i = 0; i < n; ++i) {
@@ -159,9 +164,14 @@ public class MessageReceiverTest {
 
       // Send the message via a random socket.
       final int index = random.integer(0, c - 1);
+      // Get ObjectOutputStream of the socket picked
+      tmpStream = objectStreams[index];
+
       try {
         Message message = MessageHandler.wrapMessage(new Message(messages[i], null));
-        sockets[index].getOutputStream().write(message.content.getBytes());
+        
+        tmpStream.writeObject(message.content);
+        tmpStream.flush();
       } catch (IOException e) {
         fail("Could not send the " + i + "th random message.");
       }
@@ -176,7 +186,16 @@ public class MessageReceiverTest {
         // Was interrupted. Do nothing.
       }
     }
-
+    
+    for (int i = 0; i < c; ++i) {
+      try {
+        objectStreams[i].close();
+        sockets[i].close();
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+    }
+    
     for (int i = 0; i < n; ++i) {
       if (!listener.map.containsKey(messages[i])
           || map.get(messages[i]).intValue() != listener.map.get(messages[i])) {
