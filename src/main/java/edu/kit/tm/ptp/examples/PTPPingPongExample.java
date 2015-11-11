@@ -227,7 +227,7 @@ public class PTPPingPongExample {
           // If the input is "no" proceed without sending a message.
         } else if (line.equals("no"))          {
           break;
-        // Only accept "yes" or "no".
+          // Only accept "yes" or "no".
         }
       }
 
