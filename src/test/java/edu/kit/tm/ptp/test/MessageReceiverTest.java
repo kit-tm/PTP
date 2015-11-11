@@ -71,7 +71,7 @@ public class MessageReceiverTest {
   private final ConnectionListener dummyListener = new ConnectionListener() {
 
     @Override
-    public void ConnectionOpen(Identifier identifier, Socket socket) { /* Do nothing. */ }
+    public void connectionOpen(Identifier identifier, Socket socket) { /* Do nothing. */ }
 
   };
 

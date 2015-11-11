@@ -14,6 +14,6 @@ import java.net.Socket;
 public interface ConnectionListener {
 
 
-  public void ConnectionOpen(Identifier identifier, Socket socket);
+  public void connectionOpen(Identifier identifier, Socket socket);
 
 }

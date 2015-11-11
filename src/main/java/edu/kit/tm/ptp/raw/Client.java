@@ -589,7 +589,7 @@ public class Client {
     return new ConnectionListener() {
 
       @Override
-      public void ConnectionOpen(Identifier origin, Socket socket) {
+      public void connectionOpen(Identifier origin, Socket socket) {
         // Add the connection to the socket set.
         /*
          * try { initOutputStream(origin.getTorAddress(), socket); } catch (IOException e) {

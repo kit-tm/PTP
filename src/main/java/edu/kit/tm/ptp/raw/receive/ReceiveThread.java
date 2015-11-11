@@ -88,7 +88,7 @@ public class ReceiveThread extends Worker<Origin> {
             // Set origin if available.
             if (packets[i].flags == Constants.messageoriginflag) {
               origin.identifier = new Identifier(packets[i].message.content);
-              connectionListener.ConnectionOpen(origin.identifier, origin.socket);
+              connectionListener.connectionOpen(origin.identifier, origin.socket);
               // Otherwise check if the received message indicates a disconnection.
             } else if (packets[i].flags == Constants.messagedisconnectflag) {
               origin.inStream.close();
