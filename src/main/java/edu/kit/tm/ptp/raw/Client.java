@@ -360,7 +360,7 @@ public class Client {
       // Open a socket implementing the SOCKS4a protocol.
       logger.log(Level.INFO, "Opening socket using the Tor SOCKS proxy, timeout: " + socketTimeout);
       Socket socket =
-          SOCKS.socks4aSocketConnection(destination, configuration.getHiddenServicePort(),
+          SOCKS.connectThroughSOCKS(destination, configuration.getHiddenServicePort(),
               Constants.localhost, configuration.getTorSOCKSProxyPort(), socketTimeout);
 
       // Create output stream and add it to the map
