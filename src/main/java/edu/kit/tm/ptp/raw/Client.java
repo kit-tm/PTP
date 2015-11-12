@@ -5,7 +5,6 @@ import edu.kit.tm.ptp.ReceiveListener;
 import edu.kit.tm.ptp.raw.network.SOCKS;
 import edu.kit.tm.ptp.raw.receive.MessageReceiver;
 import edu.kit.tm.ptp.utility.Constants;
-import edu.kit.tm.ptp.utility.IntegerUtils;
 import net.freehaven.tor.control.TorControlConnection;
 
 import java.io.BufferedReader;
@@ -14,6 +13,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.RandomAccessFile;
 import java.net.Socket;
@@ -226,7 +226,7 @@ public class Client {
     RandomAccessFile raf = null;
     FileChannel channel = null;
     FileLock lock = null;
-    FileOutputStream stream = null;
+    ObjectOutputStream stream = null;
 
     try {
       // Block until a lock on the raw API lock file is available.
@@ -257,8 +257,10 @@ public class Client {
       // Write the port of the receiver to the port file of the hidden service directory.
       logger.log(Level.INFO, "Writing to port file.");
       final int port = receiver.getPort();
-      stream = new FileOutputStream(portfile, false);
-      stream.write(IntegerUtils.intToByteArray(port));
+      stream = new ObjectOutputStream(new FileOutputStream(portfile, false));
+      stream.writeInt(port);
+      stream.close();
+      stream = null;
 
       logger.log(Level.INFO, "Creating hidden service.");
       createHiddenService();
@@ -499,12 +501,18 @@ public class Client {
         continue;
       }
 
-      // Read the port of the hidden service from the port file.
-      FileInputStream stream = new FileInputStream(portFile);
-      final byte[] bytes = new byte[4];
-      stream.read(bytes);
-      stream.close();
-      final int port = IntegerUtils.byteArrayToInt(bytes);
+      final int port;
+      
+      try {
+        // Read the port of the hidden service from the port file.
+        ObjectInputStream stream = new ObjectInputStream(new FileInputStream(portFile));
+        port = stream.readInt();
+        stream.close();
+      } catch (IOException e) {
+        logger.log(Level.WARNING,
+            "Received IOException while reading the hidden service port file: " + e.getMessage());
+        continue;
+      }
 
       // Add the hidden service property to the configuration properties so far.
       properties.add(Constants.hsdirkeyword + " " + hiddenService.getAbsolutePath());
