@@ -48,7 +48,7 @@ public class PTPDuplexExample {
      * Constructor method.
      *
      * @param client The "opposite" client for the ping-pong sending.
-     * @aram max The maximum number of sends that may be initiated.
+     * @param max The maximum number of sends that may be initiated.
      * @param timeout The timeout (in milliseconds) for each sending.
      */
     public MyListener(String name, PTP client, int max, int timeout) {

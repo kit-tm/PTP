@@ -642,7 +642,7 @@ public class TorManager extends Suspendable {
     reader.close();
 
     logger.log(Level.INFO, "Ports thread read Tor control port from file: " + torControlPort);
-    logger.log(Level.INFO, "Ports thread r read Tor SOCKS port from file: " + torSocksProxyPort);
+    logger.log(Level.INFO, "Ports thread read Tor SOCKS port from file: " + torSocksProxyPort);
   }
 
   /**
