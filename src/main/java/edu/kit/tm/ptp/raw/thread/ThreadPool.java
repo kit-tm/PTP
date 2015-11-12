@@ -8,10 +8,10 @@ package edu.kit.tm.ptp.raw.thread;
  * @author Simeon Andreev
  *
  */
-public class ThreadPool<Item, PoolWorker extends Worker<Item>> {
+public class ThreadPool<ItemT, PoolWorkerT extends Worker<ItemT>> {
 
   /** The workers in the thread pool which will handle the message queues. */
-  private final PoolWorker[] workers;
+  private final PoolWorkerT[] workers;
 
 
   /**
@@ -19,7 +19,7 @@ public class ThreadPool<Item, PoolWorker extends Worker<Item>> {
    *
    * @param workers The workers of this thread pool.
    */
-  public ThreadPool(PoolWorker[] workers) {
+  public ThreadPool(PoolWorkerT[] workers) {
     this.workers = workers;
   }
 
@@ -30,7 +30,7 @@ public class ThreadPool<Item, PoolWorker extends Worker<Item>> {
    *
    * @return The worker with least current estimated load.
    */
-  public PoolWorker getWorker() {
+  public PoolWorkerT getWorker() {
     long minimumLoad = Long.MAX_VALUE;
     int index = 0;
 

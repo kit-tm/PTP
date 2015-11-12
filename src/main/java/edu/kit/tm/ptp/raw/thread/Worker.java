@@ -7,7 +7,7 @@ package edu.kit.tm.ptp.raw.thread;
  * @author Simeon Andreev
  *
  */
-public abstract class Worker<Item> extends Suspendable {
+public abstract class Worker<ItemT> extends Suspendable {
 
 
   /** The current load of this thread. */
@@ -19,7 +19,7 @@ public abstract class Worker<Item> extends Suspendable {
    *
    * @param item The task information holder.
    */
-  public abstract void enqueue(Item item);
+  public abstract void enqueue(ItemT item);
 
 
   /**
