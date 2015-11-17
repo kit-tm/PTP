@@ -35,6 +35,8 @@ public class MessageDispatcherTest {
   private static final int n = 25;
   /** The time to wait (in milliseconds) between message dispatches. */
   private static long dispatchInterval = 250;
+  /** Time in milliseconds to wait for the dispatching to finish. */
+  private static final long dispatchTimeout = 10 * 1000;
 
 
   /**
@@ -148,7 +150,10 @@ public class MessageDispatcherTest {
 
     // Wait for some time.
     final long start = System.currentTimeMillis();
-    while (System.currentTimeMillis() - start < 3 * 1000 && client.counter.get() < n) {
+    while (client.counter.get() < n) {
+      if (System.currentTimeMillis() - start >= dispatchTimeout ) {
+        fail("Dispatching took longer than " + dispatchTimeout + " ms");
+      }
       try {
         Thread.sleep(250);
       } catch (InterruptedException e) {
