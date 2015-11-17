@@ -20,7 +20,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class PTPSendExample {
 
-
+  /**
+   * Starts the example.
+   * 
+   * @param args Not used.
+   */
   public static void main(String[] args) {
     PTP client = null;
 

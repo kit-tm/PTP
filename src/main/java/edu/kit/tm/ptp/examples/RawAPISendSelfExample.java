@@ -20,7 +20,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class RawAPISendSelfExample {
 
-
+  /**
+   * Starts the example.
+   * 
+   * @param args Not used.
+   */
   public static void main(String[] args) throws IllegalArgumentException, IOException {
     final AtomicBoolean received = new AtomicBoolean(false);
     final String message = "the Message";

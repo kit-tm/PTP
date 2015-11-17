@@ -105,10 +105,10 @@ public class Configuration {
     HashMap<String, String> properties = new HashMap<String, String>();
 
     // Read the entries of the configuration file in the map.
-    int n = 0;
+    int lineCount = 0;
     while (buffer.ready()) {
       String line = buffer.readLine();
-      ++n;
+      ++lineCount;
 
       // Skip empty lines.
       if (line.isEmpty()) {
@@ -124,8 +124,8 @@ public class Configuration {
       // Entries must be key value pairs separated by the delimiter.
       if (pair.length != 2) {
         buffer.close();
-        throw new IllegalArgumentException(
-            "Configuration file line " + n + " must be in the form: key" + delimiter + "value");
+        throw new IllegalArgumentException("Configuration file line " + lineCount
+            + " must be in the form: key" + delimiter + "value");
       }
 
       // Add the entry.

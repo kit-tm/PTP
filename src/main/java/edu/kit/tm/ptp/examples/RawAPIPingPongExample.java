@@ -55,8 +55,12 @@ public class RawAPIPingPongExample {
 
   }
 
-
-  public static void main(String[] args) throws IllegalArgumentException, IOException {
+  /**
+   * Starts the example. 
+   * 
+   * @param args Not used.
+   */
+  public static void main(String[] args) {
     Client client = null;
     TorManager manager = null;
 
