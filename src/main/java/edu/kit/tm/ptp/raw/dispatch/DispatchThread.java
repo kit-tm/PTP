@@ -179,10 +179,8 @@ public class DispatchThread extends Worker<Element> {
    * Sends all current undistributed messages to their destination queues.
    */
   private void distributeMessages() {
-    int n = counter.get();
-
     // Remove all n elements from the undistributed message queue.
-    while (n > 0) {
+    for (int n = counter.get(); n > 0; n = counter.decrementAndGet()) {
       Element element = undistributed.poll();
       String destination = element.message.identifier.getTorAddress();
       // Update the threads load.
@@ -198,11 +196,6 @@ public class DispatchThread extends Worker<Element> {
         queues.put(destination, queue);
         destinations.addLast(destination);
       }
-
-      // Move to the next element.
-
-      --n;
-      counter.decrementAndGet();
     }
   }
 
