@@ -12,7 +12,8 @@ import java.util.Date;
 /**
  * Utility class for fetching Internet time.
  *
- * @see http://www.rgagnon.com/javadetails/java-0589.html
+ * @see <a href="http://www.rgagnon.com/javadetails/java-0589.html">
+ * http://www.rgagnon.com/javadetails/java-0589.html</a>
  *
  */
 public final class DateUtils {

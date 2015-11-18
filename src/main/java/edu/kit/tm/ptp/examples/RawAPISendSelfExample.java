@@ -24,8 +24,10 @@ public class RawAPISendSelfExample {
    * Starts the example.
    * 
    * @param args Not used.
+   * @throws IOException Propagates any IOException received by the API, or thrown by the console
+   *         read operations.
    */
-  public static void main(String[] args) throws IllegalArgumentException, IOException {
+  public static void main(String[] args) throws IOException {
     final AtomicBoolean received = new AtomicBoolean(false);
     final String message = "the Message";
 

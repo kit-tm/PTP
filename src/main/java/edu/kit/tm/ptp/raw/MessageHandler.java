@@ -72,7 +72,7 @@ public class MessageHandler {
    * Wrap a raw string in the format length|delimiter|flags|message, where length is the message
    * length.
    *
-   * @param message The message to wrap.
+   * @param content The String to wrap.
    * @param flags The flags to add to the message.
    * @return The wrapped message.
    */

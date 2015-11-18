@@ -160,6 +160,7 @@ public class PTP {
    * @param workingDirectory The working directory of the Tor process.
    * @param controlPort The control port of the Tor process.
    * @param socksPort The SOCKS port of the Tor process.
+   * @param localPort The port on which the local hidden service should run.
    * @param directory The name of the hidden service to reuse. May be null to indicate no specific
    *        reuse request.
    * @throws IllegalArgumentException Propagates any IllegalArgumentException thrown by the reading

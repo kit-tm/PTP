@@ -34,6 +34,7 @@ public interface SendListener {
    * Indicates that the message could not be sent.
    *
    * @param message The message with which the sending was initiated.
+   * @param state The reason why the sending failed.
    */
   public void sendFail(Message message, FailState state);
 

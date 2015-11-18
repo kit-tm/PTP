@@ -101,10 +101,6 @@ public class PTPDuplexExample {
    * The main method.
    *
    * @param args Program parameters, ignored.
-   * @throws IllegalArgumentException Propagates any IllegalArgumentException thrown by the
-   *         configuration.
-   * @throws IOException Propagates any IOException received by the API, or thrown by the console
-   *         read operations.
    */
   public static void main(String[] args) {
     PTP client1 = null;

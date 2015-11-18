@@ -172,8 +172,6 @@ public class Client {
    * Sets the current listener that should be notified of messages received by a socket connection.
    *
    * @param listener The new listener.
-   *
-   * @see Waiter
    */
   public void listener(ReceiveListener listener) {
     receiver.setListener(listener);

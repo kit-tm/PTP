@@ -326,7 +326,8 @@ public class Configuration {
    * Returns the bytes needed by the Tor authentication message.
    *
    * @return The Tor authentication bytes.
-   * @see https://gitweb.torproject.org/torspec.git/blob/HEAD:/control-spec.txt
+   * @see <a href="https://gitweb.torproject.org/torspec.git/tree/control-spec.txt">
+   * https://gitweb.torproject.org/torspec.git/tree/control-spec.txt</a>
    */
   public byte[] getAuthenticationBytes() {
     return authenticationBytes;
