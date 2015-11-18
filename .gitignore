@@ -1,0 +1,18 @@
+# Build
+bin/
+build/
+
+# Gradle
+.gradle/
+
+# Eclipse
+.project
+.classpath
+.settings/
+
+# Intellij Idea
+.idea/
+PTP.iml
+
+# Runtime data
+ptp-data/
