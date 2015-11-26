@@ -15,3 +15,24 @@ dependencies {
 checkstyle {
 	toolVersion = "6.12.1"
 }
+
+// Create tasks to create a jar file for each example
+File srcDir = file(sourceSets.main.java.srcDirs[0].getAbsolutePath() + '/edu/kit/tm/ptp/examples')
+FileCollection collection = files { srcDir.listFiles() }
+String exName
+
+collection.each {File file ->
+   	exName = file.getName().split("\\.")[0]
+	tasks.create(name: exName, type:Jar) {
+		from sourceSets.main.output
+		manifest {
+			attributes 'Main-Class': 'edu.kit.tm.ptp.examples.' + exName
+		}
+		from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+		baseName = exName
+	}
+}
+
+jar.dependsOn {
+	tasks.findAll { task -> task.name.contains('Example') }
+}
