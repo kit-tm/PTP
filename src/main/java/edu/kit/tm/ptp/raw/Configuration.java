@@ -4,6 +4,7 @@ import edu.kit.tm.ptp.utility.Constants;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashMap;
@@ -87,16 +88,14 @@ public class Configuration {
    * Constructor method. Reads the configuration from a file.
    *
    * @param configurationFilename The path and name of the configuration file.
-   * @throws IllegalArgumentException Throws an IllegalArgumentException if unable to parse or find
-   *         a value.
    * @throws IOException Throws an IOException if unable to read or find the input configuration or
    *         control port file.
    */
-  public Configuration(String configurationFilename) throws IllegalArgumentException, IOException {
+  public Configuration(String configurationFilename) throws IOException {
     File configuration = new File(configurationFilename);
 
     if (!configuration.exists()) {
-      throw new IllegalArgumentException(
+      throw new FileNotFoundException(
           "Configuration file does not exist: " + configurationFilename);
     }
 
@@ -408,14 +407,12 @@ public class Configuration {
 
 
   /**
-   * Check if a string-to-string hash map contains a specific key. Will throw an illegal argument
-   * exception if not.
+   * Check if a string-to-string hash map contains a specific key.
    *
    * @param map The hash map to be checked.
    * @param key The key to be looked for in the map.
-   * @throws IllegalArgumentException Thrown when the map does not contain the specified key.
    */
-  private void check(HashMap<String, String> map, String key) throws IllegalArgumentException {
+  private void check(HashMap<String, String> map, String key) {
     logger.info("Checking if the configuration file contains the " + key + " property.");
     if (!map.containsKey(key)) {
       throw new IllegalArgumentException(
@@ -428,9 +425,8 @@ public class Configuration {
    *
    * @param map The hash map containing the key value pair.
    * @param key The key of the value to be parsed.
-   * @throws IllegalArgumentException Thrown when the value can not be parsed.
    */
-  private int parse(HashMap<String, String> map, String key) throws IllegalArgumentException {
+  private int parse(HashMap<String, String> map, String key) {
     logger.info("Parsing integer value of the " + key + " property: " + map.get(key));
     int value = 0;
 

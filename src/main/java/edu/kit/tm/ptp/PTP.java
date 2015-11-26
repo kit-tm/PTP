@@ -57,8 +57,6 @@ public class PTP {
   /**
    * Constructor method. Creates an API wrapper which manages a Tor process.
    *
-   * @throws IllegalArgumentException Propagates any IllegalArgumentException thrown by the reading
-   *         of the configuration.
    * @throws IOException Propagates any IOException thrown by the construction of the raw API, the
    *         configuration, or the Tor process manager.
    *
@@ -66,7 +64,7 @@ public class PTP {
    * @see Configuration
    * @see TorManager
    */
-  public PTP() throws IllegalArgumentException, IOException {
+  public PTP() throws IOException {
     this(null);
   }
 
@@ -75,8 +73,6 @@ public class PTP {
    *
    * @param directory The name of the hidden service to reuse. May be null to indicate no specific
    *        reuse request.
-   * @throws IllegalArgumentException Propagates any IllegalArgumentException thrown by the reading
-   *         of the configuration.
    * @throws IOException Propagates any IOException thrown by the construction of the raw API, the
    *         configuration, or the Tor process manager.
    *
@@ -84,7 +80,7 @@ public class PTP {
    * @see Configuration
    * @see TorManager
    */
-  public PTP(String directory) throws IllegalArgumentException, IOException {
+  public PTP(String directory) throws IOException {
     // Read the configuration.
     config = new Configuration(Constants.configfile);
     // Create the logger after the configuration sets the logger properties file.
@@ -140,16 +136,13 @@ public class PTP {
    * @param workingDirectory The working directory of the Tor process.
    * @param controlPort The control port of the Tor process.
    * @param socksPort The SOCKS port of the Tor process.
-   * @throws IllegalArgumentException Propagates any IllegalArgumentException thrown by the reading
-   *         of the configuration.
    * @throws IOException Propagates any IOException thrown by the construction of the raw API, the
    *         configuration, or the Tor process manager.
    *
    * @see Client
    * @see Configuration
    */
-  public PTP(String workingDirectory, int controlPort, int socksPort)
-      throws IllegalArgumentException, IOException {
+  public PTP(String workingDirectory, int controlPort, int socksPort) throws IOException {
     this(workingDirectory, controlPort, socksPort, Constants.anyport, null);
   }
 
@@ -162,8 +155,6 @@ public class PTP {
    * @param localPort The port on which the local hidden service should run.
    * @param directory The name of the hidden service to reuse. May be null to indicate no specific
    *        reuse request.
-   * @throws IllegalArgumentException Propagates any IllegalArgumentException thrown by the reading
-   *         of the configuration.
    * @throws IOException Propagates any IOException thrown by the construction of the raw API, the
    *         configuration, or the Tor process manager.
    *
@@ -171,7 +162,7 @@ public class PTP {
    * @see Configuration
    */
   public PTP(String workingDirectory, int controlPort, int socksPort, int localPort,
-      String directory) throws IllegalArgumentException, IOException {
+      String directory) throws IOException {
     // Read the configuration.
     config = new Configuration(workingDirectory + "/" + Constants.configfile);
     // Create the logger after the configuration sets the logger properties file.

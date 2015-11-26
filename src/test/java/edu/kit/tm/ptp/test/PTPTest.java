@@ -39,14 +39,12 @@ public class PTPTest {
 
 
   /**
-   * @throws IllegalArgumentException Propagates any IllegalArgumentException thrown by the API
-   *         wrapper during construction.
    * @throws IOException Propagates any IOException thrown by the API wrapper during construction.
    *
    * @see JUnit
    */
   @Before
-  public void setUp() throws IllegalArgumentException, IOException {
+  public void setUp() throws IOException {
     // Create a RNG.
     RNG random = new RNG();
 

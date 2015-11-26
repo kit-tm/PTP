@@ -251,7 +251,7 @@ public class TorManager extends Suspendable {
   /**
    * Returns whether Tors bootstrapping is complete.
    *
-   * @return true iff Tor is running and the bootstrapping is complete.
+   * @return true if Tor is running and the bootstrapping is complete.
    */
   public boolean ready() {
     return ready.get();
@@ -261,12 +261,10 @@ public class TorManager extends Suspendable {
    * Returns the control port number of the Tor process.
    *
    * @return The control port number of the Tor process.
-   * @throws IllegalArgumentException Throws an IllegalArgumentException if the boostrapping of the
-   *         Tor process is not yet done.
    */
   public int controlport() {
     if (!ready.get()) {
-      throw new IllegalArgumentException("Bootstrapping not done!");
+      throw new IllegalStateException("Bootstrapping not done!");
     }
 
     return torControlPort;
@@ -276,12 +274,10 @@ public class TorManager extends Suspendable {
    * Returns the SOCKS proxy port number of the Tor process.
    *
    * @return The SOCKS proxy port number of the Tor process.
-   * @throws IllegalArgumentException Throws an IllegalArgumentException if the boostrapping of the
-   *         Tor process is not yet done.
    */
   public int socksport() {
     if (!ready.get()) {
-      throw new IllegalArgumentException("Bootstrapping not done!");
+      throw new IllegalStateException("Bootstrapping not done!");
     }
 
     return torSocksProxyPort;
