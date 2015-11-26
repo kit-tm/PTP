@@ -62,16 +62,26 @@ public class TTLManager extends Suspendable {
   public void run() {
     logger.log(Level.INFO, "TTLManager entering execution loop.");
     running.set(true);
+    
     while (condition.get()) {
+      long start = System.currentTimeMillis();
+      long elapsed = 0;
+            
+      // Sleep until the next update.
+      do {
+        try {
+          Thread.sleep(step - elapsed);
+        } catch (InterruptedException e) {
+          // Just continue
+        }
+        elapsed = System.currentTimeMillis() - start;
+      } while (elapsed < step);
+      
       try {
         // Update the socket TTLs.
         substract();
-        // Sleep until the next update.
-        Thread.sleep(step);
       } catch (IOException e) {
         logger.log(Level.WARNING, "Received IOException while closing a socket: " + e.getMessage());
-      } catch (InterruptedException e) {
-        logger.log(Level.INFO, "TTL manager was interrupted while sleeping: " + e.getMessage());
       }
     }
     running.set(false);
