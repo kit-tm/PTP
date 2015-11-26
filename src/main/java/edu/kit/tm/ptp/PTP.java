@@ -99,14 +99,13 @@ public class PTP {
     reuse = directory != null;
 
     // Wait until the Tor bootstrapping is complete.
-    long waited = 0;
+    final long start = System.currentTimeMillis();
+    final long timeout = config.getTorBootstrapTimeout();
 
     logger.log(Level.INFO, "Waiting for Tors bootstrapping to finish.");
-    while (!tor.ready() && tor.running() && waited < config.getTorBootstrapTimeout()) {
+    while (!tor.ready() && tor.running() && System.currentTimeMillis() - start < timeout) {
       try {
-        final long start = System.currentTimeMillis();
         Thread.sleep(250);
-        waited += System.currentTimeMillis() - start;
       } catch (InterruptedException e) {
         // Waiting was interrupted. Do nothing.
       }
