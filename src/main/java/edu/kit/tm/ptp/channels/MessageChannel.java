@@ -10,25 +10,25 @@ import java.nio.channels.SocketChannel;
  */
 
 public class MessageChannel {
-    private ByteBuffer sendBuffer;
-    private ByteBuffer receiveBuffer;
-    private SocketChannel channel;
-    private int bufferLength;
+  private ByteBuffer sendBuffer;
+  private ByteBuffer receiveBuffer;
+  private SocketChannel channel;
+  private int bufferLength;
 
-    public MessageChannel(SocketChannel channel) {
-        this.channel = channel;
-        // Initialize buffers
-    }
+  public MessageChannel(SocketChannel channel) {
+    this.channel = channel;
+    // Initialize buffers
+  }
 
-    public void read() {
+  public void read() {
 
-    }
+  }
 
-    public void write() {
+  public void write() {
 
-    }
+  }
 
-    public long addMessage(byte[] data) {
-        return 0;
-    }
+  public long addMessage(byte[] data) {
+    return 0;
+  }
 }

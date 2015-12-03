@@ -5,6 +5,6 @@ package edu.kit.tm.ptp;
  *
  * @author Timon Hackenjos
  */
-public interface MessageReceivedListener <T> {
-    void messageReceived(T message, Identifier source);
+public interface MessageReceivedListener<T> {
+  void messageReceived(T message, Identifier source);
 }

@@ -6,5 +6,5 @@ package edu.kit.tm.ptp.serialization;
  * @author Timon Hackenjos
  */
 public class Message {
-    private byte[] data;
+  private byte[] data;
 }

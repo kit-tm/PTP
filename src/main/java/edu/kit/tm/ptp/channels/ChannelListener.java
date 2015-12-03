@@ -9,6 +9,7 @@ import java.nio.channels.SocketChannel;
  */
 
 public interface ChannelListener {
-    void messageSend(long id, SocketChannel destination);
-    void messageReceived(byte[] data, SocketChannel source);
+  void messageSend(long id, SocketChannel destination);
+
+  void messageReceived(byte[] data, SocketChannel source);
 }
