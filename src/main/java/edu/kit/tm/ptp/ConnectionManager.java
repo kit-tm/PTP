@@ -11,6 +11,14 @@ import java.util.Map;
 public class ConnectionManager {
   private Map<Identifier, SocketChannel> identifierMap;
   private Map<SocketChannel, Identifier> channelMap;
+  
+  public void start() {
+    
+  }
+  
+  public void stop() {
+    
+  }
 
   long send(byte[] data, Identifier destination) {
     return 0;
@@ -24,7 +32,17 @@ public class ConnectionManager {
 
   }
 
-  private void connect(Identifier destination) {
+  public void connect(Identifier destination) {
 
   }
+  
+  public void disconnect(Identifier destination) {
+    
+  }
+  
+  public int startBindServer() {
+    return 0;
+  }
+  
+
 }

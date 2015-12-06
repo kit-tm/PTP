@@ -11,7 +11,8 @@ package edu.kit.tm.ptp;
  */
 public class ReceiveListenerAdapter implements ReceiveListener {
 
+
   @Override
-  public void receivedMessage(Message message) {}
+  public void messageReceived(byte[] data, Identifier source) {}
 
 }

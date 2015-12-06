@@ -16,6 +16,6 @@ public interface ReceiveListener {
    *
    * @param message The received message.
    */
-  public void receivedMessage(Message message);
+  public void messageReceived(byte[] data, Identifier source);
 
 }

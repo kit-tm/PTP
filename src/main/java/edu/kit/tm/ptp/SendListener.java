@@ -18,17 +18,9 @@ public interface SendListener {
    * @author Simeon Andreev
    *
    */
-  public enum FailState {
-    CONNECTION_TIMEOUT, SEND_TIMEOUT
+  public enum State {
+    SUCCESS, CONNECTION_TIMEOUT, SEND_TIMEOUT
   }
-
-
-  /**
-   * Indicates that the message was sent.
-   *
-   * @param message The message with which the sending was initiated.
-   */
-  public void sendSuccess(Message message);
 
   /**
    * Indicates that the message could not be sent.
@@ -36,6 +28,6 @@ public interface SendListener {
    * @param message The message with which the sending was initiated.
    * @param state The reason why the sending failed.
    */
-  public void sendFail(Message message, FailState state);
+  public void messageSent(long id, Identifier destination, State state);
 
 }

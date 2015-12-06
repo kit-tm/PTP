@@ -1,16 +1,16 @@
 package edu.kit.tm.ptp;
 
-import edu.kit.tm.ptp.raw.Client;
 import edu.kit.tm.ptp.raw.Configuration;
-import edu.kit.tm.ptp.raw.DispatchListener;
 import edu.kit.tm.ptp.raw.ExpireListener;
-import edu.kit.tm.ptp.raw.MessageHandler;
 import edu.kit.tm.ptp.raw.TorManager;
 import edu.kit.tm.ptp.raw.connection.TTLManager;
-import edu.kit.tm.ptp.raw.dispatch.MessageDispatcher;
+import edu.kit.tm.ptp.serialization.Serializer;
+import edu.kit.tm.ptp.serialization.Message;
 import edu.kit.tm.ptp.utility.Constants;
 
 import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -22,7 +22,7 @@ import java.util.logging.Logger;
  * @author Simeon Andreev
  *
  */
-public class PTP {
+public class PTP implements SendListener, ReceiveListener {
 
 
   /**
@@ -41,18 +41,21 @@ public class PTP {
   private final Configuration config;
   /** The Tor process manager. */
   private final TorManager tor;
-  /** The raw API client. */
-  private final Client client;
   /** The manager that closes sockets when their TTL expires. */
   private final TTLManager manager;
-  /** The message dispatcher which sends the messages. */
-  private final MessageDispatcher dispatcher;
   /** A dummy sending listener to use when no listener is specified upon message sending. */
-  private final SendListener dummyListener = new SendListenerAdapter();
+  private SendListener sendListener = new SendListenerAdapter();
+  private ReceiveListener receiveListener = new ReceiveListenerAdapter();
   /** The identifier of the currently used hidden service. */
   private Identifier current = null;
   /** Indicates whether this API wrapper should reuse a hidden service. */
   private final boolean reuse;
+
+  private final HiddenServiceConfiguration hiddenServiceConfig;
+  private final ConnectionManager connectionManager;
+  private int hiddenServicePort;
+  private final Serializer serializer = new Serializer();
+  private ListenerContainer listeners = new ListenerContainer();
 
   /**
    * Constructor method. Creates an API wrapper which manages a Tor process.
@@ -120,14 +123,23 @@ public class PTP {
 
     // Set the control ports.
     config.setTorConfiguration(tor.directory(), tor.controlport(), tor.socksport());
+
     // Create the client with the read configuration and set its receiving listener.
-    client = new Client(config, directory);
+    // client = new Client(config, directory);
+
+    connectionManager = new ConnectionManager();
+    hiddenServicePort = connectionManager.startBindServer();
+
+    hiddenServiceConfig = new HiddenServiceConfiguration(config, directory, hiddenServicePort);
+
+
     // Create and start the manager with the given TTL.
     manager = new TTLManager(getTTLManagerListener(), config.getTTLPoll());
     manager.start();
+
     // Create and start the message dispatcher.
-    dispatcher = new MessageDispatcher(getMessageDispatcherListener(),
-        config.getDispatcherThreadsNumber(), config.getSocketTimeout());
+    // dispatcher = new MessageDispatcher(getMessageDispatcherListener(),
+    // config.getDispatcherThreadsNumber(), config.getSocketTimeout());
   }
 
   /**
@@ -175,13 +187,19 @@ public class PTP {
     config.setTorConfiguration(workingDirectory, controlPort, socksPort);
     // Create the client with the read configuration and set its hidden service directory if given.
     reuse = directory != null;
-    client = new Client(config, localPort, directory);
+
+    // client = new Client(config, localPort, directory);
+    connectionManager = new ConnectionManager();
+    hiddenServicePort = connectionManager.startBindServer();
+
+    hiddenServiceConfig = new HiddenServiceConfiguration(config, directory, hiddenServicePort);
+
     // Create and start the manager with the given TTL.
     manager = new TTLManager(getTTLManagerListener(), config.getTTLPoll());
     manager.start();
     // Create and start the message dispatcher.
-    dispatcher = new MessageDispatcher(getMessageDispatcherListener(),
-        config.getDispatcherThreadsNumber(), config.getSocketTimeout());
+    // dispatcher = new MessageDispatcher(getMessageDispatcherListener(),
+    // config.getDispatcherThreadsNumber(), config.getSocketTimeout());
   }
 
 
@@ -232,7 +250,7 @@ public class PTP {
    */
   public void reuseHiddenService(boolean renew) throws IOException {
     if (renew || current == null) {
-      current = new Identifier(client.identifier(!reuse));
+      current = new Identifier(hiddenServiceConfig.identifier(!reuse));
     }
   }
 
@@ -246,47 +264,39 @@ public class PTP {
    */
   public void createHiddenService() throws IOException {
     // Create a fresh hidden service identifier.
-    current = new Identifier(client.identifier(true));
+    current = new Identifier(hiddenServiceConfig.identifier(true));
   }
 
-  /**
-   * Sends a message to a given hidden service identifier and port. Success not guaranteed.
-   *
-   * @param message The message that should be sent.
-   * @param timeout The timeout before exiting without a sent message.
-   *
-   * @see Client
-   */
-  public void sendMessage(Message message, long timeout) {
-    // Delegate with the dummy listener.
-    sendMessage(message, timeout, dummyListener);
+  public long sendMessage(byte[] data, Identifier destination, long timeout) {
+    return sendMessage(data, destination);
   }
 
-  /**
-   * Sends a message to a given hidden service identifier and port and notify the given listener of
-   * sending events. Success not guaranteed, listener is notified on failure.
-   *
-   * @param message The message that should be sent.
-   * @param timeout The timeout before exiting without a sent message.
-   * @param listener The listener to notify of sending events.
-   *
-   * @see Client
-   */
-  public void sendMessage(Message message, long timeout, SendListener listener) {
-    // Alter the content with the message handler and dispatch.
-    dispatcher.enqueueMessage(message, timeout, listener);
+  public long sendMessage(byte[] data, Identifier destination) {
+    Message msg = new Message(data);
+    return sendMessage(msg, destination);
   }
 
-  /**
-   * Sets the current listener that should be notified on received messages.
-   *
-   * @param listener The new listener which should receive the notifications.
-   *
-   * @see Client
-   */
-  public void setListener(ReceiveListener listener) {
-    // Propagate the receive listener.
-    client.listener(listener);
+  public long sendMessage(Object message, Identifier destination) {
+    byte[] data = serializer.serialize(message);
+    
+    return connectionManager.send(data, destination);
+  }
+
+  public long sendMessage(Object message, Identifier destination, long timeout) {
+    return sendMessage(message, destination);
+  }
+
+  public <T> void registerMessage(Class<T> type, MessageReceivedListener<T> listener) {
+    serializer.registerClass(type);
+    listeners.putListener(type, listener);
+  }
+
+  public void setReceiveListener(ReceiveListener listener) {
+    this.receiveListener = listener;
+  }
+
+  public void setSendListener(SendListener listener) {
+    this.sendListener = listener;
   }
 
   /**
@@ -298,7 +308,8 @@ public class PTP {
    */
   public int getLocalPort() {
     // Get the local port from the client.
-    return client.localPort();
+    // return client.localPort();
+    return hiddenServicePort;
   }
 
   /**
@@ -308,12 +319,18 @@ public class PTP {
    * @see Client
    */
   public void exit() {
-    // Close the client.
-    client.exit(!reuse);
+    connectionManager.stop();
+
     // Close the socket TTL manager.
     manager.stop();
-    // Close the message dispatcher.
-    dispatcher.stop();
+
+    try {
+      hiddenServiceConfig.deleteHiddenService();
+    } catch (IOException ioe) {
+      logger.log(Level.WARNING,
+          "Received IOException while deleting the hidden service directory: " + ioe.getMessage());
+    }
+
     // Close the Tor process manager.
     if (tor != null) {
       tor.stop();
@@ -338,79 +355,31 @@ public class PTP {
        */
       @Override
       public void expired(Identifier identifier) throws IOException {
-        client.send(identifier.getTorAddress(),
-            MessageHandler.wrapRaw("", Constants.messagedisconnectflag));
-        client.disconnect(identifier.getTorAddress());
+        // client.send(identifier.getTorAddress(),
+        // MessageHandler.wrapRaw("", Constants.messagedisconnectflag));
+        connectionManager.disconnect(identifier);
       }
 
     };
   }
 
-  /**
-   * Returns a message dispatch listener that will attempt to send the message to its destination.
-   *
-   * @return The manager listener which attempts sending.
-   */
-  private DispatchListener getMessageDispatcherListener() {
-    return new DispatchListener() {
+  @Override
+  public void messageReceived(byte[] data, Identifier source) {
+    Object message;
+    try {
+      message = serializer.deserialize(data);
+      
+      listeners.callListener(message, source);
+    } catch (IOException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+  }
 
-      /**
-       * Attempts to send a message via the raw API client. If the connection was not established
-       * and the timeout was not reached, will indicate that the message should be kept in the
-       * dispatcher queue.
-       *
-       * @param message The message to send.
-       * @param lisener The listener to be notified of sending events.
-       * @param timeout The timeout for the sending.
-       * @param elapsed The amount of time the message has waited so far.
-       * @return false if a further attempt to send the message should be done.
-       *
-       * @see MessageDispatcher.Listener
-       */
-      @Override
-      public boolean dispatch(Message message, SendListener listener, long timeout, long elapsed) {
-        logger.log(Level.INFO,
-            "Attempting to send message: " + "timeout = " + timeout + ", wait = " + elapsed
-                + ", message = " + message.content.substring(0, message.content.length() % 25)
-                + ", destination = " + message.identifier.getTorAddress());
+  @Override
+  public void messageSent(long id, Identifier destination, State state) {
+    // TODO Auto-generated method stub
 
-        // If the timeout is reached return with the corresponding response.
-        if (elapsed >= timeout) {
-          logger.log(Level.INFO, "Timeout on message expired: " + message.content);
-          listener.sendFail(message, SendListener.FailState.CONNECTION_TIMEOUT);
-          return true;
-        }
-
-        // Attempt a connection to the given identifier.
-        Client.ConnectResponse connect =
-            client.connect(message.identifier.getTorAddress(), config.getSocketTimeout());
-        // If the connection to the destination hidden service was successful, add the destination
-        // identifier to the managed sockets.
-        if (connect == Client.ConnectResponse.SUCCESS) {
-          manager.put(message.identifier);
-          // Otherwise, if the connection was not successful indicate that sending should be
-          // retried.
-        } else if (connect != Client.ConnectResponse.OPEN) {
-          return false;
-        }
-
-        // Connection is successful, send the message.
-        Client.SendResponse response = client.send(message.identifier.getTorAddress(),
-            MessageHandler.wrapMessage(message).content);
-
-        // If the message was sent successfully, set the TTL of the socket opened for the
-        // identifier.
-        if (response == Client.SendResponse.SUCCESS) {
-          manager.set(message.identifier, config.getSocketTTL());
-          listener.sendSuccess(message);
-          return true;
-        }
-
-        // Otherwise, indicate that the message was not sent successfully.
-        listener.sendFail(message, SendListener.FailState.SEND_TIMEOUT);
-        return true;
-      }
-    };
   }
 
 }
