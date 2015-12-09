@@ -1,7 +1,5 @@
 package edu.kit.tm.ptp.channels;
 
-import java.nio.channels.SocketChannel;
-
 /**
  * Interface.
  *
@@ -9,7 +7,10 @@ import java.nio.channels.SocketChannel;
  */
 
 public interface ChannelListener {
-  void messageSend(long id, SocketChannel destination);
+  void messageSent(long id, MessageChannel destination);
 
-  void messageReceived(byte[] data, SocketChannel source);
+  void messageReceived(byte[] data, MessageChannel source);
+  
+  void channelOpened(MessageChannel channel);
+  void channelClosed(MessageChannel channel);
 }

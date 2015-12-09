@@ -1,5 +1,6 @@
 package edu.kit.tm.ptp.channels;
 
+import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
 /**
@@ -9,24 +10,36 @@ import java.nio.channels.SocketChannel;
  */
 
 public class ChannelManager implements Runnable {
-  public ChannelManager() {
+  public ChannelManager(ChannelListener listener) {
 
+  }
+  
+  public void start() {
+    
+  }
+  
+  public void stop() {
+    
   }
 
   public void run() {
 
   }
-
-  public void addChannel(SocketChannel channel) {
-
+  
+  public void addServerSocket(ServerSocketChannel server) {
+    
   }
 
-  public void removeChannel(SocketChannel channel) {
-
+  public MessageChannel connect(SocketChannel socket) {
+    return null;
+  }
+  
+  public void addChannel(MessageChannel channel) {
+    
   }
 
-  public long sendMessage(byte[] data, SocketChannel channel) {
-    return 0;
+  public void removeChannel(MessageChannel channel) {
+
   }
 
   public void setChannelListener(ChannelListener listener) {

@@ -28,7 +28,11 @@ public class MessageChannel {
 
   }
 
-  public long addMessage(byte[] data) {
+  public long addMessage(byte[] data, long id) {
     return 0;
+  }
+  
+  public SocketChannel getChannel() {
+    return channel;
   }
 }
