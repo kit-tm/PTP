@@ -7,7 +7,6 @@ sourceSets {
 		java {
 			srcDir 'src/main/java'
 			exclude '**/examples/**'
-			exclude '**//**'
 		}
 	}
 	test {
