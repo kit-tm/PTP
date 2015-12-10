@@ -4,10 +4,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import edu.kit.tm.ptp.Identifier;
-import edu.kit.tm.ptp.Message;
 import edu.kit.tm.ptp.PTP;
 import edu.kit.tm.ptp.ReceiveListener;
-import edu.kit.tm.ptp.SendListenerAdapter;
+import edu.kit.tm.ptp.SendListener;
 
 import org.junit.After;
 import org.junit.Before;
@@ -105,28 +104,28 @@ public class PTPTest {
     // helper class as we will be testing different addresses
     class TestSendFailHelper {
 
-      private Message returnedMessage = null;
+      private long returnedId = -1;
 
       public void run(Identifier id) {
         sendSuccess.set(false);
         sendFail.set(false);
-
-        // Send a message.
-        final Message m = new Message(testString, id);
-        final long timeout = 20 * 1000;
-        client1.sendMessage(m, timeout, new SendListenerAdapter() {
+        
+        client1.setSendListener(new SendListener() {
 
           @Override
-          public void sendSuccess(Message message) {
-            sendSuccess.set(true);
-          }
-
-          @Override
-          public void sendFail(Message message, FailState state) {
-            sendFail.set(true);
-            returnedMessage = message;
+          public void messageSent(long id, Identifier destination, State state) {
+            if (state == State.SUCCESS) {
+              sendSuccess.set(true);
+            } else {
+              sendFail.set(true);
+              returnedId = id;
+            }
           }
         });
+
+        // Send a message.
+        final long timeout = 20 * 1000;
+        final long msgId = client1.sendMessage(testString.getBytes(), id, timeout);
         // Wait for the sending result.
         final long waitStart = System.currentTimeMillis();
         while ((System.currentTimeMillis() - waitStart <= timeout + (5 * 1000))
@@ -144,9 +143,8 @@ public class PTPTest {
         if (!sendFail.get()) {
           fail("No failure notification received");
         }
-        if (!returnedMessage.content.equals(testString)) {
-          fail("Notifier message " + returnedMessage.content + " does not equal sent message "
-              + testString);
+        if (returnedId != msgId) {
+          fail("Notifier id " + returnedId + " does not equal id returned by send" + msgId);
         }
       }
     }
@@ -181,28 +179,31 @@ public class PTPTest {
     final AtomicBoolean matches = new AtomicBoolean(false);
 
     // Set the listener.
-    client1.setListener(new ReceiveListener() {
-
+    client1.setReceiveListener(new ReceiveListener() {
       @Override
-      public void receivedMessage(Message message) {
-        System.out.println("Received message: " + message.content);
+      public void messageReceived(byte[] data, Identifier source) {
+        System.out.println("Received message: " + new String(data));
         received.set(true);
-        matches.set(message.content.equals(testString));
+        matches.set(new String(data).equals(testString));
       }
     });
 
     // Send the message.
     final AtomicBoolean sendSuccess = new AtomicBoolean(false);
-    final Message m = new Message(testString, identifier);
     final long timeout = 180 * 1000;
-    client1.sendMessage(m, timeout, new SendListenerAdapter() {
+    
+    client1.setSendListener(new SendListener() {
 
       @Override
-      public void sendSuccess(Message message) {
-        sendSuccess.set(true);
+      public void messageSent(long id, Identifier destination, State state) {
+        if (state == State.SUCCESS) {
+          sendSuccess.set(true);
+        }
       }
-
+      
     });
+    
+    client1.sendMessage(testString.getBytes(), identifier, timeout);
     // Wait for the sending result.
     final long waitStart = System.currentTimeMillis();
     while (System.currentTimeMillis() - waitStart <= timeout + (5 * 1000) && !sendSuccess.get()) {
@@ -265,42 +266,43 @@ public class PTPTest {
     final AtomicBoolean countingFail = new AtomicBoolean(false);
 
     // Set the listeners.
-    client1.setListener(new ReceiveListener() {
-
+    client1.setReceiveListener(new ReceiveListener() {
+      
       @Override
-      public void receivedMessage(Message message) {
+      public void messageReceived(byte[] data, Identifier source) {
         counter1.incrementAndGet();
-        matchFail.set(!message.content.equals(testString));
+        matchFail.set(!(new String(data).equals(testString)));
         if (counter1.get() - counter2.get() > 1) {
           countingFail.set(true);
         }
-        final Message response = new Message(message.content, message.identifier);
-        client1.sendMessage(response, 10 * 1000);
+        client1.sendMessage(data, source, 10 * 1000);
       }
     });
-    client2.setListener(new ReceiveListener() {
-
+    client2.setReceiveListener(new ReceiveListener() {
       @Override
-      public void receivedMessage(Message message) {
+      public void messageReceived(byte[] data, Identifier source) {
         counter2.incrementAndGet();
-        matchFail.set(!message.content.equals(testString));
+        matchFail.set(!(new String(data).equals(testString)));
         if (counter2.get() - counter1.get() > 1) {
           countingFail.set(true);
         }
-        final Message response = new Message(message.content, message.identifier);
-        client2.sendMessage(response, 10 * 1000);
+        client2.sendMessage(data, source, 10 * 1000);
       }
+    });
+    
+    client1.setSendListener(new SendListener() {
+
+      @Override
+      public void messageSent(long id, Identifier destination, State state) {
+        if (state == State.SUCCESS) {
+          sendSuccess.set(true);
+        }
+      }
+      
     });
 
     // Send the initial ping-pong message.
-    client1.sendMessage(new Message(testString, client2.getIdentifier()), 180 * 1000,
-        new SendListenerAdapter() {
-
-          @Override
-          public void sendSuccess(Message message) {
-            sendSuccess.set(true);
-          }
-        });
+    client1.sendMessage(testString.getBytes(), client2.getIdentifier(), 180 * 1000);
 
     // Wait for the sending result, to ensure first identifier is available.
     Long waitStart = System.currentTimeMillis();
@@ -367,34 +369,35 @@ public class PTPTest {
     for (int i = 0; i < 24; i++) {
       sb.append(sb.toString());
     }
+    
     final String bigString = sb.toString();
 
-    final Message m = new Message(bigString, client2.getIdentifier());
-    final long timeout = 300 * 1000;
-
     // Set the listener.
-    client2.setListener(new ReceiveListener() {
-
+    client2.setReceiveListener(new ReceiveListener() {
+      
       @Override
-      public void receivedMessage(Message message) {
-        matches.set(message.content.equals(bigString));
+      public void messageReceived(byte[] data, Identifier source) {
+        matches.set((new String(data)).equals(bigString));
         receiveSuccess.set(true);
       }
     });
-
-    // send the big message
-    client1.sendMessage(m, timeout, new SendListenerAdapter() {
-
-      @Override
-      public void sendSuccess(Message message) {
-        sendSuccess.set(true);
-      }
+    
+    client1.setSendListener(new SendListener() {
 
       @Override
-      public void sendFail(Message message, FailState state) {
-        failState.set(state.ordinal());
+      public void messageSent(long id, Identifier destination, State state) {
+        if (state == State.SUCCESS) {
+          sendSuccess.set(true);
+        } else {
+          failState.set(state.ordinal());
+        }
       }
+      
     });
+    
+    final long timeout = 300 * 1000;
+    // send the big message
+    client1.sendMessage(bigString.getBytes(), client2.getIdentifier(), timeout);
 
     // Wait for the sending result
     long waitStart = System.currentTimeMillis();
@@ -407,7 +410,7 @@ public class PTPTest {
       }
     }
     if (failState.get() >= 0) {
-      fail("Sending failed: " + SendListenerAdapter.FailState.values()[failState.get()].toString());
+      fail("Sending failed: " + SendListener.State.values()[failState.get()].toString());
     }
     if (!sendSuccess.get()) {
       fail("Sending timed out and this wasn't detected by sendListener.");
