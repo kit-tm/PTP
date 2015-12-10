@@ -8,6 +8,7 @@ import edu.kit.tm.ptp.channels.SOCKSChannel;
 import edu.kit.tm.ptp.utility.Constants;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
@@ -102,7 +103,8 @@ public class ConnectionManager implements Runnable, ChannelListener {
 
   public int startBindServer() throws IOException {
     ServerSocketChannel server = ServerSocketChannel.open();
-    server.socket().bind(new InetSocketAddress(Constants.anyport));
+    server.socket()
+        .bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), Constants.anyport));
     server.configureBlocking(false);
 
     channelManager.addServerSocket(server);
