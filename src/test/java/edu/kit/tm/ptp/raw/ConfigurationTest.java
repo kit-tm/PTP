@@ -1,4 +1,4 @@
-package edu.kit.tm.ptp.test;
+package edu.kit.tm.ptp.raw;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
