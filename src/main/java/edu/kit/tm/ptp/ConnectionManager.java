@@ -36,32 +36,32 @@ public class ConnectionManager implements Runnable, ChannelListener {
   private SendListener sendListener;
   private ReceiveListener receiveListener;
   private Configuration configuration;
-  
+
   private ChannelManager channelManager = new ChannelManager(this);
   private Map<Identifier, MessageChannel> identifierMap = new HashMap<>();
   private Map<MessageChannel, Identifier> channelMap = new HashMap<>();
   private Map<Identifier, LinkedList<MessageAttempt>> messageAttempts =
       new HashMap<Identifier, LinkedList<MessageAttempt>>();
   private Map<Identifier, ConnectionState> connectionStates = new HashMap<>();
-  
+
   // TODO Threadsicherheit überprüfen
   private AtomicLong messageId = new AtomicLong(0);
   private Queue<MessageAttempt> waitingQueue = new ConcurrentLinkedQueue<>();
   private Queue<Long> sentMessages = new ConcurrentLinkedQueue<>();
   private Queue<MessageChannel> newConnections = new ConcurrentLinkedQueue<>();
   private Queue<MessageChannel> closedConnections = new ConcurrentLinkedQueue<>();
-  
+
   public ConnectionManager(String socksHost, int socksPort) {
     this.socksHost = socksHost;
     this.socksPort = socksPort;
   }
-  
+
   public void start() throws IOException {
     thread = new Thread(this);
     thread.start();
     channelManager.start();
   }
-  
+
   public void stop() {
     thread.interrupt();
     channelManager.stop();
@@ -74,7 +74,7 @@ public class ConnectionManager implements Runnable, ChannelListener {
     if (!waitingQueue.offer(attempt)) {
       // log error
     }
-    
+
     return id;
   }
 
@@ -103,9 +103,9 @@ public class ConnectionManager implements Runnable, ChannelListener {
     ServerSocketChannel server = ServerSocketChannel.open();
     server.socket().bind(new InetSocketAddress(Constants.anyport));
     server.configureBlocking(false);
-    
+
     channelManager.addServerSocket(server);
-    
+
     return server.socket().getLocalPort();
   }
 
@@ -142,7 +142,7 @@ public class ConnectionManager implements Runnable, ChannelListener {
       // TODO log error
     }
   }
-  
+
   private void processNewConnections() {
     ConnectionState state;
     Identifier identifier;
@@ -150,11 +150,15 @@ public class ConnectionManager implements Runnable, ChannelListener {
 
     while ((channel = newConnections.poll()) != null) {
       identifier = channelMap.get(channel);
-      
+
       if (identifier == null) {
         // Incoming connection
         // TODO Auth
-        connectionStates.put(identifier, ConnectionState.CONNECTED);
+
+        // Not yet authenticated
+        if (!newConnections.offer(channel)) {
+          // TODO log error
+        }
       } else {
         state = connectionStates.get(identifier);
 
@@ -163,7 +167,8 @@ public class ConnectionManager implements Runnable, ChannelListener {
         switch (state) {
           case CONNECT:
             SOCKSChannel socks = new SOCKSChannel(channel);
-            socks.connetThroughSOCKS(identifier.getTorAddress(), configuration.getHiddenServicePort());
+            socks.connetThroughSOCKS(identifier.getTorAddress(),
+                configuration.getHiddenServicePort());
             identifierMap.put(identifier, socks);
             channelMap.put(socks, identifier);
             channelManager.addChannel(socks);
@@ -178,7 +183,7 @@ public class ConnectionManager implements Runnable, ChannelListener {
       }
     }
   }
-  
+
   private void processMessageAttempts() {
     ConnectionState state;
     Identifier identifier;
@@ -214,35 +219,35 @@ public class ConnectionManager implements Runnable, ChannelListener {
       }
     }
   }
-  
+
   private void processClosedConnections() {
     MessageChannel channel;
     Identifier identifier;
-    
+
     while ((channel = closedConnections.poll()) != null) {
       identifier = channelMap.get(channel);
       connectionStates.put(identifier, ConnectionState.CLOSED);
-      
+
       identifierMap.remove(identifier);
-      channelMap.remove(channel);  
+      channelMap.remove(channel);
     }
   }
-  
+
   private void processSentMessages() {
     Long id;
     MessageAttempt attempt;
-    
+
     while ((id = sentMessages.poll()) != null) {
       Collection<LinkedList<MessageAttempt>> attemptsCollection = messageAttempts.values();
-      
+
       boolean found = false;
-      
+
       for (LinkedList<MessageAttempt> attempts : attemptsCollection) {
         Iterator<MessageAttempt> it = attempts.iterator();
-        
-        while(it.hasNext() && !found) {
+
+        while (it.hasNext() && !found) {
           attempt = it.next();
-          
+
           if (attempt.getId() == id) {
             it.remove();
             sendListener.messageSent(id, attempt.getDestination(), State.SUCCESS);
@@ -250,7 +255,7 @@ public class ConnectionManager implements Runnable, ChannelListener {
           }
         }
       }
-      
+
       if (!found) {
         // TODO log error
       }
@@ -263,16 +268,16 @@ public class ConnectionManager implements Runnable, ChannelListener {
 
 
     while (!Thread.interrupted()) {
-      
+
       // Check new connections
       processNewConnections();
-      
+
       // Check closed connections
       processClosedConnections();
-      
+
       // deliver messages
       processMessageAttempts();
-      
+
       // call sendListeners
       processSentMessages();
 
