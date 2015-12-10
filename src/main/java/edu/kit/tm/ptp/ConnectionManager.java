@@ -1,5 +1,12 @@
 package edu.kit.tm.ptp;
 
+import edu.kit.tm.ptp.SendListener.State;
+import edu.kit.tm.ptp.channels.ChannelListener;
+import edu.kit.tm.ptp.channels.ChannelManager;
+import edu.kit.tm.ptp.channels.MessageChannel;
+import edu.kit.tm.ptp.channels.SOCKSChannel;
+import edu.kit.tm.ptp.utility.Constants;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.ServerSocketChannel;
@@ -12,12 +19,6 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicLong;
-import edu.kit.tm.ptp.SendListener.State;
-import edu.kit.tm.ptp.channels.ChannelListener;
-import edu.kit.tm.ptp.channels.ChannelManager;
-import edu.kit.tm.ptp.channels.MessageChannel;
-import edu.kit.tm.ptp.channels.SOCKSChannel;
-import edu.kit.tm.ptp.utility.Constants;
 
 /**
  * Class.

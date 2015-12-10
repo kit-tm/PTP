@@ -124,7 +124,8 @@ public class PTP implements ReceiveListener {
     // Create the client with the read configuration and set its receiving listener.
     // client = new Client(config, directory);
 
-    connectionManager = new ConnectionManager(Constants.localhost, config.getTorSOCKSProxyPort(), config.getHiddenServicePort());
+    connectionManager = new ConnectionManager(Constants.localhost, config.getTorSOCKSProxyPort(),
+        config.getHiddenServicePort());
     connectionManager.setSendListener(new SendListenerAdapter());
     connectionManager.setReceiveListener(this);
     hiddenServicePort = connectionManager.startBindServer();
@@ -188,7 +189,8 @@ public class PTP implements ReceiveListener {
     reuse = directory != null;
 
     // client = new Client(config, localPort, directory);
-    connectionManager = new ConnectionManager(Constants.localhost, config.getTorSOCKSProxyPort(), config.getHiddenServicePort());
+    connectionManager = new ConnectionManager(Constants.localhost, config.getTorSOCKSProxyPort(),
+        config.getHiddenServicePort());
     connectionManager.setSendListener(new SendListenerAdapter());
     connectionManager.setReceiveListener(this);
     hiddenServicePort = connectionManager.startBindServer();
