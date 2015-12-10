@@ -17,7 +17,6 @@ import edu.kit.tm.ptp.channels.ChannelListener;
 import edu.kit.tm.ptp.channels.ChannelManager;
 import edu.kit.tm.ptp.channels.MessageChannel;
 import edu.kit.tm.ptp.channels.SOCKSChannel;
-import edu.kit.tm.ptp.raw.Configuration;
 import edu.kit.tm.ptp.utility.Constants;
 
 /**
@@ -32,10 +31,10 @@ public class ConnectionManager implements Runnable, ChannelListener {
 
   private String socksHost;
   private int socksPort;
+  private int hsPort;
   private Thread thread;
   private SendListener sendListener;
   private ReceiveListener receiveListener;
-  private Configuration configuration;
 
   private ChannelManager channelManager = new ChannelManager(this);
   private Map<Identifier, MessageChannel> identifierMap = new HashMap<>();
@@ -51,9 +50,10 @@ public class ConnectionManager implements Runnable, ChannelListener {
   private Queue<MessageChannel> newConnections = new ConcurrentLinkedQueue<>();
   private Queue<MessageChannel> closedConnections = new ConcurrentLinkedQueue<>();
 
-  public ConnectionManager(String socksHost, int socksPort) {
+  public ConnectionManager(String socksHost, int socksPort, int hsPort) {
     this.socksHost = socksHost;
     this.socksPort = socksPort;
+    this.hsPort = hsPort;
   }
 
   public void start() throws IOException {
@@ -78,11 +78,11 @@ public class ConnectionManager implements Runnable, ChannelListener {
     return id;
   }
 
-  public void addSendListener(SendListener listener) {
+  public void setSendListener(SendListener listener) {
     this.sendListener = listener;
   }
 
-  public void addReceiveListener(ReceiveListener listener) {
+  public void setReceiveListener(ReceiveListener listener) {
     this.receiveListener = listener;
   }
 
@@ -167,8 +167,7 @@ public class ConnectionManager implements Runnable, ChannelListener {
         switch (state) {
           case CONNECT:
             SOCKSChannel socks = new SOCKSChannel(channel);
-            socks.connetThroughSOCKS(identifier.getTorAddress(),
-                configuration.getHiddenServicePort());
+            socks.connetThroughSOCKS(identifier.getTorAddress(), hsPort);
             identifierMap.put(identifier, socks);
             channelMap.put(socks, identifier);
             channelManager.addChannel(socks);

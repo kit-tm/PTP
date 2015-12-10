@@ -1,11 +1,9 @@
 package edu.kit.tm.ptp.examples;
 
 import edu.kit.tm.ptp.Identifier;
-import edu.kit.tm.ptp.Message;
 import edu.kit.tm.ptp.PTP;
 import edu.kit.tm.ptp.ReceiveListener;
 import edu.kit.tm.ptp.SendListener;
-import edu.kit.tm.ptp.SendListenerAdapter;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -38,10 +36,10 @@ public class PTPSendExample {
       System.out.println("Own identifier: " + client.getIdentifier().toString());
 
       // Setup ReceiveListener
-      client.setListener(new ReceiveListener() {
+      client.setReceiveListener(new ReceiveListener() {
         @Override
-        public void receivedMessage(Message message) {
-          System.out.println("Received message: " + message.content);
+        public void messageReceived(byte[] data, Identifier source) {
+          System.out.println("Received message: " + new String(data));
         }
       });
 
@@ -54,18 +52,13 @@ public class PTPSendExample {
       final long timeout = 60 * 1000;
 
       final AtomicInteger counter = new AtomicInteger(0);
-      SendListener listener = new SendListenerAdapter() {
-
+      client.setSendListener(new SendListener() {
+        
         @Override
-        public void sendSuccess(Message message) {
+        public void messageSent(long id, Identifier destination, State state) {
           counter.incrementAndGet();
         }
-
-        @Override
-        public void sendFail(Message message, FailState state) {
-          counter.incrementAndGet();
-        }
-      };
+      });
 
       int sent = 0;
 
@@ -75,8 +68,7 @@ public class PTPSendExample {
         if (content.equals("exit")) {
           break;
         }
-        Message message = new Message(content, destination);
-        client.sendMessage(message, timeout, listener);
+        client.sendMessage(content.getBytes(), destination, timeout);
         ++sent;
       }
 

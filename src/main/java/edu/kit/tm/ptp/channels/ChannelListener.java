@@ -12,5 +12,6 @@ public interface ChannelListener {
   void messageReceived(byte[] data, MessageChannel source);
   
   void channelOpened(MessageChannel channel);
+  
   void channelClosed(MessageChannel channel);
 }

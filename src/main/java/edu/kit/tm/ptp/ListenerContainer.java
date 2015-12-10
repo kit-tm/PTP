@@ -37,6 +37,7 @@ public class ListenerContainer {
   }*/
   
   private <T> void callListener2(T object, Identifier source) {
+    @SuppressWarnings("unchecked")
     MessageReceivedListener<T> listener = 
         (MessageReceivedListener<T>) listeners.get(object.getClass());
     

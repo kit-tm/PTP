@@ -4,13 +4,11 @@ import edu.kit.tm.ptp.raw.Configuration;
 import edu.kit.tm.ptp.raw.ExpireListener;
 import edu.kit.tm.ptp.raw.TorManager;
 import edu.kit.tm.ptp.raw.connection.TTLManager;
-import edu.kit.tm.ptp.serialization.Serializer;
 import edu.kit.tm.ptp.serialization.Message;
+import edu.kit.tm.ptp.serialization.Serializer;
 import edu.kit.tm.ptp.utility.Constants;
 
 import java.io.IOException;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -22,7 +20,7 @@ import java.util.logging.Logger;
  * @author Simeon Andreev
  *
  */
-public class PTP implements SendListener, ReceiveListener {
+public class PTP implements ReceiveListener {
 
 
   /**
@@ -44,7 +42,6 @@ public class PTP implements SendListener, ReceiveListener {
   /** The manager that closes sockets when their TTL expires. */
   private final TTLManager manager;
   /** A dummy sending listener to use when no listener is specified upon message sending. */
-  private SendListener sendListener = new SendListenerAdapter();
   private ReceiveListener receiveListener = new ReceiveListenerAdapter();
   /** The identifier of the currently used hidden service. */
   private Identifier current = null;
@@ -127,7 +124,9 @@ public class PTP implements SendListener, ReceiveListener {
     // Create the client with the read configuration and set its receiving listener.
     // client = new Client(config, directory);
 
-    connectionManager = new ConnectionManager();
+    connectionManager = new ConnectionManager(Constants.localhost, config.getTorSOCKSProxyPort(), config.getHiddenServicePort());
+    connectionManager.setSendListener(new SendListenerAdapter());
+    connectionManager.setReceiveListener(this);
     hiddenServicePort = connectionManager.startBindServer();
 
     hiddenServiceConfig = new HiddenServiceConfiguration(config, directory, hiddenServicePort);
@@ -189,7 +188,9 @@ public class PTP implements SendListener, ReceiveListener {
     reuse = directory != null;
 
     // client = new Client(config, localPort, directory);
-    connectionManager = new ConnectionManager();
+    connectionManager = new ConnectionManager(Constants.localhost, config.getTorSOCKSProxyPort(), config.getHiddenServicePort());
+    connectionManager.setSendListener(new SendListenerAdapter());
+    connectionManager.setReceiveListener(this);
     hiddenServicePort = connectionManager.startBindServer();
 
     hiddenServiceConfig = new HiddenServiceConfiguration(config, directory, hiddenServicePort);
@@ -279,7 +280,8 @@ public class PTP implements SendListener, ReceiveListener {
   public long sendMessage(Object message, Identifier destination) {
     byte[] data = serializer.serialize(message);
     
-    return connectionManager.send(data, destination);
+    // TOOD set appropriate default timeout
+    return connectionManager.send(data, destination, -1);
   }
 
   public long sendMessage(Object message, Identifier destination, long timeout) {
@@ -296,7 +298,7 @@ public class PTP implements SendListener, ReceiveListener {
   }
 
   public void setSendListener(SendListener listener) {
-    this.sendListener = listener;
+    connectionManager.setSendListener(listener);
   }
 
   /**
@@ -365,21 +367,19 @@ public class PTP implements SendListener, ReceiveListener {
 
   @Override
   public void messageReceived(byte[] data, Identifier source) {
-    Object message;
+    Object obj;
     try {
-      message = serializer.deserialize(data);
+      obj = serializer.deserialize(data);
       
-      listeners.callListener(message, source);
+      if (obj instanceof Message) {
+        Message message = (Message) obj;
+        receiveListener.messageReceived(message.getData(), source);
+      } else {
+        listeners.callListener(obj, source);
+      }
     } catch (IOException e) {
       // TODO Auto-generated catch block
       e.printStackTrace();
     }
   }
-
-  @Override
-  public void messageSent(long id, Identifier destination, State state) {
-    // TODO Auto-generated method stub
-
-  }
-
 }

@@ -1,10 +1,9 @@
 package edu.kit.tm.ptp.examples;
 
 import edu.kit.tm.ptp.Identifier;
-import edu.kit.tm.ptp.Message;
 import edu.kit.tm.ptp.PTP;
 import edu.kit.tm.ptp.ReceiveListener;
-import edu.kit.tm.ptp.SendListenerAdapter;
+import edu.kit.tm.ptp.SendListener;
 
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -59,8 +58,8 @@ public class PTPDuplexExample {
     }
 
     @Override
-    public void receivedMessage(Message message) {
-      System.out.println("Listener " + name + " received: " + message.content);
+    public void messageReceived(byte[] data, Identifier source) {
+      System.out.println("Listener " + name + " received: " + new String(data));
       // No more sending if maximum was reached.
       if (counter.get() > max) {
         return;
@@ -71,7 +70,7 @@ public class PTPDuplexExample {
       }
       // Send message back.
       start = System.currentTimeMillis();
-      client.sendMessage(message, timeout);
+      client.sendMessage(data, source, timeout);
       counter.incrementAndGet();
     }
 
@@ -122,16 +121,18 @@ public class PTPDuplexExample {
       System.out.println("Connecting client.");
       final AtomicBoolean connected = new AtomicBoolean(false);
       final long timeout = 120 * 1000;
-      final Message m = new Message("Hello.", identifier1);
-
-      client2.sendMessage(m, timeout, new SendListenerAdapter() {
-
+      final String m = "Hello.";
+      
+      client2.setSendListener(new SendListener() {
         @Override
-        public void sendSuccess(Message message) {
-          connected.set(true);
+        public void messageSent(long id, Identifier destination, State state) {
+          if (state == State.SUCCESS) {
+            connected.set(true);
+          }
         }
-
       });
+
+      client2.sendMessage(m.getBytes(), identifier1, timeout);
 
       // Wait for the sending result.
       long waitStart = System.currentTimeMillis();
@@ -152,14 +153,14 @@ public class PTPDuplexExample {
       final int max = 50;
       // Set ping-pong listeners.
       MyListener listener1 = new MyListener("L1", client1, max, 15000);
-      client1.setListener(listener1);
+      client1.setReceiveListener(listener1);
       MyListener listener2 = new MyListener("L2", client2, max, 15000);
-      client2.setListener(listener2);
+      client2.setReceiveListener(listener2);
 
 
       final int shortTimeout = 15 * 1000;
       // Send the initial message.
-      client2.sendMessage(m, shortTimeout);
+      client2.sendMessage(m, identifier1, shortTimeout);
 
       // Wait until the maximum number of PING-PONGs (or the timeout) is reached.
       System.out.println("Sleeping.");

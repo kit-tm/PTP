@@ -1,10 +1,9 @@
 package edu.kit.tm.ptp.examples;
 
 import edu.kit.tm.ptp.Identifier;
-import edu.kit.tm.ptp.Message;
 import edu.kit.tm.ptp.PTP;
 import edu.kit.tm.ptp.ReceiveListener;
-import edu.kit.tm.ptp.SendListenerAdapter;
+import edu.kit.tm.ptp.SendListener;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -80,8 +79,8 @@ public class PTPPingPongExample {
         // Set the timer start.
         start = System.currentTimeMillis();
         // Send the message.
-        final Message m = new Message(message + (response ? " " + counter.get() : ""), identifier);
-        client.sendMessage(m, 1 * 1000);
+        final String m = message + (response ? " " + counter.get() : "");
+        client.sendMessage(m, identifier, 1 * 1000);
         ++sent;
       }
       // Another PING-PONG initiated, increment counter.
@@ -116,10 +115,10 @@ public class PTPPingPongExample {
     }
 
     @Override
-    public void receivedMessage(Message received) {
-      System.out.println("Client received message: " + received.content);
+    public void messageReceived(byte[] data, Identifier source) {
+      System.out.println("Client received message: " + new String(data));
       if (message == null) {
-        message = received.content;
+        message = new String(data);
       } else {
         duration += System.currentTimeMillis() - start;
       }
@@ -163,15 +162,18 @@ public class PTPPingPongExample {
       System.out.println("Connecting client.");
       final AtomicBoolean connected = new AtomicBoolean(false);
       final long timeout = 120 * 1000;
-      final Message m = new Message("", destination);
-      client.sendMessage(m, timeout, new SendListenerAdapter() {
+      final String m = "";
+      client.setSendListener(new SendListener() {
 
         @Override
-        public void sendSuccess(Message message) {
-          connected.set(true);
+        public void messageSent(long id, Identifier destination, State state) {
+          if (state == State.SUCCESS) {
+            connected.set(true);
+          }
         }
 
       });
+      client.sendMessage(m, destination, timeout);
       // Wait for the sending result.
       long waitStart = System.currentTimeMillis();
       while (System.currentTimeMillis() - waitStart <= timeout + (5 * 1000) && !connected.get()) {
@@ -202,7 +204,7 @@ public class PTPPingPongExample {
       final int max = 50;
       // Create the listener and set it.
       final MyListener listener = new MyListener(client, destination, max);
-      client.setListener(listener);
+      client.setReceiveListener(listener);
 
       // Connected, ask if a message should be sent.
       System.out.println("Connected.");
@@ -221,7 +223,7 @@ public class PTPPingPongExample {
           listener.send(message, false);
           break;
           // If the input is "no" proceed without sending a message.
-        } else if (line.equals("no"))          {
+        } else if (line.equals("no")) {
           break;
           // Only accept "yes" or "no".
         }
