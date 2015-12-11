@@ -24,6 +24,7 @@ public class ChannelManager implements Runnable {
 
   public void run() {
 
+    // TODO Call finishConnect on connected channels
   }
   
   public void addServerSocket(ServerSocketChannel server) {

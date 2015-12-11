@@ -90,7 +90,6 @@ public class ConnectionManager implements Runnable, ChannelListener {
 
   private MessageChannel connect(Identifier destination) throws IOException {
     SocketChannel socket = SocketChannel.open();
-    socket.configureBlocking(false);
 
     MessageChannel channel = channelManager.connect(socket);
     socket.connect(InetSocketAddress.createUnresolved(socksHost, socksPort));
@@ -169,7 +168,7 @@ public class ConnectionManager implements Runnable, ChannelListener {
         // established
         switch (state) {
           case CONNECT:
-            SOCKSChannel socks = new SOCKSChannel(channel);
+            SOCKSChannel socks = new SOCKSChannel(channel, channelManager);
             socks.connetThroughSOCKS(identifier.getTorAddress(), hsPort);
             identifierMap.put(identifier, socks);
             channelMap.put(socks, identifier);

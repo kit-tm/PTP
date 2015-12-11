@@ -15,7 +15,7 @@ public class MessageChannel {
   private SocketChannel channel;
   private int bufferLength;
 
-  public MessageChannel(SocketChannel channel) {
+  public MessageChannel(SocketChannel channel, ChannelManager manager) {
     this.channel = channel;
     // Initialize buffers
   }
@@ -28,11 +28,10 @@ public class MessageChannel {
 
   }
 
-  public long addMessage(byte[] data, long id) {
-    return 0;
+  public void addMessage(byte[] data, long id) {
   }
   
   public SocketChannel getChannel() {
-    return channel;
+    return null;
   }
 }

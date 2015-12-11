@@ -45,36 +45,6 @@ public class ChannelManagerTest {
     }
   }
 
-  class Listener implements ChannelListener {
-    public MessageChannel passedChannel;
-    public AtomicInteger conOpen = new AtomicInteger(0);
-    public AtomicInteger conClosed = new AtomicInteger(0);
-    public AtomicInteger other = new AtomicInteger(0);
-
-    @Override
-    public void messageSent(long id, MessageChannel destination) {
-      other.incrementAndGet();
-    }
-
-    @Override
-    public void messageReceived(byte[] data, MessageChannel source) {
-      other.incrementAndGet();
-    }
-
-    @Override
-    public void channelOpened(MessageChannel channel) {
-      conOpen.incrementAndGet();
-      passedChannel = channel;
-    }
-
-    @Override
-    public void channelClosed(MessageChannel channel) {
-      conClosed.incrementAndGet();
-      passedChannel = channel;
-    }
-
-  }
-
   @Test
   public void testaddServerSocket() throws IOException {
     Listener listener = new Listener();
@@ -84,36 +54,21 @@ public class ChannelManagerTest {
 
     Socket client = null;
     int timeout = 5 * 1000;
-    long start = System.currentTimeMillis();
 
-    try {
-      client = new Socket();
-      client.connect(
-          new InetSocketAddress(InetAddress.getLoopbackAddress(), server.socket().getLocalPort()),
-          timeout);
-    } finally {
-      if (client != null) {
-        try {
-          client.close();
-        } catch (IOException ioe) {
-          // Do nothing
-        }
-      }
-    }
+    client = new Socket();
+    client.connect(
+        new InetSocketAddress(InetAddress.getLoopbackAddress(), server.socket().getLocalPort()),
+        timeout);
 
-    while (listener.conOpen.get() == 0 && (System.currentTimeMillis() - start < timeout)) {
-      try {
-        Thread.sleep(1 * 1000);
-      } catch (InterruptedException e) {
-        // Sleeping was interrupted. Do nothing.
-      }
-    }
-
-    channelManager.stop();
+    TestHelper.wait(listener.conOpen, 1, timeout);
+    client.close();
 
     assertEquals(1, listener.conOpen.get());
     assertEquals(1, listener.conClosed.get());
-    assertEquals(0, listener.other.get());
+    assertEquals(0, listener.read.get());
+    assertEquals(0, listener.write.get());
+    
+    channelManager.stop();
   }
 
   @Test
@@ -124,39 +79,29 @@ public class ChannelManagerTest {
 
     SocketChannel client = null;
 
-    try {
-      client = SocketChannel.open();
-      client.configureBlocking(false);
-      channelManager.connect(client);
-      client.connect(
-          new InetSocketAddress(InetAddress.getLoopbackAddress(), server.socket().getLocalPort()));
-    } finally {
-      if (client != null) {
-        try {
-          client.close();
-        } catch (IOException ioe) {
-          // Do nothing
-        }
-      }
-    }
+
+    client = SocketChannel.open();
+    channelManager.connect(client);
+    client.connect(
+        new InetSocketAddress(InetAddress.getLoopbackAddress(), server.socket().getLocalPort()));
 
     long timeout = 5 * 1000;
     TestHelper.wait(listener.conOpen, 1, timeout);
+    client.finishConnect();
 
+    assertEquals(true, client.isConnected());
     assertEquals(1, listener.conOpen.get());
     assertEquals(0, listener.conClosed.get());
-    assertEquals(0, listener.other.get());
+    assertEquals(0, listener.read.get());
+    assertEquals(0, listener.write.get());
 
     channelManager.stop();
 
-    if (listener.conOpen.get() > 0) {
-      try {
-        client.finishConnect();
-        client.close();
-      } catch (IOException ioe) {
-        ioe.printStackTrace();
-      }
-    }
+    client.close();
+    assertEquals(1, listener.conOpen.get());
+    assertEquals(1, listener.conClosed.get());
+    assertEquals(0, listener.read.get());
+    assertEquals(0, listener.write.get());
   }
 
 
@@ -172,33 +117,22 @@ public class ChannelManagerTest {
 
     SocketChannel client = null;
 
-    try {
-      client = SocketChannel.open();
-      client.configureBlocking(false);
-      channelManager.connect(client);
-      client.connect(new InetSocketAddress(InetAddress.getLoopbackAddress(),
-          ptp.getConfiguration().getTorSOCKSProxyPort()));
-    } finally {
-      if (client != null) {
-        try {
-          client.close();
-        } catch (IOException ioe) {
-          // Do nothing
-        }
-      }
-    }
+    client = SocketChannel.open();
+    channelManager.connect(client);
+    client.connect(new InetSocketAddress(InetAddress.getLoopbackAddress(),
+        ptp.getConfiguration().getTorSOCKSProxyPort()));
 
     long timeout = 5 * 1000;
 
     TestHelper.wait(socks.conOpen, 1, timeout);
+    client.finishConnect();
 
     assertEquals(1, socks.conOpen);
     assertEquals(0, socks.conClosed);
-    assertEquals(0, socks.other);
+    assertEquals(0, socks.read);
+    assertEquals(0, socks.write);
 
-    client.finishConnect();
-
-    SOCKSChannel socksChannel = new SOCKSChannel(socks.passedChannel);
+    SOCKSChannel socksChannel = new SOCKSChannel(socks.passedChannel, channelManager);
     socksChannel.connetThroughSOCKS(ptp.getIdentifier().toString(),
         ptp.getConfiguration().getHiddenServicePort());
     channelManager.addChannel(socksChannel);
@@ -206,7 +140,8 @@ public class ChannelManagerTest {
     TestHelper.wait(socks.conOpen, 2, timeout);
 
     assertEquals(2, socks.conOpen);
-    assertEquals(0, socks.other);
+    assertEquals(0, socks.read);
+    assertEquals(0, socks.write);
     assertEquals(socksChannel, socks.passedChannel);
     assertEquals(0, socks.conClosed);
 
