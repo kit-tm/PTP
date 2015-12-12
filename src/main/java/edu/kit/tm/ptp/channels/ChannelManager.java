@@ -42,8 +42,4 @@ public class ChannelManager implements Runnable {
   public void removeChannel(MessageChannel channel) {
 
   }
-
-  public void setChannelListener(ChannelListener listener) {
-
-  }
 }

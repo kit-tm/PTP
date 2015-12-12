@@ -18,6 +18,12 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * Test class for the ChannelManager.
+ * 
+ * @author Timon Hackenjos
+ *
+ */
 public class ChannelManagerTest {
   private ServerSocketChannel server = null;
 
@@ -151,5 +157,36 @@ public class ChannelManagerTest {
     assertEquals(socksChannel, socks.passedChannel);
 
     channelManager.stop();
+  }
+  
+  @Test
+  public void testRemoveChannel() throws IOException {
+    Listener listener = new Listener();
+    ChannelManager channelManager = new ChannelManager(listener);
+    channelManager.start();
+
+    SocketChannel client = null;
+
+    client = SocketChannel.open();
+    MessageChannel clientChannel = channelManager.connect(client);
+    client.connect(
+        new InetSocketAddress(InetAddress.getLoopbackAddress(), server.socket().getLocalPort()));
+
+    long timeout = 5 * 1000;
+    TestHelper.wait(listener.conOpen, 1, timeout);
+    channelManager.addChannel(clientChannel);
+
+    assertEquals(true, client.isConnected());
+    assertEquals(1, listener.conOpen.get());
+    assertEquals(0, listener.conClosed.get());
+    assertEquals(0, listener.read.get());
+    assertEquals(0, listener.write.get());
+
+    channelManager.removeChannel(clientChannel);
+    assertEquals(false, client.isConnected());
+    assertEquals(1, listener.conOpen.get());
+    assertEquals(0, listener.conClosed.get());
+    assertEquals(0, listener.read.get());
+    assertEquals(0, listener.write.get());
   }
 }
