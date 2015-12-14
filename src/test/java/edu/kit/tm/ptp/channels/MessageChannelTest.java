@@ -141,13 +141,6 @@ public class MessageChannelTest {
     assertEquals(client, listener.passedChannel);
   }
 
-  @Test(expected = IllegalArgumentException.class)
-  public void testMessageChannel_NotConnected() throws IOException {
-    SocketChannel client = SocketChannel.open();
-    ChannelManager manager = new ChannelManager(new Listener());
-    new MessageChannel(client, manager);
-  }
-
   @Test
   public void testGetChannel() throws IOException {
     SocketChannel client = SocketChannel.open();

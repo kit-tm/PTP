@@ -10,6 +10,7 @@ import edu.kit.tm.ptp.utility.Constants;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Collection;
@@ -170,10 +171,15 @@ public class ConnectionManager implements Runnable, ChannelListener {
           case CONNECT:
             SOCKSChannel socks = new SOCKSChannel(channel, channelManager);
             socks.connetThroughSOCKS(identifier.getTorAddress(), hsPort);
-            identifierMap.put(identifier, socks);
-            channelMap.put(socks, identifier);
-            channelManager.addChannel(socks);
-            connectionStates.put(identifier, ConnectionState.CONNECT_SOCKS);
+            try {
+              channelManager.addChannel(socks);
+
+              identifierMap.put(identifier, socks);
+              channelMap.put(socks, identifier);
+              connectionStates.put(identifier, ConnectionState.CONNECT_SOCKS);
+            } catch (ClosedChannelException e) {
+              // TODO log error
+            }
             break;
           case CONNECT_SOCKS:
             connectionStates.put(identifier, ConnectionState.CONNECTED);
