@@ -20,6 +20,7 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -36,8 +37,8 @@ public class ConnectionManager implements Runnable, ChannelListener {
   private int socksPort;
   private int hsPort;
   private Thread thread;
-  private SendListener sendListener;
-  private ReceiveListener receiveListener;
+  private SendListener sendListener = null;
+  private ReceiveListener receiveListener = null;
 
   private ChannelManager channelManager = new ChannelManager(this);
   private Map<Identifier, MessageChannel> identifierMap = new HashMap<>();
@@ -52,6 +53,18 @@ public class ConnectionManager implements Runnable, ChannelListener {
   private Queue<Long> sentMessages = new ConcurrentLinkedQueue<>();
   private Queue<MessageChannel> newConnections = new ConcurrentLinkedQueue<>();
   private Queue<MessageChannel> closedConnections = new ConcurrentLinkedQueue<>();
+  private Queue<ReceivedMessage> receivedMessages = new ConcurrentLinkedQueue<>();
+  private Semaphore semaphore = new Semaphore(0);
+
+  private class ReceivedMessage {
+    public byte[] data;
+    public Identifier source;
+
+    public ReceivedMessage(byte[] data, Identifier source) {
+      this.data = data;
+      this.source = source;
+    }
+  }
 
   public ConnectionManager(String socksHost, int socksPort, int hsPort) {
     this.socksHost = socksHost;
@@ -65,7 +78,7 @@ public class ConnectionManager implements Runnable, ChannelListener {
     channelManager.start();
   }
 
-  public void stop() {
+  public void stop() throws IOException {
     thread.interrupt();
     channelManager.stop();
   }
@@ -77,6 +90,8 @@ public class ConnectionManager implements Runnable, ChannelListener {
     if (!waitingQueue.offer(attempt)) {
       // log error
     }
+    
+    semaphore.release();
 
     return id;
   }
@@ -98,7 +113,13 @@ public class ConnectionManager implements Runnable, ChannelListener {
   }
 
   public void disconnect(Identifier destination) {
+    MessageChannel channel = identifierMap.get(destination);
+    if (channel == null) {
+      // TODO log error
+      return;
+    }
 
+    channelManager.removeChannel(channel);
   }
 
   public int startBindServer() throws IOException {
@@ -117,10 +138,12 @@ public class ConnectionManager implements Runnable, ChannelListener {
     if (!sentMessages.offer(id)) {
       // TODO handle error
     }
+    semaphore.release();
   }
 
   @Override
   public void messageReceived(byte[] data, MessageChannel source) {
+
     Identifier identifier = channelMap.get(source);
 
     if (identifier == null) {
@@ -128,8 +151,8 @@ public class ConnectionManager implements Runnable, ChannelListener {
       throw new IllegalStateException();
     }
 
-    // Make call with different Thread?
-    receiveListener.messageReceived(data, identifier);
+    receivedMessages.offer(new ReceivedMessage(data, identifier));
+    semaphore.release();
   }
 
   @Override
@@ -137,6 +160,7 @@ public class ConnectionManager implements Runnable, ChannelListener {
     if (!newConnections.offer(channel)) {
       // TODO log error
     }
+    semaphore.release();
   }
 
   @Override
@@ -144,6 +168,7 @@ public class ConnectionManager implements Runnable, ChannelListener {
     if (!closedConnections.offer(channel)) {
       // TODO log error
     }
+    semaphore.release();
   }
 
   private void processNewConnections() {
@@ -257,7 +282,9 @@ public class ConnectionManager implements Runnable, ChannelListener {
 
           if (attempt.getId() == id) {
             it.remove();
-            sendListener.messageSent(id, attempt.getDestination(), State.SUCCESS);
+            if (sendListener != null) {
+              sendListener.messageSent(id, attempt.getDestination(), State.SUCCESS);
+            }
             found = true;
           }
         }
@@ -269,6 +296,16 @@ public class ConnectionManager implements Runnable, ChannelListener {
     }
   }
 
+  public void processReceivedMessages() {
+    ReceivedMessage message;
+
+    while ((message = receivedMessages.poll()) != null) {
+      if (receiveListener != null) {
+        receiveListener.messageReceived(message.data, message.source);
+      }
+    }
+  }
+
   @Override
   public void run() {
     // TODO Auto-generated method stub
@@ -276,19 +313,30 @@ public class ConnectionManager implements Runnable, ChannelListener {
 
     while (!Thread.interrupted()) {
 
-      // Check new connections
-      processNewConnections();
+      try {
+        semaphore.acquire();
+        semaphore.drainPermits();
 
-      // Check closed connections
-      processClosedConnections();
+        // Check new connections
+        processNewConnections();
 
-      // deliver messages
-      processMessageAttempts();
+        // Check closed connections
+        processClosedConnections();
 
-      // call sendListeners
-      processSentMessages();
+        // deliver messages
+        processMessageAttempts();
 
-      // Check timeouts for messages
+        // call sendListeners
+        processSentMessages();
+
+        // call receiveListeners
+        processReceivedMessages();
+
+        // Check timeouts for messages
+
+      } catch (InterruptedException ie) {
+        // Do nothing
+      }
     }
   }
 }

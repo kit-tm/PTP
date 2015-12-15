@@ -22,7 +22,7 @@ public class MessageChannel {
   private ByteBuffer receiveBuffer;
   private ByteBuffer receiveLengthBuffer;
   protected SocketChannel channel;
-  private int bufferLength;
+  private int bufferLength = 1024;
   protected ChannelManager manager;
   private State readState = State.LENGTH;
   private State writeState = State.IDLE;
@@ -145,6 +145,7 @@ public class MessageChannel {
       throw new IllegalStateException();
     }
     sendLengthBuffer.putInt(data.length);
+    sendLengthBuffer.flip();
     sendBuffer = ByteBuffer.wrap(data);
     
     currentId = id;

@@ -70,10 +70,10 @@ public class ChannelManagerTest {
     client.close();
 
     assertEquals(1, listener.conOpen.get());
-    assertEquals(1, listener.conClosed.get());
+    assertEquals(0, listener.conClosed.get());
     assertEquals(0, listener.read.get());
     assertEquals(0, listener.write.get());
-    
+
     channelManager.stop();
   }
 
@@ -87,27 +87,31 @@ public class ChannelManagerTest {
 
 
     client = SocketChannel.open();
-    channelManager.connect(client);
+    MessageChannel clientChannel = channelManager.connect(client);
     client.connect(
         new InetSocketAddress(InetAddress.getLoopbackAddress(), server.socket().getLocalPort()));
 
     long timeout = 5 * 1000;
     TestHelper.wait(listener.conOpen, 1, timeout);
-    client.finishConnect();
-
+    
+    channelManager.addChannel(clientChannel);
+    
     assertEquals(true, client.isConnected());
     assertEquals(1, listener.conOpen.get());
     assertEquals(0, listener.conClosed.get());
     assertEquals(0, listener.read.get());
     assertEquals(0, listener.write.get());
 
-    channelManager.stop();
+    channelManager.removeChannel(clientChannel);
+    
+    TestHelper.wait(listener.conClosed, 1, timeout);
 
-    client.close();
     assertEquals(1, listener.conOpen.get());
     assertEquals(1, listener.conClosed.get());
     assertEquals(0, listener.read.get());
     assertEquals(0, listener.write.get());
+    
+    channelManager.stop();
   }
 
 
@@ -119,7 +123,7 @@ public class ChannelManagerTest {
     channelManager.start();
 
     PTP ptp = new PTP();
-    ptp.reuseHiddenService();
+    ptp.createHiddenService();
 
     SocketChannel client = null;
 
@@ -131,7 +135,6 @@ public class ChannelManagerTest {
     long timeout = 5 * 1000;
 
     TestHelper.wait(socks.conOpen, 1, timeout);
-    client.finishConnect();
 
     assertEquals(1, socks.conOpen);
     assertEquals(0, socks.conClosed);
@@ -158,7 +161,7 @@ public class ChannelManagerTest {
 
     channelManager.stop();
   }
-  
+
   @Test
   public void testRemoveChannel() throws IOException {
     Listener listener = new Listener();
@@ -171,21 +174,21 @@ public class ChannelManagerTest {
     MessageChannel clientChannel = channelManager.connect(client);
     client.connect(
         new InetSocketAddress(InetAddress.getLoopbackAddress(), server.socket().getLocalPort()));
-
+    
     long timeout = 5 * 1000;
     TestHelper.wait(listener.conOpen, 1, timeout);
+    assertEquals(1, listener.conOpen.get());
+    assertEquals(true, client.isConnected());
+
     channelManager.addChannel(clientChannel);
 
-    assertEquals(true, client.isConnected());
-    assertEquals(1, listener.conOpen.get());
     assertEquals(0, listener.conClosed.get());
     assertEquals(0, listener.read.get());
     assertEquals(0, listener.write.get());
 
     channelManager.removeChannel(clientChannel);
-    assertEquals(false, client.isConnected());
     assertEquals(1, listener.conOpen.get());
-    assertEquals(0, listener.conClosed.get());
+    assertEquals(1, listener.conClosed.get());
     assertEquals(0, listener.read.get());
     assertEquals(0, listener.write.get());
   }

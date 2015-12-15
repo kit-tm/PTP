@@ -109,13 +109,13 @@ public class PTP implements ReceiveListener {
 
     // Check if Tor is not running.
     if (!tor.running()) {
-      throw new IllegalArgumentException("Starting Tor failed!");
+      throw new IOException("Starting Tor failed!");
     }
 
     // Check if we reached the timeout without a finished boostrapping.
     if (!tor.ready()) {
       tor.killtor();
-      throw new IllegalArgumentException("Tor bootstrapping timeout expired!");
+      throw new IOException("Tor bootstrapping timeout expired!");
     }
 
     // Set the control ports.
@@ -323,7 +323,12 @@ public class PTP implements ReceiveListener {
    * @see Client
    */
   public void exit() {
-    connectionManager.stop();
+    try {
+      connectionManager.stop();
+    } catch (IOException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
 
     // Close the socket TTL manager.
     manager.stop();

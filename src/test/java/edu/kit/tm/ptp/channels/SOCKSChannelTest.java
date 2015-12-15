@@ -43,7 +43,7 @@ public class SOCKSChannelTest {
   }
 
   @Test (expected = IllegalStateException.class)
-  public void test() throws IOException {
+  public void testaddMessageBeforeConnecting() throws IOException {
     SocketChannel client = SocketChannel.open();
     client.configureBlocking(false);
     if (!client.connect(
@@ -54,7 +54,7 @@ public class SOCKSChannelTest {
     
     assertEquals(true, client.isConnected());
     ChannelManager manager = new ChannelManager(new Listener());
-    MessageChannel channel = new MessageChannel(client, manager);
+    SOCKSChannel channel = new SOCKSChannel(client, manager);
     byte[] data = new byte[] { 0x0 };
     channel.addMessage(data, 10L);
   }

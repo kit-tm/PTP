@@ -35,13 +35,28 @@ public class ChannelManager implements Runnable {
     thread.start();
   }
 
-  public void stop() {
+  public void stop() throws IOException {
     thread.interrupt();
+    selector.close();
   }
 
   public void run() {
+    
+    int readyChannels = 0;
+    long timeout = 100;
 
     while (!thread.isInterrupted()) {
+      try {
+        readyChannels = selector.select(timeout);
+      } catch (IOException e1) {
+        thread.interrupt();
+        // TODO log error
+      }
+      
+      if (readyChannels == 0) {
+        continue;
+      }
+      
       Set<SelectionKey> selectedKeys = selector.selectedKeys();
       Iterator<SelectionKey> keyIterator = selectedKeys.iterator();
 
@@ -52,6 +67,7 @@ public class ChannelManager implements Runnable {
           ServerSocketChannel server = (ServerSocketChannel) key.attachment();
           try {
             SocketChannel client = server.accept();
+            client.configureBlocking(false);
             MessageChannel channel = new MessageChannel(client, this);
             listener.channelOpened(channel);
           } catch (IOException e) {
@@ -65,7 +81,7 @@ public class ChannelManager implements Runnable {
           if (key.isValid() && key.isConnectable()) {
             try {
               channel.getChannel().finishConnect();
-              key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+              //key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
               listener.channelOpened(channel);
             } catch (IOException ioe) {
               // TODO log error
@@ -85,6 +101,7 @@ public class ChannelManager implements Runnable {
         
         keyIterator.remove();
       }
+      
     }
 
   }
@@ -113,6 +130,8 @@ public class ChannelManager implements Runnable {
     }
 
     key.cancel();
+    
+    channel.closeChannel();
   }
 
   public ChannelListener getChannelListener() {

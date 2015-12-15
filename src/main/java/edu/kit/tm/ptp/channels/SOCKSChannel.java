@@ -2,6 +2,7 @@ package edu.kit.tm.ptp.channels;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.SocketChannel;
 
 public class SOCKSChannel extends MessageChannel {
   private boolean connected;
@@ -10,6 +11,11 @@ public class SOCKSChannel extends MessageChannel {
 
   public SOCKSChannel(MessageChannel messageChannel, ChannelManager manager) {
     super(messageChannel.getChannel(), manager);
+    connected = false;
+  }
+  
+  public SOCKSChannel(SocketChannel channel, ChannelManager manager) {
+    super(channel, manager);
     connected = false;
   }
 
