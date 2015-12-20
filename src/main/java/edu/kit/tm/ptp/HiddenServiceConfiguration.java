@@ -66,6 +66,8 @@ public class HiddenServiceConfiguration {
     if (directory == null) {
       this.directory = Constants.hiddenserviceprefix + port;
     }
+    
+    this.port = port;
 
     // Check if the hidden service directory exists, if not create it.
     File hiddenServiceDirectory = new File(configuration.getHiddenServiceDirectory());

@@ -137,4 +137,18 @@ public class ChannelManager implements Runnable {
   public ChannelListener getChannelListener() {
     return listener;
   }
+  
+  public void registerWrite(MessageChannel channel, boolean enable) {
+    SelectionKey key = channel.getChannel().keyFor(selector);
+
+    if (key == null) {
+      throw new IllegalArgumentException();
+    }
+    
+    if (enable) {
+      key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
+    } else {
+      key.interestOps(key.interestOps() & (~SelectionKey.OP_WRITE));
+    }
+  }
 }

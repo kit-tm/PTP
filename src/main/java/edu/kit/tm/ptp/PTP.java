@@ -126,8 +126,10 @@ public class PTP implements ReceiveListener {
 
     connectionManager = new ConnectionManager(Constants.localhost, config.getTorSOCKSProxyPort(),
         config.getHiddenServicePort());
+    connectionManager.setSerializer(serializer);
     connectionManager.setSendListener(new SendListenerAdapter());
     connectionManager.setReceiveListener(this);
+    connectionManager.start();
     hiddenServicePort = connectionManager.startBindServer();
 
     hiddenServiceConfig = new HiddenServiceConfiguration(config, directory, hiddenServicePort);
@@ -191,8 +193,10 @@ public class PTP implements ReceiveListener {
     // client = new Client(config, localPort, directory);
     connectionManager = new ConnectionManager(Constants.localhost, config.getTorSOCKSProxyPort(),
         config.getHiddenServicePort());
+    connectionManager.setSerializer(serializer);
     connectionManager.setSendListener(new SendListenerAdapter());
     connectionManager.setReceiveListener(this);
+    connectionManager.start();
     hiddenServicePort = connectionManager.startBindServer();
 
     hiddenServiceConfig = new HiddenServiceConfiguration(config, directory, hiddenServicePort);
@@ -255,6 +259,7 @@ public class PTP implements ReceiveListener {
     if (renew || current == null) {
       current = new Identifier(hiddenServiceConfig.identifier(!reuse));
     }
+    connectionManager.setLocalIdentifier(current);
   }
 
   /**
@@ -268,6 +273,7 @@ public class PTP implements ReceiveListener {
   public void createHiddenService() throws IOException {
     // Create a fresh hidden service identifier.
     current = new Identifier(hiddenServiceConfig.identifier(true));
+    connectionManager.setLocalIdentifier(current);
   }
 
   public long sendMessage(byte[] data, Identifier destination, long timeout) {

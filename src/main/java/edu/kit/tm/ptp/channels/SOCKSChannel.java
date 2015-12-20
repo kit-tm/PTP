@@ -13,7 +13,7 @@ public class SOCKSChannel extends MessageChannel {
     super(messageChannel.getChannel(), manager);
     connected = false;
   }
-  
+
   public SOCKSChannel(SocketChannel channel, ChannelManager manager) {
     super(channel, manager);
     connected = false;
@@ -28,11 +28,13 @@ public class SOCKSChannel extends MessageChannel {
 
     // ByteBuffers use Big Endian by Default
     // SOCKS4a
-    socksWriteBuffer.put(new byte[] {0x04, 0x01});
+    socksWriteBuffer.put((byte) 0x04);
+    socksWriteBuffer.put((byte) 0x01);
     socksWriteBuffer.putShort((short) port);
-    socksWriteBuffer.put(new byte[] {0x0, 0x0, 0x0, 0x01, 0x0});
+    socksWriteBuffer.putInt(0x01);
+    socksWriteBuffer.put((byte) 0x00);
     socksWriteBuffer.put(host.getBytes());
-    socksWriteBuffer.put(new byte[] {0x0});
+    socksWriteBuffer.put((byte) 0x00);
     socksWriteBuffer.flip();
 
     socksReceiveBuffer = ByteBuffer.allocate(8);
@@ -45,11 +47,6 @@ public class SOCKSChannel extends MessageChannel {
     } else {
       try {
         int read = channel.read(socksReceiveBuffer);
-        
-        if (read == -1) {
-          closeChannel();
-          return;
-        }
 
         if (!socksReceiveBuffer.hasRemaining()) {
           socksReceiveBuffer.flip();
@@ -58,9 +55,11 @@ public class SOCKSChannel extends MessageChannel {
             closeChannel();
             return;
           }
-          
+
           connected = true;
-          manager.getChannelListener().channelOpened(this);
+          listener.channelOpened(this);
+        } else if (read == -1) {
+          closeChannel();
         }
       } catch (IOException e) {
         closeChannel();
@@ -75,6 +74,9 @@ public class SOCKSChannel extends MessageChannel {
     } else {
       try {
         channel.write(socksWriteBuffer);
+        if (!socksWriteBuffer.hasRemaining()) {
+          manager.registerWrite(this, false);
+        }
       } catch (IOException e) {
         closeChannel();
       }

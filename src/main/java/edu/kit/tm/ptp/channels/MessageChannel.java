@@ -23,7 +23,7 @@ public class MessageChannel {
   private ByteBuffer receiveLengthBuffer;
   protected SocketChannel channel;
   private int bufferLength = 1024;
-  protected ChannelManager manager;
+  protected ChannelListener listener;
   private State readState = State.LENGTH;
   private State writeState = State.IDLE;
 
@@ -31,6 +31,7 @@ public class MessageChannel {
   private final int lenLength = 4;
   private long currentId;
   private Lock writeLock = new ReentrantLock();
+  protected ChannelManager manager;
 
   public MessageChannel(SocketChannel channel, ChannelManager manager) {
     if (channel == null || manager == null) {
@@ -39,6 +40,7 @@ public class MessageChannel {
 
     this.channel = channel;
     this.manager = manager;
+    this.listener = manager.getChannelListener();
     // Initialize buffers
     receiveBuffer = ByteBuffer.allocate(bufferLength);
     sendLengthBuffer = ByteBuffer.allocate(lenLength);
@@ -72,7 +74,7 @@ public class MessageChannel {
           if (!receiveBuffer.hasRemaining()) {
             byte[] data = receiveBuffer.array();
 
-            manager.getChannelListener().messageReceived(data, this);
+            listener.messageReceived(data, this);
             readState = State.LENGTH;
 
             receiveBuffer.clear();
@@ -101,7 +103,7 @@ public class MessageChannel {
       // TODO log error
     }
     
-    manager.getChannelListener().channelClosed(this);
+    listener.channelClosed(this);
   }
 
   public void write() {
@@ -124,9 +126,12 @@ public class MessageChannel {
           channel.write(sendBuffer);
           
           if (!sendBuffer.hasRemaining()) {
-            manager.getChannelListener().messageSent(currentId, this);
+            listener.messageSent(currentId, this);
             writeState = State.IDLE;
           }
+          break;
+        case IDLE:
+          manager.registerWrite(this, false);
           break;
         default:
           break;
@@ -150,10 +155,19 @@ public class MessageChannel {
     
     currentId = id;
     writeState = State.LENGTH;
+    manager.registerWrite(this, true);
     writeLock.unlock();
   }
 
   public SocketChannel getChannel() {
     return channel;
+  }
+  
+  public void setChannelListener(ChannelListener listener) {
+    this.listener = listener;
+  }
+  
+  public ChannelListener getChannenListener() {
+    return listener;
   }
 }
