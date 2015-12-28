@@ -24,6 +24,8 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Class.
@@ -46,21 +48,25 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
   private ChannelManager channelManager = new ChannelManager(this);
   private Map<Identifier, MessageChannel> identifierMap = new HashMap<>();
   private Map<MessageChannel, Identifier> channelMap = new HashMap<>();
-  private Map<Identifier, LinkedList<MessageAttempt>> messageAttempts =
-      new HashMap<Identifier, LinkedList<MessageAttempt>>();
-  private Map<Identifier, ConnectionState> connectionStates = new HashMap<>();
+  private List<MessageAttempt> sentMessages = new LinkedList<>();
+  private Map<MessageChannel, ConnectionState> connectionStates = new HashMap<>();
+  private Map<Identifier, Long> lastTry = new HashMap<>();
 
   // TODO Threadsicherheit überprüfen
   private AtomicLong messageId = new AtomicLong(0);
   private Queue<MessageAttempt> waitingQueue = new ConcurrentLinkedQueue<>();
-  private Queue<Long> sentMessages = new ConcurrentLinkedQueue<>();
+  private Queue<Long> sentMessageIds = new ConcurrentLinkedQueue<>();
   private Queue<MessageChannel> newConnections = new ConcurrentLinkedQueue<>();
   private Queue<MessageChannel> closedConnections = new ConcurrentLinkedQueue<>();
   private Queue<ReceivedMessage> receivedMessages = new ConcurrentLinkedQueue<>();
   private Queue<ChannelIdentifier> authQueue = new ConcurrentLinkedQueue<>();
   private Semaphore semaphore = new Semaphore(0);
-  
+  private Waker waker = new Waker(5000);
+  private Thread wakerThread = new Thread(waker);
+
   private Serializer serializer;
+  private final Logger logger = Logger.getLogger(Constants.connectionManagerLogger);
+  private final long connectIntervall = 30 * 1000;
 
   private class ReceivedMessage {
     public byte[] data;
@@ -72,17 +78,26 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
     }
   }
 
+  private class ChannelIdentifier {
+    public MessageChannel channel;
+    public Identifier identifier;
+
+    public ChannelIdentifier(MessageChannel channel, Identifier identifier) {
+      this.channel = channel;
+      this.identifier = identifier;
+    }
+  }
+
   public ConnectionManager(String socksHost, int socksPort, int hsPort) {
     this.socksHost = socksHost;
     this.socksPort = socksPort;
     this.hsPort = hsPort;
-    this.serializer = serializer;
   }
-  
+
   public void setSerializer(Serializer serializer) {
     this.serializer = serializer;
   }
-  
+
   public void setSendListener(SendListener listener) {
     this.sendListener = listener;
   }
@@ -92,23 +107,44 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
   }
 
   public void start() throws IOException {
+    logger.log(Level.INFO, "Starting ConnectionManager");
     thread = new Thread(this);
     thread.start();
     channelManager.start();
+    logger.log(Level.INFO, "ConnectionManager started");
   }
 
   public void stop() throws IOException {
+    logger.log(Level.INFO, "Stopping ConnectionManager");
     thread.interrupt();
+    semaphore.release();
+    
+    logger.log(Level.INFO, "Waiting for Thread to stop");
+    
+    while (thread.isAlive()) {
+      try {
+        Thread.sleep(100);
+      } catch (InterruptedException e) {
+        // Sleeping was interrupted
+      }
+    }
+    
+    logger.log(Level.INFO, "Stopping channel manager");
+    
     channelManager.stop();
+    logger.log(Level.INFO, "ConnectionManager stopped");
   }
-  
+
   public int startBindServer() throws IOException {
+    logger.log(Level.INFO, "Starting bind server");
     ServerSocketChannel server = ServerSocketChannel.open();
     server.socket()
         .bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), Constants.anyport));
     server.configureBlocking(false);
 
     channelManager.addServerSocket(server);
+
+    logger.log(Level.INFO, "Started bind server on port " + server.socket().getLocalPort());
 
     return server.socket().getLocalPort();
   }
@@ -118,61 +154,78 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
     MessageAttempt attempt =
         new MessageAttempt(id, System.currentTimeMillis(), data, timeout, destination);
     if (!waitingQueue.offer(attempt)) {
-      // log error
+      logger.log(Level.WARNING, "Can't add message attempt to queue");
+      return id;
     }
-    
+
+    logger.log(Level.INFO, "Assigned id " + id + " to message attempt for identifier " + destination
+        + " with size " + data.length + " bytes");
+
     semaphore.release();
 
     return id;
   }
 
   private MessageChannel connect(Identifier destination) throws IOException {
+    logger.log(Level.INFO, "Trying to connect to identifer " + destination);
+
     SocketChannel socket = SocketChannel.open();
     socket.configureBlocking(false);
     socket.connect(new InetSocketAddress(socksHost, socksPort));
-    
+
     MessageChannel channel = channelManager.connect(socket);
     return channel;
   }
 
   public void disconnect(Identifier destination) {
+    logger.log(Level.INFO, "Disconnecting channel to identifier " + destination);
     MessageChannel channel = identifierMap.get(destination);
     if (channel == null) {
-      // TODO log error
+      logger.log(Level.WARNING, "Called disconnect for identifier without connected channel");
       return;
     }
 
-    closedConnections.offer(channel);
-    // TODO check offer return value
+    if (!closedConnections.offer(channel)) {
+      logger.log(Level.WARNING, "Can't add channel to close to queue");
+      return;
+    }
     semaphore.release();
   }
 
   @Override
   public void messageSent(long id, MessageChannel destination) {
-    if (!sentMessages.offer(id)) {
-      // TODO handle error
+    logger.log(Level.INFO, "Message with id " + id + " sent successfully");
+    if (!sentMessageIds.offer(id)) {
+      logger.log(Level.WARNING, "Can't add message to queue");
+      return;
     }
     semaphore.release();
   }
 
   @Override
   public void messageReceived(byte[] data, MessageChannel source) {
-
     Identifier identifier = channelMap.get(source);
 
     if (identifier == null) {
-      // TODO handle error
-      throw new IllegalStateException();
+      logger.log(Level.WARNING,
+          "Received message with size " + data.length + " from unknown channel");
+      return;
     }
 
-    receivedMessages.offer(new ReceivedMessage(data, identifier));
+    logger.log(Level.INFO, "Received message from " + identifier + " with size " + data.length);
+
+    if (!receivedMessages.offer(new ReceivedMessage(data, identifier))) {
+      logger.log(Level.WARNING, "Failed to add received message to queue");
+      return;
+    }
     semaphore.release();
   }
 
   @Override
   public void channelOpened(MessageChannel channel) {
     if (!newConnections.offer(channel)) {
-      // TODO log error
+      logger.log(Level.WARNING, "Failed to add new channel to queue");
+      return;
     }
     semaphore.release();
   }
@@ -180,7 +233,8 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
   @Override
   public void channelClosed(MessageChannel channel) {
     if (!closedConnections.offer(channel)) {
-      // TODO log error
+      logger.log(Level.WARNING, "Failed to add channel to remove to queue");
+      return;
     }
     semaphore.release();
   }
@@ -194,24 +248,40 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
       identifier = channelMap.get(channel);
 
       if (identifier == null) {
+
+        try {
+          logger.log(Level.INFO,
+              "Received new connection from " + channel.getChannel().getRemoteAddress().toString());
+        } catch (IOException ioe) {
+          logger.log(Level.WARNING, "Failed to get remote address of new channel", ioe);
+          continue;
+        }
+
         // Incoming connection
-        // TODO Auth
         try {
           channelManager.addChannel(channel);
-          
+          connectionStates.put(channel, ConnectionState.CONNECTED);
+
           Authenticator auth = new DummyAuthenticator(this, channel, serializer);
-          // TODO need own identifier
           auth.authenticate(localIdentifier);
         } catch (ClosedChannelException e) {
-          // TODO handle exception
+          logger.log(Level.WARNING, "Channel was closed while adding channel to ChannelManager", e);
+          continue;
         }
       } else {
-        state = connectionStates.get(identifier);
+        state = connectionStates.get(channel);
 
         // TODO what to do with an incoming connection from a hs for which a connection is already
         // established
         switch (state) {
           case CONNECT:
+            logger.log(Level.INFO,
+                "Trying to connect to " + identifier + " through tor socks proxy");
+            // channel isn't registered at channel manager
+            identifierMap.remove(identifier);
+            channelMap.remove(channel);
+            connectionStates.remove(channel);
+
             SOCKSChannel socks = new SOCKSChannel(channel, channelManager);
             socks.connetThroughSOCKS(identifier.getTorAddress(), hsPort);
             try {
@@ -219,17 +289,23 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
 
               identifierMap.put(identifier, socks);
               channelMap.put(socks, identifier);
-              connectionStates.put(identifier, ConnectionState.CONNECT_SOCKS);
+              connectionStates.put(socks, ConnectionState.CONNECT_SOCKS);
             } catch (ClosedChannelException e) {
-              // TODO log error
+              logger.log(Level.WARNING, "Channel was closed while adding channel to ChannelManager",
+                  e);
+              identifierMap.remove(identifier);
+              channelMap.remove(socks);
+              connectionStates.remove(socks);
             }
             break;
           case CONNECT_SOCKS:
-            connectionStates.put(identifier, ConnectionState.CONNECTED);
-            break;
-          case CONNECTED:
+            logger.log(Level.INFO,
+                "Connection to " + identifier + " through socks was successfull");
+            connectionStates.put(channel, ConnectionState.CONNECTED);
+
+       
+            logger.log(Level.INFO, "Trying to authenticate connection to " + identifier);
             Authenticator auth = new DummyAuthenticator(this, channel, serializer);
-            // TODO need own identifier
             auth.authenticate(localIdentifier);
             break;
           default:
@@ -240,16 +316,23 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
   }
 
   private void processMessageAttempts() {
-    // TODO Thread kann nicht einschlafen, falls eine unzustellbare Nachricht in der Warteschlange ist
+    // TODO Thread kann nicht einschlafen, falls eine unzustellbare Nachricht in der Warteschlange
+    // ist
     ConnectionState state;
     Identifier identifier;
     MessageChannel channel;
     MessageAttempt attempt;
     Queue<MessageAttempt> tmpQueue = new LinkedList<MessageAttempt>();
- 
+
     while ((attempt = waitingQueue.poll()) != null) {
+      if (!attempt.isRegistered()) {
+        sentMessages.add(attempt);
+        attempt.setRegistered(true);
+      }
+      
       identifier = attempt.getDestination();
-      state = connectionStates.get(identifier);
+      channel = identifierMap.get(identifier);
+      state = channel != null ? connectionStates.get(channel) : null;
 
       if (state == null) {
         state = ConnectionState.CLOSED;
@@ -257,42 +340,113 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
 
       switch (state) {
         case AUTHENTICATED:
-          identifierMap.get(identifier).addMessage(attempt.getData(), attempt.getId());
+          logger.log(Level.INFO,
+              "Sending message with id " + attempt.getId() + " to " + attempt.getDestination());
+
+          if (channel == null) {
+            throw new IllegalStateException();
+          }
+
+          if (channel.isIdle()) {
+            channel.addMessage(attempt.getData(), attempt.getId());
+            sentMessages.add(attempt);
+          } else {
+            if (!tmpQueue.offer(attempt)) {
+              logger.log(Level.WARNING, "Failed to add message attempt to queue");
+              continue;
+            }
+
+            if (!wakerThread.isAlive()) {
+              logger.log(Level.INFO, "Starting new waker thread");
+              wakerThread = new Thread(waker);
+              wakerThread.start();
+            }
+          }
           break;
         case CLOSED:
-          try {
-            channel = connect(identifier);
-            identifierMap.put(identifier, channel);
-            channelMap.put(channel, identifier);
-            connectionStates.put(identifier, ConnectionState.CONNECT);
-          } catch (IOException ioe) {
-            // TODO log error
+          if (lastTry.get(identifier) == null
+              || System.currentTimeMillis() - lastTry.get(identifier) >= connectIntervall) {
+            logger.log(Level.INFO,
+                "Connection to destination " + identifier + " is closed, openning new one");
+            lastTry.put(identifier, System.currentTimeMillis());
+            try {
+              channel = connect(identifier);
+
+              identifierMap.put(identifier, channel);
+              channelMap.put(channel, identifier);
+              connectionStates.put(channel, ConnectionState.CONNECT);
+            } catch (IOException ioe) {
+              logger.log(Level.WARNING,
+                  "Error while trying to open a new connection to " + identifier, ioe);
+              identifierMap.remove(identifier);
+              channelMap.remove(channel);
+              connectionStates.remove(channel);
+            }
+          } else {
+            logger.log(Level.INFO,
+                "Waiting " + connectIntervall + "ms between connection attempts to " + identifier);
           }
           // continue with default case
         default:
           // TODO check if offer returns true
-          //waitingQueue.offer(attempt);
-          tmpQueue.offer(attempt);
-          semaphore.release();
+          // waitingQueue.offer(attempt);
+          if (!tmpQueue.offer(attempt)) {
+            logger.log(Level.WARNING, "Failed to add message attempt to queue");
+            continue;
+          }
+
+          // Wake thread after some time
+          if (!wakerThread.isAlive()) {
+            logger.log(Level.INFO, "Starting new waker thread");
+            wakerThread = new Thread(waker);
+            wakerThread.start();
+          } else {
+            logger.log(Level.INFO, "Waker thread is already running");
+          }
           break;
       }
     }
-    
-    for (MessageAttempt message: tmpQueue) {
-      waitingQueue.offer(message);
+    if (tmpQueue.size() > 0) {
+      logger.log(Level.INFO, tmpQueue.size() + " unsent messages in queue");
+    }
+
+    for (MessageAttempt message : tmpQueue) {
+      if (!waitingQueue.offer(message)) {
+        logger.log(Level.WARNING, "Failed to add message attempt to queue");
+      }
     }
   }
 
   private void processClosedConnections() {
     MessageChannel channel;
     Identifier identifier;
+    ConnectionState state;
 
     while ((channel = closedConnections.poll()) != null) {
+      state = connectionStates.get(channel);
       identifier = channelMap.get(channel);
-      connectionStates.put(identifier, ConnectionState.CLOSED);
 
-      identifierMap.remove(identifier);
+      if (state == null) {
+        logger.log(Level.WARNING, "Closing unregistered channel");
+      }
+
+      channelManager.removeChannel(channel);
+
+      try {
+        channel.getChannel().close();
+      } catch (IOException e) {
+        logger.log(Level.INFO, "Error while trying to close channel");
+      }
+
       channelMap.remove(channel);
+      connectionStates.remove(channel);
+
+      if (identifier != null) {
+        identifierMap.remove(identifier);
+      }
+
+      logger.log(Level.INFO,
+          "Closed connection to identifier " + (identifier != null ? identifier.toString() : ""));
     }
   }
 
@@ -300,34 +454,32 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
     Long id;
     MessageAttempt attempt;
 
-    while ((id = sentMessages.poll()) != null) {
-      Collection<LinkedList<MessageAttempt>> attemptsCollection = messageAttempts.values();
+    while ((id = sentMessageIds.poll()) != null) {
 
       boolean found = false;
 
-      for (LinkedList<MessageAttempt> attempts : attemptsCollection) {
-        Iterator<MessageAttempt> it = attempts.iterator();
+      Iterator<MessageAttempt> it = sentMessages.iterator();
 
-        while (it.hasNext() && !found) {
-          attempt = it.next();
+      while (it.hasNext() && !found) {
+        attempt = it.next();
 
-          if (attempt.getId() == id) {
-            it.remove();
-            if (sendListener != null) {
-              sendListener.messageSent(id, attempt.getDestination(), State.SUCCESS);
-            }
-            found = true;
+        if (attempt.getId() == id) {
+          it.remove();
+          if (sendListener != null) {
+            sendListener.messageSent(id, attempt.getDestination(), State.SUCCESS);
           }
+          found = true;
         }
+
       }
 
       if (!found) {
-        // TODO log error
+        throw new IllegalStateException();
       }
     }
   }
 
-  public void processReceivedMessages() {
+  private void processReceivedMessages() {
     ReceivedMessage message;
 
     while ((message = receivedMessages.poll()) != null) {
@@ -336,27 +488,36 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
       }
     }
   }
-  
-  public void processAuthAttempts() {
+
+  private void processAuthAttempts() {
     ChannelIdentifier channelIdentifier;
     MessageChannel channel;
     Identifier identifier;
-    
+
     while ((channelIdentifier = authQueue.poll()) != null) {
       channel = channelIdentifier.channel;
       identifier = channelIdentifier.identifier;
-      
+
       if (identifier == null) {
         // Auth wasn't successfull
         identifier = channelMap.get(channel);
-        // Reuse channelClosed(channel) ?
-        connectionStates.put(identifier, ConnectionState.CLOSED);
 
-        identifierMap.remove(identifier);
-        channelMap.remove(channel);
+        if (identifier == null) {
+          logger.log(Level.WARNING, "Authentication attempt on non-registered channel");
+        } else {
+          logger.log(Level.INFO, "Authenticating connection to " + identifier + " failed");
+        }
+        if (!closedConnections.offer(channel)) {
+          logger.log(Level.WARNING, "Failed to add connection to close to queue");
+        }
       } else {
         // Auth was successfull
-        connectionStates.put(identifier, ConnectionState.AUTHENTICATED);
+        connectionStates.put(channel, ConnectionState.AUTHENTICATED);
+        // TODO check for other connections to identifier
+        identifierMap.put(identifier, channel);
+        channelMap.put(channel, identifier);
+        logger.log(Level.INFO,
+            "Connection to " + identifier + " has been authenticated successfully");
       }
     }
   }
@@ -366,35 +527,35 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
     // TODO Auto-generated method stub
 
 
-    while (!Thread.interrupted()) {
+    while (!thread.isInterrupted()) {
 
       try {
         // TODO Problematisch?
         semaphore.acquire();
         semaphore.drainPermits();
 
-        // Check new connections
-        processNewConnections();
-        
-        // Check closed connections
-        processClosedConnections();
-
         // deliver messages
         processMessageAttempts();
+
+        // Check new connections
+        processNewConnections();
 
         // call sendListeners
         processSentMessages();
 
         // call receiveListeners
         processReceivedMessages();
-        
+
         // authentication
         processAuthAttempts();
+
+        // Check closed connections
+        processClosedConnections();
 
         // Check timeouts for messages
 
       } catch (InterruptedException ie) {
-        // Do nothing
+        thread.interrupt();
       }
     }
   }
@@ -402,7 +563,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
   @Override
   public void authenticationSuccess(MessageChannel channel, Identifier identifier) {
     if (!authQueue.offer(new ChannelIdentifier(channel, identifier))) {
-      // TODO log error
+      logger.log(Level.WARNING, "Failed to add successfull auth attempt to queue");
     }
     semaphore.release();
   }
@@ -410,22 +571,47 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
   @Override
   public void authenticationFailed(MessageChannel channel) {
     if (!authQueue.offer(new ChannelIdentifier(channel, null))) {
-      // TODO log error
+      logger.log(Level.WARNING, "Failed to add failed auth attempt to queue");
     }
     semaphore.release();
   }
-  
-  private class ChannelIdentifier {
-    public MessageChannel channel;
-    public Identifier identifier;
-    
-    public ChannelIdentifier(MessageChannel channel, Identifier identifier) {
-      this.channel = channel;
-      this.identifier = identifier;
-    }
-  }
-  
+
   public void setLocalIdentifier(Identifier localIdentifier) {
     this.localIdentifier = localIdentifier;
+    logger.log(Level.INFO, "Set local identifier to " + localIdentifier);
+  }
+
+  private class Waker implements Runnable {
+    private long wait;
+
+    public Waker(long wait) {
+      if (wait < 0) {
+        throw new IllegalArgumentException();
+      }
+
+      this.wait = wait;
+    }
+
+    private void sleep() {
+      long elapsed = 0;
+      long start = System.currentTimeMillis();
+
+      while (wait - elapsed > 0) {
+        try {
+          Thread.sleep(wait - elapsed);
+        } catch (InterruptedException e) {
+          // Sleep got interrupted
+        }
+
+        elapsed = System.currentTimeMillis() - start;
+      }
+    }
+
+    @Override
+    public void run() {
+      sleep();
+      semaphore.release();
+    }
+
   }
 }

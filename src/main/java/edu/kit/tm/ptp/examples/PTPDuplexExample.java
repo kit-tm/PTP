@@ -160,7 +160,7 @@ public class PTPDuplexExample {
 
       final int shortTimeout = 15 * 1000;
       // Send the initial message.
-      client2.sendMessage(m, identifier1, shortTimeout);
+      client2.sendMessage(m.getBytes(), identifier1, shortTimeout);
 
       // Wait until the maximum number of PING-PONGs (or the timeout) is reached.
       System.out.println("Sleeping.");

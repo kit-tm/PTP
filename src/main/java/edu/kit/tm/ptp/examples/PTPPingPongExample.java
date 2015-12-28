@@ -80,7 +80,7 @@ public class PTPPingPongExample {
         start = System.currentTimeMillis();
         // Send the message.
         final String m = message + (response ? " " + counter.get() : "");
-        client.sendMessage(m, identifier, 1 * 1000);
+        client.sendMessage(m.getBytes(), identifier, 1 * 1000);
         ++sent;
       }
       // Another PING-PONG initiated, increment counter.
@@ -173,7 +173,7 @@ public class PTPPingPongExample {
         }
 
       });
-      client.sendMessage(m, destination, timeout);
+      client.sendMessage(m.getBytes(), destination, timeout);
       // Wait for the sending result.
       long waitStart = System.currentTimeMillis();
       while (System.currentTimeMillis() - waitStart <= timeout + (5 * 1000) && !connected.get()) {

@@ -4,6 +4,8 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 
+import edu.kit.tm.ptp.DummyAuthenticator.AuthenticationMessage;
+
 import java.io.IOException;
 
 
@@ -18,6 +20,7 @@ public class Serializer {
   
   public Serializer() {
     kryo.register(Message.class);
+    kryo.register(AuthenticationMessage.class);
   }
   
   public byte[] serialize(Object obj) {

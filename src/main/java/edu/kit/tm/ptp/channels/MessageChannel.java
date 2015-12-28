@@ -13,6 +13,7 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 
 public class MessageChannel {
+
   private enum State {
     IDLE, LENGTH, DATA, CLOSED
   }
@@ -54,12 +55,12 @@ public class MessageChannel {
         case LENGTH:
 
           read = channel.read(receiveLengthBuffer);
-          
+
           if (read == -1) {
             closeChannel();
             return;
           }
-          
+
           if (!receiveLengthBuffer.hasRemaining()) {
             receiveLengthBuffer.flip();
             readLength = receiveLengthBuffer.getInt();
@@ -102,7 +103,7 @@ public class MessageChannel {
     } catch (IOException e) {
       // TODO log error
     }
-    
+
     listener.channelClosed(this);
   }
 
@@ -116,7 +117,7 @@ public class MessageChannel {
         case LENGTH:
 
           channel.write(sendLengthBuffer);
-          
+
           if (!sendLengthBuffer.hasRemaining()) {
             sendLengthBuffer.clear();
             writeState = State.DATA;
@@ -124,7 +125,7 @@ public class MessageChannel {
           break;
         case DATA:
           channel.write(sendBuffer);
-          
+
           if (!sendBuffer.hasRemaining()) {
             listener.messageSent(currentId, this);
             writeState = State.IDLE;
@@ -152,7 +153,7 @@ public class MessageChannel {
     sendLengthBuffer.putInt(data.length);
     sendLengthBuffer.flip();
     sendBuffer = ByteBuffer.wrap(data);
-    
+
     currentId = id;
     writeState = State.LENGTH;
     manager.registerWrite(this, true);
@@ -162,12 +163,16 @@ public class MessageChannel {
   public SocketChannel getChannel() {
     return channel;
   }
-  
+
   public void setChannelListener(ChannelListener listener) {
     this.listener = listener;
   }
-  
+
   public ChannelListener getChannenListener() {
     return listener;
+  }
+
+  public boolean isIdle() {
+    return writeState == State.IDLE;
   }
 }

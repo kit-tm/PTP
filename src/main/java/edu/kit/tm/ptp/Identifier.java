@@ -11,6 +11,10 @@ public class Identifier {
 
   /** The Tor hidden service address of this identifier. */
   private String address;
+  
+  public Identifier() {
+    address = null;
+  }
 
 
   /**

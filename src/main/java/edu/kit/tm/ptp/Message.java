@@ -13,6 +13,11 @@ public class Message {
   public final String content;
   /** The Tor hidden service destination identifier. */
   public final Identifier identifier;
+  
+  public Message() {
+    this.content = null;
+    this.identifier = null;
+  }
 
 
   /**

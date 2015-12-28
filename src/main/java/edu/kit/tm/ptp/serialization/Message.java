@@ -8,6 +8,10 @@ package edu.kit.tm.ptp.serialization;
 public class Message {
   private byte[] data;
   
+  public Message() {
+    this.data = null;
+  }
+  
   public Message(byte[] data) {
     this.data = data;
   }

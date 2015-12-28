@@ -72,9 +72,10 @@ public class PTPSendExample {
         ++sent;
       }
 
+      long start = System.currentTimeMillis();
       // Wait until all messages are sent.
       System.out.println("Sleeping.");
-      while (counter.get() < sent) {
+      while (counter.get() < sent && System.currentTimeMillis() - start < 3000) {
         try {
           // Sleep.
           Thread.sleep(5 * 1000);

@@ -41,7 +41,7 @@ public class ChannelManager implements Runnable {
   }
 
   public void run() {
-    
+
     int readyChannels = 0;
     long timeout = 100;
 
@@ -52,11 +52,11 @@ public class ChannelManager implements Runnable {
         thread.interrupt();
         // TODO log error
       }
-      
+
       if (readyChannels == 0) {
         continue;
       }
-      
+
       Set<SelectionKey> selectedKeys = selector.selectedKeys();
       Iterator<SelectionKey> keyIterator = selectedKeys.iterator();
 
@@ -80,8 +80,10 @@ public class ChannelManager implements Runnable {
 
           if (key.isValid() && key.isConnectable()) {
             try {
+              // unregister channel
+              key.interestOps(0);
               channel.getChannel().finishConnect();
-              //key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+
               listener.channelOpened(channel);
             } catch (IOException ioe) {
               // TODO log error
@@ -98,10 +100,10 @@ public class ChannelManager implements Runnable {
             channel.write();
           }
         }
-        
+
         keyIterator.remove();
       }
-      
+
     }
 
   }
@@ -125,26 +127,22 @@ public class ChannelManager implements Runnable {
   public void removeChannel(MessageChannel channel) {
     SelectionKey key = channel.getChannel().keyFor(selector);
 
-    if (key == null) {
-      throw new IllegalArgumentException();
-    }
-
-    key.cancel();
-    
-    channel.closeChannel();
+    if (key != null) {
+      key.cancel();
+    }   
   }
 
   public ChannelListener getChannelListener() {
     return listener;
   }
-  
+
   public void registerWrite(MessageChannel channel, boolean enable) {
     SelectionKey key = channel.getChannel().keyFor(selector);
 
     if (key == null) {
       throw new IllegalArgumentException();
     }
-    
+
     if (enable) {
       key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
     } else {

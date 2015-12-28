@@ -7,6 +7,7 @@ public class MessageAttempt {
   private byte[] data;
   private long timeout;
   private Identifier destination;
+  private boolean registered;
   
   public MessageAttempt(long id, long sendTimestamp, byte[] data, long timeout,
       Identifier destination) {
@@ -15,8 +16,17 @@ public class MessageAttempt {
     setData(data);
     setTimeout(timeout);
     setDestination(destination);
+    setRegistered(false);
   }
   
+  public boolean isRegistered() {
+    return registered;
+  }
+
+  public void setRegistered(boolean registered) {
+    this.registered = registered;
+  }
+
   public long getId() {
     return id;
   }

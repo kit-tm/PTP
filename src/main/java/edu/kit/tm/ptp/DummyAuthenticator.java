@@ -14,7 +14,7 @@ public class DummyAuthenticator extends Authenticator implements ChannelListener
       Serializer serializer) {
     super(listener, channel);
     this.serializer = serializer;
-    serializer.registerClass(AuthenticationMessage.class);
+    //serializer.registerClass(AuthenticationMessage.class);
   }
 
 
@@ -28,8 +28,12 @@ public class DummyAuthenticator extends Authenticator implements ChannelListener
   }
 
 
-  private class AuthenticationMessage {
+  public static class AuthenticationMessage {
     private Identifier source;
+    
+    public AuthenticationMessage() {
+      this.source = null;
+    }
 
     public AuthenticationMessage(Identifier identifier) {
       this.source = identifier;

@@ -107,6 +107,8 @@ public class Constants {
   public static final String configlogger = "edu.kit.tm.ptp.raw.Configuration";
   /** The name of the logger for the MessageHandler class. */
   public static final String receivethreadlogger = "edu.kit.tm.ptp.ReceiveThread";
+  /** The name of the logger for the ConnectionManager class. */
+  public static final String connectionManagerLogger = "edu.kit.tm.ptp.ConnectionManager";
 
 
 
