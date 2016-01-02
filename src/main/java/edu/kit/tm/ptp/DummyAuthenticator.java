@@ -46,6 +46,8 @@ public class DummyAuthenticator extends Authenticator implements ChannelListener
 
   @Override
   public void messageReceived(byte[] data, MessageChannel source) {
+    channel.setChannelListener(oldListener);
+    
     try {
       Object message = serializer.deserialize(data);
 
@@ -58,8 +60,6 @@ public class DummyAuthenticator extends Authenticator implements ChannelListener
     } catch (IOException e) {
       authListener.authenticationFailed(channel);
       // TODO log error
-    } finally {
-      channel.setChannelListener(oldListener);
     }
   }
 

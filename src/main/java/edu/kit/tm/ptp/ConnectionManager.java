@@ -117,9 +117,9 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
     logger.log(Level.INFO, "Stopping ConnectionManager");
     thread.interrupt();
     semaphore.release();
-    
+
     logger.log(Level.INFO, "Waiting for Thread to stop");
-    
+
     while (thread.isAlive()) {
       try {
         Thread.sleep(100);
@@ -127,9 +127,9 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
         // Sleeping was interrupted
       }
     }
-    
+
     logger.log(Level.INFO, "Stopping channel manager");
-    
+
     channelManager.stop();
     logger.log(Level.INFO, "ConnectionManager stopped");
   }
@@ -302,7 +302,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
                 "Connection to " + identifier + " through socks was successfull");
             connectionStates.put(channel, ConnectionState.CONNECTED);
 
-       
+
             logger.log(Level.INFO, "Trying to authenticate connection to " + identifier);
             Authenticator auth = new DummyAuthenticator(this, channel, serializer);
             auth.authenticate(localIdentifier);
@@ -328,7 +328,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
         sentMessages.add(attempt);
         attempt.setRegistered(true);
       }
-      
+
       identifier = attempt.getDestination();
       channel = identifierMap.get(identifier);
       state = channel != null ? connectionStates.get(channel) : null;
@@ -353,19 +353,13 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
               logger.log(Level.WARNING, "Failed to add message attempt to queue");
               continue;
             }
-
-            if (!wakerThread.isAlive()) {
-              logger.log(Level.INFO, "Starting new waker thread");
-              wakerThread = new Thread(waker);
-              wakerThread.start();
-            }
           }
           break;
         case CLOSED:
+          logger.log(Level.INFO, "Connection to destination " + identifier + " is closed");
           if (lastTry.get(identifier) == null
               || System.currentTimeMillis() - lastTry.get(identifier) >= connectIntervall) {
-            logger.log(Level.INFO,
-                "Connection to destination " + identifier + " is closed, openning new one");
+            logger.log(Level.INFO, "Opening new connection to destination " + identifier);
             lastTry.put(identifier, System.currentTimeMillis());
             try {
               channel = connect(identifier);
@@ -383,23 +377,20 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
           }
           // continue with default case
         default:
-          // TODO check if offer returns true
-          // waitingQueue.offer(attempt);
           if (!tmpQueue.offer(attempt)) {
             logger.log(Level.WARNING, "Failed to add message attempt to queue");
             continue;
-          }
-
-          // Wake thread after some time
-          if (!wakerThread.isAlive()) {
-            wakerThread = new Thread(waker);
-            wakerThread.start();
           }
           break;
       }
     }
     if (tmpQueue.size() > 0) {
-      logger.log(Level.INFO, tmpQueue.size() + " unsent messages in queue");
+      logger.log(Level.INFO, tmpQueue.size() + " unsent message(s) in queue");
+      // Wake thread after some time
+      if (!wakerThread.isAlive()) {
+        wakerThread = new Thread(waker);
+        wakerThread.start();
+      }
     }
 
     for (MessageAttempt message : tmpQueue) {
