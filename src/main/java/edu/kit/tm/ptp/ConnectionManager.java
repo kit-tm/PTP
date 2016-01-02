@@ -14,7 +14,6 @@ import java.net.InetSocketAddress;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -349,7 +348,6 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
 
           if (channel.isIdle()) {
             channel.addMessage(attempt.getData(), attempt.getId());
-            sentMessages.add(attempt);
           } else {
             if (!tmpQueue.offer(attempt)) {
               logger.log(Level.WARNING, "Failed to add message attempt to queue");
@@ -382,9 +380,6 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
               channelMap.remove(channel);
               connectionStates.remove(channel);
             }
-          } else {
-            logger.log(Level.INFO,
-                "Waiting " + connectIntervall + "ms between connection attempts to " + identifier);
           }
           // continue with default case
         default:
@@ -397,11 +392,8 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
 
           // Wake thread after some time
           if (!wakerThread.isAlive()) {
-            logger.log(Level.INFO, "Starting new waker thread");
             wakerThread = new Thread(waker);
             wakerThread.start();
-          } else {
-            logger.log(Level.INFO, "Waker thread is already running");
           }
           break;
       }
