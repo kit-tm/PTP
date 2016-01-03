@@ -9,12 +9,18 @@ import java.io.IOException;
 public class DummyAuthenticator extends Authenticator implements ChannelListener {
   private Serializer serializer;
   private ChannelListener oldListener;
+  private boolean sent;
+  private boolean received;
+  private byte[] response;
 
   DummyAuthenticator(AuthenticationListener listener, MessageChannel channel,
       Serializer serializer) {
     super(listener, channel);
     this.serializer = serializer;
     //serializer.registerClass(AuthenticationMessage.class);
+    sent = false;
+    received = false;
+    response = null;
   }
 
 
@@ -42,14 +48,29 @@ public class DummyAuthenticator extends Authenticator implements ChannelListener
 
 
   @Override
-  public void messageSent(long id, MessageChannel destination) {}
+  public void messageSent(long id, MessageChannel destination) {
+    sent = true;
+    
+    if (received) {
+      finishAuth();
+    }
+  }
 
   @Override
   public void messageReceived(byte[] data, MessageChannel source) {
+    received = true;
+    response = data;
+    
+    if (sent) {
+      finishAuth();
+    }
+  }
+  
+  private void finishAuth() {
     channel.setChannelListener(oldListener);
     
     try {
-      Object message = serializer.deserialize(data);
+      Object message = serializer.deserialize(response);
 
       if (!(message instanceof AuthenticationMessage)) {
         authListener.authenticationFailed(channel);
