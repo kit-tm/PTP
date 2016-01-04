@@ -24,7 +24,7 @@ public class MessageChannel {
   private ByteBuffer receiveLengthBuffer;
   protected SocketChannel channel;
   private int bufferLength = 1024;
-  private int maxBufferLength = 1024 * 1024; // 1MB
+  private int maxBufferLength = 1024 * 1024 * 100; // 100MB
   protected ChannelListener listener;
   private State readState = State.LENGTH;
   private State writeState = State.IDLE;
