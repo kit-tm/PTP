@@ -60,8 +60,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
   private Queue<ReceivedMessage> receivedMessages = new ConcurrentLinkedQueue<>();
   private Queue<ChannelIdentifier> authQueue = new ConcurrentLinkedQueue<>();
   private Semaphore semaphore = new Semaphore(0);
-  private Waker waker = new Waker(5000);
-  private Thread wakerThread = new Thread(waker);
+  private Waker waker = new Waker(semaphore);
 
   private Serializer serializer;
   private final Logger logger = Logger.getLogger(Constants.connectionManagerLogger);
@@ -69,9 +68,9 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
 
   private class ReceivedMessage {
     public byte[] data;
-    public Identifier source;
+    public MessageChannel source;
 
-    public ReceivedMessage(byte[] data, Identifier source) {
+    public ReceivedMessage(byte[] data, MessageChannel source) {
       this.data = data;
       this.source = source;
     }
@@ -110,6 +109,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
     thread = new Thread(this);
     thread.start();
     channelManager.start();
+    waker.start();
     logger.log(Level.INFO, "ConnectionManager started");
   }
 
@@ -131,6 +131,11 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
     logger.log(Level.INFO, "Stopping channel manager");
 
     channelManager.stop();
+
+    logger.log(Level.INFO, "Stopping waker");
+
+    waker.stop();
+
     logger.log(Level.INFO, "ConnectionManager stopped");
   }
 
@@ -203,17 +208,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
 
   @Override
   public void messageReceived(byte[] data, MessageChannel source) {
-    Identifier identifier = channelMap.get(source);
-
-    if (identifier == null) {
-      logger.log(Level.WARNING,
-          "Received message with size " + data.length + " from unknown channel");
-      return;
-    }
-
-    logger.log(Level.INFO, "Received message from " + identifier + " with size " + data.length);
-
-    if (!receivedMessages.offer(new ReceivedMessage(data, identifier))) {
+    if (!receivedMessages.offer(new ReceivedMessage(data, source))) {
       logger.log(Level.WARNING, "Failed to add received message to queue");
       return;
     }
@@ -247,7 +242,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
       identifier = channelMap.get(channel);
 
       if (identifier == null) {
-
+        // Incoming connection
         try {
           logger.log(Level.INFO,
               "Received new connection from " + channel.getChannel().getRemoteAddress().toString());
@@ -256,7 +251,6 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
           continue;
         }
 
-        // Incoming connection
         try {
           channelManager.addChannel(channel);
           connectionStates.put(channel, ConnectionState.CONNECTED);
@@ -302,6 +296,14 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
                 "Connection to " + identifier + " through socks was successfull");
             connectionStates.put(channel, ConnectionState.CONNECTED);
 
+            if (localIdentifier == null) {
+              logger.log(Level.WARNING, "No identifier set. Unable to authenticate the connection");
+              channelManager.removeChannel(channel);
+              identifierMap.remove(identifier);
+              channelMap.remove(channel);
+              connectionStates.remove(channel);
+              continue;
+            }
 
             logger.log(Level.INFO, "Trying to authenticate connection to " + identifier);
             Authenticator auth = new DummyAuthenticator(this, channel, serializer);
@@ -384,13 +386,11 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
           break;
       }
     }
+
     if (tmpQueue.size() > 0) {
       logger.log(Level.INFO, tmpQueue.size() + " unsent message(s) in queue");
       // Wake thread after some time
-      if (!wakerThread.isAlive()) {
-        wakerThread = new Thread(waker);
-        wakerThread.start();
-      }
+      waker.wake(5 * 1000);
     }
 
     for (MessageAttempt message : tmpQueue) {
@@ -457,6 +457,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
       }
 
       if (!found) {
+        logger.log(Level.WARNING, "Unknown message id of sent message " + id);
         throw new IllegalStateException();
       }
     }
@@ -466,8 +467,19 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
     ReceivedMessage message;
 
     while ((message = receivedMessages.poll()) != null) {
+      Identifier identifier = channelMap.get(message.source);
+
+      if (identifier == null) {
+        logger.log(Level.WARNING,
+            "Received message with size " + message.data.length + " from unknown channel");
+        continue;
+      }
+
+      logger.log(Level.INFO,
+          "Received message from " + identifier + " with size " + message.data.length);
+      
       if (receiveListener != null) {
-        receiveListener.messageReceived(message.data, message.source);
+        receiveListener.messageReceived(message.data, identifier);
       }
     }
   }
@@ -507,9 +519,6 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
 
   @Override
   public void run() {
-    // TODO Auto-generated method stub
-
-
     while (!thread.isInterrupted()) {
 
       try {
@@ -525,12 +534,12 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
 
         // call sendListeners
         processSentMessages();
+        
+        // authentication
+        processAuthAttempts();
 
         // call receiveListeners
         processReceivedMessages();
-
-        // authentication
-        processAuthAttempts();
 
         // Check closed connections
         processClosedConnections();
@@ -562,39 +571,5 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
   public void setLocalIdentifier(Identifier localIdentifier) {
     this.localIdentifier = localIdentifier;
     logger.log(Level.INFO, "Set local identifier to " + localIdentifier);
-  }
-
-  private class Waker implements Runnable {
-    private long wait;
-
-    public Waker(long wait) {
-      if (wait < 0) {
-        throw new IllegalArgumentException();
-      }
-
-      this.wait = wait;
-    }
-
-    private void sleep() {
-      long elapsed = 0;
-      long start = System.currentTimeMillis();
-
-      while (wait - elapsed > 0) {
-        try {
-          Thread.sleep(wait - elapsed);
-        } catch (InterruptedException e) {
-          // Sleep got interrupted
-        }
-
-        elapsed = System.currentTimeMillis() - start;
-      }
-    }
-
-    @Override
-    public void run() {
-      sleep();
-      semaphore.release();
-    }
-
   }
 }
