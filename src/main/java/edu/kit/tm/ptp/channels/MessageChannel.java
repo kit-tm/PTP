@@ -24,6 +24,7 @@ public class MessageChannel {
   private ByteBuffer receiveLengthBuffer;
   protected SocketChannel channel;
   private int bufferLength = 1024;
+  private int maxBufferLength = 1024 * 1024; // 1MB
   protected ChannelListener listener;
   private State readState = State.LENGTH;
   private State writeState = State.IDLE;
@@ -65,6 +66,13 @@ public class MessageChannel {
             receiveLengthBuffer.flip();
             readLength = receiveLengthBuffer.getInt();
             receiveLengthBuffer.clear();
+            
+            if (readLength > maxBufferLength) {
+              // TODO log
+              closeChannel();
+              return;
+            }
+            
             receiveBuffer = ByteBuffer.allocate(readLength);
             readState = State.DATA;
           }
