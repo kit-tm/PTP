@@ -39,7 +39,7 @@ public class PTPSendExample {
       client.setReceiveListener(new ReceiveListener() {
         @Override
         public void messageReceived(byte[] data, Identifier source) {
-          System.out.println("Received message: " + new String(data));
+          System.out.println("Received message: " + new String(data) + " from " + source);
         }
       });
 
