@@ -3,6 +3,7 @@ package edu.kit.tm.ptp.raw.connection;
 import static org.junit.Assert.fail;
 
 import edu.kit.tm.ptp.Identifier;
+import edu.kit.tm.ptp.TestHelper;
 import edu.kit.tm.ptp.raw.ExpireListener;
 import edu.kit.tm.ptp.raw.connection.TTLManager;
 
@@ -123,15 +124,8 @@ public class TTLManagerTest {
     runningManager.set(identifier, expiration);
     runningManager.remove(identifier);
 
-    // Wait for the TTL to expire.
-    final long start = System.currentTimeMillis();
-    while (start < step + expiration + 50) {
-      try {
-        Thread.sleep(50);
-      } catch (InterruptedException e) {
-        // Sleeping was interrupted. Do nothing.
-      }
-    }
+    // Wait for the TTL to expire.    
+    TestHelper.sleep(2 * step + expiration);
 
     // Check if the listener was notified of the expiration.
     if (client.disconnected.get()) {

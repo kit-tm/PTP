@@ -107,7 +107,7 @@ public class ChannelManagerTest {
     TestHelper.wait(listener.conClosed, 1, timeout);
 
     assertEquals(1, listener.conOpen.get());
-    assertEquals(1, listener.conClosed.get());
+    assertEquals(0, listener.conClosed.get());
     assertEquals(0, listener.read.get());
     assertEquals(0, listener.write.get());
     
@@ -118,46 +118,48 @@ public class ChannelManagerTest {
 
   @Test
   public void testConnectThroughSOCKS() throws IOException {
-    Listener socks = new Listener();
-    ChannelManager channelManager = new ChannelManager(socks);
+    Listener listener = new Listener();
+    ChannelManager channelManager = new ChannelManager(listener);
     channelManager.start();
 
     PTP ptp = new PTP();
     ptp.createHiddenService();
 
-    SocketChannel client = null;
-
-    client = SocketChannel.open();
-    channelManager.connect(client);
+    SocketChannel client = SocketChannel.open();
+    client.configureBlocking(false);
     client.connect(new InetSocketAddress(InetAddress.getLoopbackAddress(),
         ptp.getConfiguration().getTorSOCKSProxyPort()));
+    channelManager.connect(client);
 
-    long timeout = 5 * 1000;
+    long timeout = 30 * 1000;
 
-    TestHelper.wait(socks.conOpen, 1, timeout);
+    TestHelper.wait(listener.conOpen, 1, timeout);
 
-    assertEquals(1, socks.conOpen);
-    assertEquals(0, socks.conClosed);
-    assertEquals(0, socks.read);
-    assertEquals(0, socks.write);
+    assertEquals(1, listener.conOpen.get());
+    assertEquals(0, listener.conClosed.get());
+    assertEquals(0, listener.read.get());
+    assertEquals(0, listener.write.get());
+    
+    TestHelper.sleep(timeout);
 
-    SOCKSChannel socksChannel = new SOCKSChannel(socks.passedChannel, channelManager);
+    SOCKSChannel socksChannel = new SOCKSChannel(listener.passedChannel, channelManager);
     socksChannel.connetThroughSOCKS(ptp.getIdentifier().toString(),
         ptp.getConfiguration().getHiddenServicePort());
     channelManager.addChannel(socksChannel);
 
-    TestHelper.wait(socks.conOpen, 2, timeout);
+    TestHelper.wait(listener.conOpen, 2, timeout);
 
-    assertEquals(2, socks.conOpen);
-    assertEquals(0, socks.read);
-    assertEquals(0, socks.write);
-    assertEquals(socksChannel, socks.passedChannel);
-    assertEquals(0, socks.conClosed);
+    assertEquals(2, listener.conOpen.get());
+    assertEquals(0, listener.write.get());
+    assertEquals(socksChannel, listener.passedChannel);
+    assertEquals(0, listener.conClosed.get());
 
-    client.close();
+    ptp.exit();
+    
+    TestHelper.wait(listener.conClosed, 1, timeout);
 
-    assertEquals(1, socks.conClosed);
-    assertEquals(socksChannel, socks.passedChannel);
+    assertEquals(1, listener.conClosed.get());
+    assertEquals(socksChannel, listener.passedChannel);
 
     channelManager.stop();
   }
@@ -188,7 +190,7 @@ public class ChannelManagerTest {
 
     channelManager.removeChannel(clientChannel);
     assertEquals(1, listener.conOpen.get());
-    assertEquals(1, listener.conClosed.get());
+    assertEquals(0, listener.conClosed.get());
     assertEquals(0, listener.read.get());
     assertEquals(0, listener.write.get());
   }

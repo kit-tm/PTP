@@ -19,31 +19,32 @@ public   class Listener implements ChannelListener {
 
   @Override
   public void messageSent(long id, MessageChannel destination) {
-    other.incrementAndGet();
-    write.incrementAndGet();
     passedId = id;
     this.destination = destination;
+    other.incrementAndGet();
+    write.incrementAndGet();
   }
 
   @Override
   public void messageReceived(byte[] data, MessageChannel source) {
-    other.incrementAndGet();
-    read.incrementAndGet();
     passedBytes = data;
     this.source = source;
+    other.incrementAndGet();
+    read.incrementAndGet();
   }
 
   @Override
   public void channelOpened(MessageChannel channel) {
-    conOpen.incrementAndGet();
+    System.out.println("Channel opened");
     passedChannel = channel;
     passedChannels.add(channel);
+    conOpen.incrementAndGet();
   }
 
   @Override
   public void channelClosed(MessageChannel channel) {
-    conClosed.incrementAndGet();
     passedChannel = channel;
+    conClosed.incrementAndGet();
   }
 
 }

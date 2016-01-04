@@ -1,5 +1,6 @@
 package edu.kit.tm.ptp;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class TestHelper {
@@ -11,6 +12,22 @@ public class TestHelper {
     long start = System.currentTimeMillis();
 
     while (condition.get() != expected && (System.currentTimeMillis() - start < millis)) {
+      try {
+        Thread.sleep(1 * 1000);
+      } catch (InterruptedException e) {
+        // Sleeping was interrupted. Do nothing.
+      }
+    }
+  }
+  
+  public static void wait(AtomicBoolean condition, long millis) {
+    if (condition == null || millis < 0) {
+      throw new IllegalArgumentException();
+    }
+    
+    long start = System.currentTimeMillis();
+
+    while (!condition.get() && (System.currentTimeMillis() - start < millis)) {
       try {
         Thread.sleep(1 * 1000);
       } catch (InterruptedException e) {

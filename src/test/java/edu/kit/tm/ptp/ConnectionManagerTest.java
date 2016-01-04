@@ -11,6 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Test;
 
 import edu.kit.tm.ptp.raw.Configuration;
+import edu.kit.tm.ptp.serialization.Serializer;
 import edu.kit.tm.ptp.utility.Constants;
 
 public class ConnectionManagerTest {
@@ -25,17 +26,17 @@ public class ConnectionManagerTest {
 
     @Override
     public void messageReceived(byte[] data, Identifier source) {
-      received.incrementAndGet();
       receivedData = data;
       this.source = source;
+      received.incrementAndGet();
     }
 
     @Override
     public void messageSent(long id, Identifier destination, State state) {
-      sent.incrementAndGet();
       this.id = id;
       this.destination = destination;
       this.state = state;
+      sent.incrementAndGet();
     }
   }
 
@@ -60,26 +61,25 @@ public class ConnectionManagerTest {
     Listener listener = new Listener();
     PTP ptp = new PTP();
     ptp.createHiddenService();
-    ptp.setReceiveListener(listener);
 
     Configuration config = ptp.getConfiguration();
 
     ConnectionManager manager = new ConnectionManager(Constants.localhost,
         config.getTorSOCKSProxyPort(), config.getHiddenServicePort());
     manager.setSendListener(listener);
+    manager.setLocalIdentifier(new Identifier("bla.onion"));
+    manager.setSerializer(new Serializer());
     manager.start();
     
-    long timeout = 5 * 1000;
+    long timeout = 120 * 1000;
     
     byte[] data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
     long id = manager.send(data, ptp.getIdentifier(), timeout);
     
-    TestHelper.wait(listener.received, 1, timeout);
+    TestHelper.wait(listener.sent, 1, timeout);
     
-    assertEquals(1, listener.sent);
-    assertEquals(1, listener.received);
+    assertEquals(1, listener.sent.get());
     
-    assertEquals(data, listener.receivedData);
     assertEquals(id, listener.id);
     assertEquals(SendListener.State.SUCCESS, listener.state);
     assertEquals(ptp.getIdentifier(), listener.destination);

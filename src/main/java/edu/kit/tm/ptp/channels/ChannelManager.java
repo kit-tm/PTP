@@ -140,7 +140,8 @@ public class ChannelManager implements Runnable {
     SelectionKey key = channel.getChannel().keyFor(selector);
 
     if (key == null) {
-      throw new IllegalArgumentException();
+      // TODO log error
+      return;
     }
 
     if (enable) {
