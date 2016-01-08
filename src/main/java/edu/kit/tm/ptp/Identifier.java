@@ -1,5 +1,6 @@
 package edu.kit.tm.ptp;
 
+import java.util.regex.Pattern;
 
 /**
  * A wrapper for Tor hidden service addresses.
@@ -11,6 +12,8 @@ public class Identifier {
 
   /** The Tor hidden service address of this identifier. */
   private String address;
+  
+  private static final Pattern validOnionAddress = Pattern.compile("[a-z2-7]{16}.onion");
   
   public Identifier() {
     address = null;
@@ -62,6 +65,10 @@ public class Identifier {
   @Override
   public String toString() {
     return address;
+  }
+  
+  public boolean isValid() {
+    return validOnionAddress.matcher(address).matches();
   }
 
 }

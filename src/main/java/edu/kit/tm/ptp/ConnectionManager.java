@@ -326,12 +326,17 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
     Queue<MessageAttempt> tmpQueue = new LinkedList<MessageAttempt>();
 
     while ((attempt = waitingQueue.poll()) != null) {
+      identifier = attempt.getDestination();
+      if (!identifier.isValid()) {
+        sendListener.messageSent(attempt.getId(), identifier, State.CONNECTION_TIMEOUT);
+        continue;
+      }
+
       if (!attempt.isRegistered()) {
         sentMessages.add(attempt);
         attempt.setRegistered(true);
       }
 
-      identifier = attempt.getDestination();
       channel = identifierMap.get(identifier);
       state = channel != null ? connectionStates.get(channel) : null;
 
@@ -377,7 +382,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
               connectionStates.remove(channel);
             }
           }
-          // continue with default case
+        // continue with default case
         default:
           if (!tmpQueue.offer(attempt)) {
             logger.log(Level.WARNING, "Failed to add message attempt to queue");
@@ -477,7 +482,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
 
       logger.log(Level.INFO,
           "Received message from " + identifier + " with size " + message.data.length);
-      
+
       if (receiveListener != null) {
         receiveListener.messageReceived(message.data, identifier);
       }
@@ -534,7 +539,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
 
         // call sendListeners
         processSentMessages();
-        
+
         // authentication
         processAuthAttempts();
 
