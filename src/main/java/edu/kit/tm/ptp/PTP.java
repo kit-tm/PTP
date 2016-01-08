@@ -285,7 +285,7 @@ public class PTP implements ReceiveListener {
     return sendMessage(msg, destination);
   }
 
-  public long sendMessage(Object message, Identifier destination) {
+  public long sendMessage(Object message, Identifier destination) {  
     byte[] data = serializer.serialize(message);
     
     // TOOD set appropriate default timeout
