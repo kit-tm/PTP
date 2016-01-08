@@ -3,9 +3,9 @@ package edu.kit.tm.ptp.raw.connection;
 import static org.junit.Assert.fail;
 
 import edu.kit.tm.ptp.Identifier;
-import edu.kit.tm.ptp.TestHelper;
 import edu.kit.tm.ptp.raw.ExpireListener;
 import edu.kit.tm.ptp.raw.connection.TTLManager;
+import edu.kit.tm.ptp.utility.TestHelper;
 
 import org.junit.After;
 import org.junit.Before;

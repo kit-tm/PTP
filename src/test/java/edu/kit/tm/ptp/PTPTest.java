@@ -8,6 +8,7 @@ import edu.kit.tm.ptp.PTP;
 import edu.kit.tm.ptp.ReceiveListener;
 import edu.kit.tm.ptp.SendListener;
 import edu.kit.tm.ptp.raw.connection.RNG;
+import edu.kit.tm.ptp.utility.TestHelper;
 
 import org.junit.After;
 import org.junit.Before;
@@ -146,7 +147,7 @@ public class PTPTest {
     TestSendFailHelper helper = new TestSendFailHelper();
     helper.run(invalidId1);
     helper.run(invalidId2);
-    helper.run(offlineId);
+    //helper.run(offlineId);
   }
 
   /**

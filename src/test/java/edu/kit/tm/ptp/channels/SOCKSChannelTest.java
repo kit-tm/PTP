@@ -2,8 +2,9 @@ package edu.kit.tm.ptp.channels;
 
 import static org.junit.Assert.*;
 
-import edu.kit.tm.ptp.TestHelper;
 import edu.kit.tm.ptp.utility.Constants;
+import edu.kit.tm.ptp.utility.TestConstants;
+import edu.kit.tm.ptp.utility.TestHelper;
 
 import org.junit.After;
 import org.junit.Before;
@@ -19,43 +20,34 @@ public class SOCKSChannelTest {
   private ServerSocketChannel server = null;
 
   @Before
-  public void setUp() {
-    try {
-      server = ServerSocketChannel.open();
-      server.socket()
-          .bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), Constants.anyport));
-      server.configureBlocking(false);
-
-    } catch (IOException ioe) {
-      fail("An error occurred while setting up a ServerSocketChannel: " + ioe.getMessage());
-    }
+  public void setUp() throws IOException {
+    server = ServerSocketChannel.open();
+    server.socket()
+        .bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), Constants.anyport));
+    server.configureBlocking(false);
   }
 
   @After
-  public void tearDown() {
+  public void tearDown() throws IOException {
     if (server != null) {
-      try {
-        server.close();
-      } catch (IOException ioe) {
-        // Do nothing
-      }
+      server.close();
     }
   }
 
-  @Test (expected = IllegalStateException.class)
+  @Test(expected = IllegalStateException.class)
   public void testaddMessageBeforeConnecting() throws IOException {
     SocketChannel client = SocketChannel.open();
     client.configureBlocking(false);
     if (!client.connect(
         new InetSocketAddress(InetAddress.getLoopbackAddress(), server.socket().getLocalPort()))) {
-      TestHelper.sleep(5 * 1000);
+      TestHelper.sleep(TestConstants.socketConnectTimeout);
       client.finishConnect();
     }
-    
+
     assertEquals(true, client.isConnected());
     ChannelManager manager = new ChannelManager(new Listener());
     SOCKSChannel channel = new SOCKSChannel(client, manager);
-    byte[] data = new byte[] { 0x0 };
+    byte[] data = new byte[] {0x0};
     channel.addMessage(data, 10L);
   }
 

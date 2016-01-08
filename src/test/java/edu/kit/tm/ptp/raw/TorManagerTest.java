@@ -4,7 +4,7 @@ import static org.junit.Assert.fail;
 
 import edu.kit.tm.ptp.raw.TorManager;
 import edu.kit.tm.ptp.utility.Constants;
-
+import edu.kit.tm.ptp.utility.TestHelper;
 import net.freehaven.tor.control.TorControlConnection;
 
 import org.junit.After;
@@ -98,6 +98,7 @@ public class TorManagerTest {
   public void testStop() {
     // Stop the concurrent TorManager.
     concurrentManager.stop();
+    
     // Check whether the concurrent TorManager is still running.
     if (concurrentManager.running()) {
       fail("Concurrent TorManager is returning a running state after being stopped.");
@@ -114,6 +115,7 @@ public class TorManagerTest {
     }
     // Stop the ready TorManager.
     readyManager.stop();
+    
     // Check whether the ready TorManager is still running.
     if (readyManager.running()) {
       fail("Ready TorManager is returning a running state after being stopped.");

@@ -35,7 +35,6 @@ public   class Listener implements ChannelListener {
 
   @Override
   public void channelOpened(MessageChannel channel) {
-    System.out.println("Channel opened");
     passedChannel = channel;
     passedChannels.add(channel);
     conOpen.incrementAndGet();

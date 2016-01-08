@@ -1,18 +1,20 @@
 package edu.kit.tm.ptp;
 
+import edu.kit.tm.ptp.raw.Configuration;
+import edu.kit.tm.ptp.serialization.Serializer;
+import edu.kit.tm.ptp.utility.Constants;
+import edu.kit.tm.ptp.utility.TestConstants;
+import edu.kit.tm.ptp.utility.TestHelper;
+
+import org.junit.After;
 import static org.junit.Assert.*;
+import org.junit.Test;
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import org.junit.Test;
-
-import edu.kit.tm.ptp.raw.Configuration;
-import edu.kit.tm.ptp.serialization.Serializer;
-import edu.kit.tm.ptp.utility.Constants;
 
 public class ConnectionManagerTest {
   class Listener implements SendListener, ReceiveListener {
@@ -40,20 +42,27 @@ public class ConnectionManagerTest {
     }
   }
 
+  private ConnectionManager manager;
+
+  @After
+  public void tearDown() throws IOException {
+    if (manager != null) {
+      manager.stop();
+    }
+  }
+
   @Test
   public void testStartBindServer() throws IOException {
     ConnectionManager manager = new ConnectionManager(Constants.localhost, 1000, 1001);
     manager.start();
     int port = manager.startBindServer();
 
-    int timeout = 5 * 1000;
-
     Socket socket = new Socket();
-    socket.connect(new InetSocketAddress(InetAddress.getLoopbackAddress(), port), timeout);
+    socket.connect(new InetSocketAddress(InetAddress.getLoopbackAddress(), port),
+        TestConstants.socketConnectTimeout);
 
     assertEquals(true, socket.isConnected());
     socket.close();
-    manager.stop();
   }
 
   @Test
@@ -70,16 +79,14 @@ public class ConnectionManagerTest {
     manager.setLocalIdentifier(new Identifier("bla.onion"));
     manager.setSerializer(new Serializer());
     manager.start();
-    
-    long timeout = 120 * 1000;
-    
-    byte[] data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
-    long id = manager.send(data, ptp.getIdentifier(), timeout);
-    
-    TestHelper.wait(listener.sent, 1, timeout);
-    
+
+    byte[] data = new byte[] {0x0, 0x1, 0x2, 0x3};
+    long id = manager.send(data, ptp.getIdentifier(), TestConstants.hiddenServiceSetupTimeout);
+
+    TestHelper.wait(listener.sent, 1, TestConstants.hiddenServiceSetupTimeout);
+
     assertEquals(1, listener.sent.get());
-    
+
     assertEquals(id, listener.id);
     assertEquals(SendListener.State.SUCCESS, listener.state);
     assertEquals(ptp.getIdentifier(), listener.destination);

@@ -1,4 +1,4 @@
-package edu.kit.tm.ptp;
+package edu.kit.tm.ptp.utility;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
