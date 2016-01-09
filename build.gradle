@@ -1,6 +1,7 @@
 apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'checkstyle'
+apply plugin: 'jacoco'
 
 sourceSets {
 	main {
@@ -13,6 +14,14 @@ sourceSets {
 			srcDir 'src/test/java'
 		}
 	}
+}
+
+jacocoTestReport {
+    reports {
+        xml.enabled false
+        csv.enabled false
+        html.destination "${buildDir}/jacocoHtml"
+    }
 }
 
 repositories {
