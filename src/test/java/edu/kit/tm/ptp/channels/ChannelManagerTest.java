@@ -109,6 +109,9 @@ public class ChannelManagerTest {
 
     PTP ptp = new PTP();
     ptp.createHiddenService();
+    
+    // wait for hidden service to become available
+    TestHelper.sleep(TestConstants.hiddenServiceSetupTimeout);
 
     SocketChannel client = SocketChannel.open();
     client.configureBlocking(false);
@@ -127,8 +130,9 @@ public class ChannelManagerTest {
     socksChannel.connetThroughSOCKS(ptp.getIdentifier().toString(),
         ptp.getConfiguration().getHiddenServicePort());
     channelManager.addChannel(socksChannel);
-
-    TestHelper.wait(listener.conOpen, 2, TestConstants.hiddenServiceSetupTimeout);
+    
+    // hidden service should be immediately available
+    TestHelper.wait(listener.conOpen, 2, TestConstants.socketConnectTimeout);
 
     assertEquals(2, listener.conOpen.get());
     assertEquals(0, listener.write.get());
