@@ -147,7 +147,7 @@ public class PTPTest {
     TestSendFailHelper helper = new TestSendFailHelper();
     helper.run(invalidId1);
     helper.run(invalidId2);
-    //helper.run(offlineId);
+    helper.run(offlineId);
   }
 
   /**

@@ -317,8 +317,6 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
   }
 
   private void processMessageAttempts() {
-    // TODO Thread kann nicht einschlafen, falls eine unzustellbare Nachricht in der Warteschlange
-    // ist
     ConnectionState state;
     Identifier identifier;
     MessageChannel channel;
@@ -327,11 +325,28 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
 
     while ((attempt = waitingQueue.poll()) != null) {
       identifier = attempt.getDestination();
+
+      // Check if identifier is valid
       if (!identifier.isValid()) {
         sendListener.messageSent(attempt.getId(), identifier, State.CONNECTION_TIMEOUT);
         continue;
       }
 
+      // Check timeout of message
+      if (attempt.getTimeout() != -1
+          && System.currentTimeMillis() - attempt.getSendTimestamp() >= attempt.getTimeout()) {
+        // Remove message from queue
+        if (attempt.isRegistered()) {
+          if (!sentMessages.remove(attempt)) {
+            logger.log(Level.WARNING, "Removing message attempt failed.");
+          }
+        }
+
+        sendListener.messageSent(attempt.getId(), attempt.getDestination(),
+            State.CONNECTION_TIMEOUT);
+      }
+
+      // Save all message attempts in list
       if (!attempt.isRegistered()) {
         sentMessages.add(attempt);
         attempt.setRegistered(true);
@@ -527,7 +542,6 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
     while (!thread.isInterrupted()) {
 
       try {
-        // TODO Problematisch?
         semaphore.acquire();
         semaphore.drainPermits();
 

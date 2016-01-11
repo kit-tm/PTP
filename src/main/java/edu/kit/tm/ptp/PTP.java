@@ -277,23 +277,23 @@ public class PTP implements ReceiveListener {
   }
 
   public long sendMessage(byte[] data, Identifier destination, long timeout) {
-    return sendMessage(data, destination);
+    Message msg = new Message(data);
+    return sendMessage(msg, destination, timeout);
   }
 
   public long sendMessage(byte[] data, Identifier destination) {
-    Message msg = new Message(data);
-    return sendMessage(msg, destination);
+    // TODO set appropriate default timeout
+    return sendMessage(data, destination, -1);
   }
 
-  public long sendMessage(Object message, Identifier destination) {  
-    byte[] data = serializer.serialize(message);
-    
-    // TOOD set appropriate default timeout
-    return connectionManager.send(data, destination, -1);
+  public long sendMessage(Object message, Identifier destination) {
+    // TODO set appropriate default timeout
+    return sendMessage(message, destination, -1);
   }
 
   public long sendMessage(Object message, Identifier destination, long timeout) {
-    return sendMessage(message, destination);
+    byte[] data = serializer.serialize(message);
+    return connectionManager.send(data, destination, timeout);
   }
 
   public <T> void registerMessage(Class<T> type, MessageReceivedListener<T> listener) {
