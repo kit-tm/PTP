@@ -22,6 +22,12 @@ jacocoTestReport {
         csv.enabled false
         html.destination "${buildDir}/jacocoHtml"
     }
+
+	afterEvaluate {
+        classDirectories = files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: 'edu/kit/tm/ptp/examples/**')
+        })
+    }
 }
 
 repositories {
