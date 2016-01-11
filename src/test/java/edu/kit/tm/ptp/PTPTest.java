@@ -1,6 +1,7 @@
 package edu.kit.tm.ptp;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import edu.kit.tm.ptp.Identifier;
@@ -8,6 +9,7 @@ import edu.kit.tm.ptp.PTP;
 import edu.kit.tm.ptp.ReceiveListener;
 import edu.kit.tm.ptp.SendListener;
 import edu.kit.tm.ptp.raw.connection.RNG;
+import edu.kit.tm.ptp.utility.TestConstants;
 import edu.kit.tm.ptp.utility.TestHelper;
 
 import org.junit.After;
@@ -37,6 +39,22 @@ public class PTPTest {
   private PTP client2 = null;
   /** The message used in the tests. */
   private String testString = null;
+  
+  /*
+   * Used by testSendClass(). 
+   */
+  static class Message {
+    int id;
+    
+    // Necessary for kryo
+    public Message() {
+      id = -1;
+    }
+    
+    public Message(int id) {
+      this.id = id;
+    }
+  }
 
 
   /**
@@ -370,5 +388,49 @@ public class PTPTest {
     TestHelper.wait(receiveSuccess, 120 * 1000);
 
     assertEquals("Received message does not match sent message.", true, matches.get());
+  }
+  
+  /**
+   * Tests registering and sending an arbitrary class between
+   * two PTP instances.
+   */
+  @Test
+  public void testSendClass() throws IOException {    
+    final AtomicBoolean received = new AtomicBoolean(false);
+    final AtomicBoolean messageMatches = new AtomicBoolean(false);
+    final AtomicBoolean sourceMatches = new AtomicBoolean(false);
+    
+    client1.reuseHiddenService();
+    client2.reuseHiddenService();
+    
+    Identifier from = client1.getIdentifier();
+    Message toSend = new Message((int)(Math.random() * Integer.MAX_VALUE));
+    
+    class MessageListener implements MessageReceivedListener<Message> {
+      @Override
+      public void messageReceived(Message message, Identifier source) {
+        messageMatches.set(toSend.id == message.id);
+        sourceMatches.set(source.equals(from));
+        received.set(true);
+      }
+    }
+    
+    SendReceiveListener listener = new SendReceiveListener();
+    
+    client1.setSendListener(listener);
+    
+    // Message has to be registered on both ends
+    client1.registerMessage(Message.class, new MessageListener());
+    client2.registerMessage(Message.class, new MessageListener());
+    
+    client1.sendMessage(toSend, client2.getIdentifier());
+    
+    TestHelper.wait(listener.sent, 1, TestConstants.hiddenServiceSetupTimeout);
+    TestHelper.wait(received, TestConstants.listenerTimeout);
+    
+    assertEquals(1, listener.sent.get());
+    assertTrue(received.get());
+    assertTrue(messageMatches.get());
+    assertTrue(sourceMatches.get());
   }
 }

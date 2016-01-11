@@ -17,31 +17,6 @@ import java.net.Socket;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ConnectionManagerTest {
-  class Listener implements SendListener, ReceiveListener {
-    private AtomicInteger sent = new AtomicInteger(0);
-    private AtomicInteger received = new AtomicInteger(0);
-    public byte[] receivedData;
-    public Identifier source;
-    public Identifier destination;
-    public long id;
-    public State state;
-
-    @Override
-    public void messageReceived(byte[] data, Identifier source) {
-      receivedData = data;
-      this.source = source;
-      received.incrementAndGet();
-    }
-
-    @Override
-    public void messageSent(long id, Identifier destination, State state) {
-      this.id = id;
-      this.destination = destination;
-      this.state = state;
-      sent.incrementAndGet();
-    }
-  }
-
   private ConnectionManager manager;
 
   @After
@@ -67,7 +42,7 @@ public class ConnectionManagerTest {
 
   @Test
   public void testSend() throws IOException {
-    Listener listener = new Listener();
+    SendReceiveListener listener = new SendReceiveListener();
     PTP ptp = new PTP();
     ptp.createHiddenService();
 
