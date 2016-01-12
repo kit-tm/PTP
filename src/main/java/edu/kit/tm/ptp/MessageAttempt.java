@@ -8,6 +8,7 @@ public class MessageAttempt {
   private long timeout;
   private Identifier destination;
   private boolean registered;
+  private boolean addedToChannel;
   
   public MessageAttempt(long id, long sendTimestamp, byte[] data, long timeout,
       Identifier destination) {
@@ -17,6 +18,7 @@ public class MessageAttempt {
     setTimeout(timeout);
     setDestination(destination);
     setRegistered(false);
+    setAddedToChannel(false);
   }
   
   public boolean isRegistered() {
@@ -25,6 +27,14 @@ public class MessageAttempt {
 
   public void setRegistered(boolean registered) {
     this.registered = registered;
+  }
+  
+  public boolean isAddedToChannel() {
+    return addedToChannel;
+  }
+
+  public void setAddedToChannel(boolean addedToChannel) {
+    this.addedToChannel = addedToChannel;
   }
 
   public long getId() {
