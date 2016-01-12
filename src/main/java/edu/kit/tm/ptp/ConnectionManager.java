@@ -64,7 +64,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
 
   private Serializer serializer;
   private final Logger logger = Logger.getLogger(Constants.connectionManagerLogger);
-  private final long connectIntervall = 30 * 1000;
+  private final long connectInterval = 30 * 1000;
 
   private class ReceivedMessage {
     public byte[] data;
@@ -380,7 +380,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
         case CLOSED:
           logger.log(Level.INFO, "Connection to destination " + identifier + " is closed");
           if (lastTry.get(identifier) == null
-              || System.currentTimeMillis() - lastTry.get(identifier) >= connectIntervall) {
+              || System.currentTimeMillis() - lastTry.get(identifier) >= connectInterval) {
             logger.log(Level.INFO, "Opening new connection to destination " + identifier);
             lastTry.put(identifier, System.currentTimeMillis());
             try {
