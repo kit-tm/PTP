@@ -59,6 +59,7 @@ collection.each {File file ->
 		}
 		from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
 		baseName = exName
+		destinationDir = new File("build/examples")
 	}
 }
 
