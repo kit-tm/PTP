@@ -19,7 +19,7 @@ public class Serializer {
   private int defaultBufferSize = 1024;
   
   public Serializer() {
-    kryo.register(Message.class);
+    kryo.register(ByteArrayMessage.class);
     kryo.register(AuthenticationMessage.class);
   }
   

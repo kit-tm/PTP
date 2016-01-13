@@ -5,14 +5,14 @@ package edu.kit.tm.ptp.serialization;
  *
  * @author Timon Hackenjos
  */
-public class Message {
+public class ByteArrayMessage {
   private byte[] data;
   
-  public Message() {
+  public ByteArrayMessage() {
     this.data = null;
   }
   
-  public Message(byte[] data) {
+  public ByteArrayMessage(byte[] data) {
     this.data = data;
   }
 

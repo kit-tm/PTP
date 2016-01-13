@@ -4,7 +4,7 @@ import edu.kit.tm.ptp.raw.Configuration;
 import edu.kit.tm.ptp.raw.ExpireListener;
 import edu.kit.tm.ptp.raw.TorManager;
 import edu.kit.tm.ptp.raw.connection.TTLManager;
-import edu.kit.tm.ptp.serialization.Message;
+import edu.kit.tm.ptp.serialization.ByteArrayMessage;
 import edu.kit.tm.ptp.serialization.Serializer;
 import edu.kit.tm.ptp.utility.Constants;
 
@@ -277,7 +277,7 @@ public class PTP implements ReceiveListener {
   }
 
   public long sendMessage(byte[] data, Identifier destination, long timeout) {
-    Message msg = new Message(data);
+    ByteArrayMessage msg = new ByteArrayMessage(data);
     return sendMessage(msg, destination, timeout);
   }
 
@@ -384,8 +384,8 @@ public class PTP implements ReceiveListener {
     try {
       obj = serializer.deserialize(data);
       
-      if (obj instanceof Message) {
-        Message message = (Message) obj;
+      if (obj instanceof ByteArrayMessage) {
+        ByteArrayMessage message = (ByteArrayMessage) obj;
         receiveListener.messageReceived(message.getData(), source);
       } else {
         listeners.callListener(obj, source);
