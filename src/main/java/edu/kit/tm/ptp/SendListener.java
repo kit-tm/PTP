@@ -6,27 +6,37 @@ package edu.kit.tm.ptp;
  * An interface for subscribers to message sending notifications.
  *
  * @author Simeon Andreev
+ * @author Timon Hackenjos
  *
  */
 public interface SendListener {
 
 
   /**
-   * A state of sending failure enumeration. * CONNECTION_TIMEOUT indicates a connection timeout. *
-   * SEND_TIMEOUT indicates a sending timeout, although a connection was established.
+   * Describes the state of a message which should be sent.
+   * 
+   * <li>{@link #SUCCESS}</li>
+   * <li>{@link #TIMEOUT}</li>
+   * <li>{@link #INVALID_DESTINATION}</li>
    *
    * @author Simeon Andreev
+   * @author Timon Hackenjos
    *
    */
   public enum State {
-    SUCCESS, CONNECTION_TIMEOUT, SEND_TIMEOUT
+    /** The message has been sent successfully. */
+    SUCCESS, 
+    /** The attempt to send the message timed out. */
+    TIMEOUT, 
+    /** The destination is invalid. */
+    INVALID_DESTINATION
   }
 
   /**
-   * Indicates that the message could not be sent.
+   * Indicates that the message was sent or could not be sent.
    *
    * @param message The message with which the sending was initiated.
-   * @param state The reason why the sending failed.
+   * @param state If the sending succeeded and why.
    */
   public void messageSent(long id, Identifier destination, State state);
 

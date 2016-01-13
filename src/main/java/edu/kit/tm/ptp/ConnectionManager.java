@@ -349,7 +349,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
 
       // Check if identifier is valid
       if (!identifier.isValid()) {
-        sendListener.messageSent(attempt.getId(), identifier, State.CONNECTION_TIMEOUT);
+        sendListener.messageSent(attempt.getId(), identifier, State.INVALID_DESTINATION);
         continue;
       }
 
@@ -364,7 +364,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
         }
 
         sendListener.messageSent(attempt.getId(), attempt.getDestination(),
-            State.CONNECTION_TIMEOUT);
+            State.TIMEOUT);
       }
 
       // Save all message attempts in list
