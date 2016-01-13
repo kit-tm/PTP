@@ -56,7 +56,19 @@ public class PTPSendExample {
         
         @Override
         public void messageSent(long id, Identifier destination, State state) {
-          counter.incrementAndGet();
+          switch (state) {
+            case INVALID_DESTINATION:
+              System.out.println("Destination " + destination + " is invalid");
+              break;
+            case SUCCESS:
+              counter.incrementAndGet();
+              break;
+            case TIMEOUT:
+              System.out.println("Sending of message timed out");
+              break;
+            default:
+              break;
+          }
         }
       });
 
