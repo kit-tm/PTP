@@ -47,16 +47,20 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
   private final Logger logger = Logger.getLogger(Constants.connectionManagerLogger);
   private static final long connectInterval = 30 * 1000;
   private ChannelManager channelManager = new ChannelManager(this);
-  
+
   private Map<MessageChannel, ConnectionState> connectionStates = new HashMap<>();
   private Map<Identifier, MessageChannel> identifierMap = new HashMap<>();
   private Map<MessageChannel, Identifier> channelMap = new HashMap<>();
   private Map<Identifier, Long> lastTry = new HashMap<>();
-  private List<MessageAttempt> messageAttempts = new LinkedList<>();
 
-  // TODO Threadsicherheit überprüfen
+  /** Messages which have already been dispatched to a channel. */
+  private List<MessageAttempt> dispatchedMessages = new LinkedList<>();
+
   private AtomicLong messageId = new AtomicLong(0);
+
+  /** Messages which have to be dispatched to an appropriate channel. */
   private Queue<MessageAttempt> messageQueue = new ConcurrentLinkedQueue<>();
+
   private Queue<Long> sentMessageIds = new ConcurrentLinkedQueue<>();
   private Queue<MessageChannel> newConnections = new ConcurrentLinkedQueue<>();
   private Queue<MessageChannel> closedConnections = new ConcurrentLinkedQueue<>();
@@ -156,7 +160,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
   long send(byte[] data, Identifier destination, long timeout) {
     long id = messageId.getAndIncrement();
     MessageAttempt attempt =
-        new MessageAttempt(id, System.currentTimeMillis(), data, timeout, destination);    
+        new MessageAttempt(id, System.currentTimeMillis(), data, timeout, destination);
     messageQueue.add(attempt);
 
     logger.log(Level.INFO, "Assigned id " + id + " to message attempt for identifier " + destination
@@ -174,7 +178,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
       logger.log(Level.WARNING, "Called disconnect for identifier without connected channel");
       return;
     }
-    
+
     closedConnections.add(channel);
     semaphore.release();
   }
@@ -203,7 +207,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
     closedConnections.add(channel);
     semaphore.release();
   }
-  
+
   @Override
   public void authenticationSuccess(MessageChannel channel, Identifier identifier) {
     authQueue.add(new ChannelIdentifier(channel, identifier));
@@ -303,7 +307,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
       }
     }
   }
-  
+
   private MessageChannel connect(Identifier destination) throws IOException {
     logger.log(Level.INFO, "Trying to connect to identifer " + destination);
 
@@ -334,21 +338,8 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
       // Check timeout of message
       if (attempt.getTimeout() != -1
           && System.currentTimeMillis() - attempt.getSendTimestamp() >= attempt.getTimeout()) {
-        // Remove message from queue
-        if (attempt.isRegistered()) {
-          if (!messageAttempts.remove(attempt)) {
-            logger.log(Level.WARNING, "Removing message attempt failed.");
-          }
-        }
-
-        sendListener.messageSent(attempt.getId(), attempt.getDestination(),
-            State.TIMEOUT);
-      }
-
-      // Save all message attempts in list
-      if (!attempt.isRegistered()) {
-        messageAttempts.add(attempt);
-        attempt.setRegistered(true);
+        sendListener.messageSent(attempt.getId(), attempt.getDestination(), State.TIMEOUT);
+        continue;
       }
 
       channel = identifierMap.get(identifier);
@@ -369,7 +360,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
 
           if (channel.isIdle()) {
             channel.addMessage(attempt.getData(), attempt.getId());
-            attempt.setAddedToChannel(true);
+            dispatchedMessages.add(attempt);
           } else {
             tmpQueue.add(attempt);
           }
@@ -394,7 +385,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
               connectionStates.remove(channel);
             }
           }
-        // continue with default case
+          // continue with default case
         default:
           tmpQueue.add(attempt);
           break;
@@ -406,7 +397,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
       // Wake thread after some time
       waker.wake(5 * 1000);
     }
-    
+
     messageQueue.addAll(tmpQueue);
   }
 
@@ -430,10 +421,10 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
       } catch (IOException e) {
         logger.log(Level.INFO, "Error while trying to close channel");
       }
-      
+
       if (identifier != null) {
-        for (MessageAttempt attempt : messageAttempts) {
-          if (identifier.equals(attempt.getDestination()) && attempt.isAddedToChannel()) {
+        for (MessageAttempt attempt : dispatchedMessages) {
+          if (identifier.equals(attempt.getDestination())) {
             messageQueue.add(attempt);
           }
         }
@@ -459,7 +450,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
 
       boolean found = false;
 
-      Iterator<MessageAttempt> it = messageAttempts.iterator();
+      Iterator<MessageAttempt> it = dispatchedMessages.iterator();
 
       while (it.hasNext() && !found) {
         attempt = it.next();
@@ -469,9 +460,15 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
           if (sendListener != null) {
             sendListener.messageSent(id, attempt.getDestination(), State.SUCCESS);
           }
+
+          if (attempt.getTimeout() != -1
+              && attempt.getSendTimestamp() + attempt.getTimeout() < System.currentTimeMillis()) {
+            logger.log(Level.WARNING,
+                "Message with id " + attempt.getId() + " was sent even though the timer expired");
+          }
+
           found = true;
         }
-
       }
 
       if (!found) {
@@ -537,38 +534,41 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
   @Override
   public void run() {
     logger.log(Level.INFO, "ConnectionManager thread is running");
-    
+
     while (!thread.isInterrupted()) {
 
       try {
         semaphore.acquire();
         semaphore.drainPermits();
 
-        // deliver messages
+        /*
+         * The order of the following method calls matter. processSentMessages() and
+         * processReceivedMessages() should be called before processClosedConnections()
+         */
+
+        // call sendListeners
+        processSentMessages();
+
+        // call receiveListeners
+        processReceivedMessages();
+
+        // dispatch messages to channels
         processMessageAttempts();
 
         // Check new connections
         processNewConnections();
 
-        // call sendListeners
-        processSentMessages();
-
         // authentication
         processAuthAttempts();
 
-        // call receiveListeners
-        processReceivedMessages();
-
         // Check closed connections
         processClosedConnections();
-
-        // Check timeouts for messages
 
       } catch (InterruptedException ie) {
         thread.interrupt();
       }
     }
-    
+
     logger.log(Level.INFO, "ConnectionManager thread finishes execution");
   }
 }
