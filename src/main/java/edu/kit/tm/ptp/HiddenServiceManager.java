@@ -26,7 +26,7 @@ import java.util.logging.Logger;
  *
  * @author Timon Hackenjos
  */
-public class HiddenServiceConfiguration {
+public class HiddenServiceManager {
   /**
    * The logger for this class.
    */
@@ -52,7 +52,7 @@ public class HiddenServiceConfiguration {
    */
   private int port;
 
-  public HiddenServiceConfiguration(Configuration configuration, String directory, int port)
+  public HiddenServiceManager(Configuration configuration, String directory, int port)
       throws IOException {
 
     this.configuration = configuration;

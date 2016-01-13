@@ -48,7 +48,7 @@ public class PTP implements ReceiveListener {
   /** Indicates whether this API wrapper should reuse a hidden service. */
   private final boolean reuse;
 
-  private final HiddenServiceConfiguration hiddenServiceConfig;
+  private final HiddenServiceManager hiddenServiceConfig;
   private final ConnectionManager connectionManager;
   private int hiddenServicePort;
   private final Serializer serializer = new Serializer();
@@ -132,7 +132,7 @@ public class PTP implements ReceiveListener {
     connectionManager.start();
     hiddenServicePort = connectionManager.startBindServer();
 
-    hiddenServiceConfig = new HiddenServiceConfiguration(config, directory, hiddenServicePort);
+    hiddenServiceConfig = new HiddenServiceManager(config, directory, hiddenServicePort);
 
 
     // Create and start the manager with the given TTL.
@@ -199,7 +199,7 @@ public class PTP implements ReceiveListener {
     connectionManager.start();
     hiddenServicePort = connectionManager.startBindServer();
 
-    hiddenServiceConfig = new HiddenServiceConfiguration(config, directory, hiddenServicePort);
+    hiddenServiceConfig = new HiddenServiceManager(config, directory, hiddenServicePort);
 
     // Create and start the manager with the given TTL.
     manager = new TTLManager(getTTLManagerListener(), config.getTTLPoll());
