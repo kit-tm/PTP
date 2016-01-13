@@ -156,11 +156,8 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
   long send(byte[] data, Identifier destination, long timeout) {
     long id = messageId.getAndIncrement();
     MessageAttempt attempt =
-        new MessageAttempt(id, System.currentTimeMillis(), data, timeout, destination);
-    if (!messageQueue.offer(attempt)) {
-      logger.log(Level.WARNING, "Can't add message attempt to queue");
-      return id;
-    }
+        new MessageAttempt(id, System.currentTimeMillis(), data, timeout, destination);    
+    messageQueue.add(attempt);
 
     logger.log(Level.INFO, "Assigned id " + id + " to message attempt for identifier " + destination
         + " with size " + data.length + " bytes");
@@ -177,64 +174,45 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
       logger.log(Level.WARNING, "Called disconnect for identifier without connected channel");
       return;
     }
-
-    if (!closedConnections.offer(channel)) {
-      logger.log(Level.WARNING, "Can't add channel to close to queue");
-      return;
-    }
+    
+    closedConnections.add(channel);
     semaphore.release();
   }
 
   @Override
   public void messageSent(long id, MessageChannel destination) {
     logger.log(Level.INFO, "Message with id " + id + " sent successfully");
-    if (!sentMessageIds.offer(id)) {
-      logger.log(Level.WARNING, "Can't add message to queue");
-      return;
-    }
+    sentMessageIds.add(id);
     semaphore.release();
   }
 
   @Override
   public void messageReceived(byte[] data, MessageChannel source) {
-    if (!receivedMessages.offer(new ReceivedMessage(data, source))) {
-      logger.log(Level.WARNING, "Failed to add received message to queue");
-      return;
-    }
+    receivedMessages.add(new ReceivedMessage(data, source));
     semaphore.release();
   }
 
   @Override
   public void channelOpened(MessageChannel channel) {
-    if (!newConnections.offer(channel)) {
-      logger.log(Level.WARNING, "Failed to add new channel to queue");
-      return;
-    }
+    newConnections.add(channel);
     semaphore.release();
   }
 
   @Override
   public void channelClosed(MessageChannel channel) {
-    if (!closedConnections.offer(channel)) {
-      logger.log(Level.WARNING, "Failed to add channel to remove to queue");
-      return;
-    }
+    closedConnections.add(channel);
     semaphore.release();
   }
   
   @Override
   public void authenticationSuccess(MessageChannel channel, Identifier identifier) {
-    if (!authQueue.offer(new ChannelIdentifier(channel, identifier))) {
-      logger.log(Level.WARNING, "Failed to add successfull auth attempt to queue");
-    }
+    authQueue.add(new ChannelIdentifier(channel, identifier));
     semaphore.release();
   }
 
   @Override
   public void authenticationFailed(MessageChannel channel) {
-    if (!authQueue.offer(new ChannelIdentifier(channel, null))) {
-      logger.log(Level.WARNING, "Failed to add failed auth attempt to queue");
-    }
+    authQueue.add(new ChannelIdentifier(channel, null));
     semaphore.release();
   }
 
@@ -393,10 +371,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
             channel.addMessage(attempt.getData(), attempt.getId());
             attempt.setAddedToChannel(true);
           } else {
-            if (!tmpQueue.offer(attempt)) {
-              logger.log(Level.WARNING, "Failed to add message attempt to queue");
-              continue;
-            }
+            tmpQueue.add(attempt);
           }
           break;
         case CLOSED:
@@ -421,10 +396,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
           }
         // continue with default case
         default:
-          if (!tmpQueue.offer(attempt)) {
-            logger.log(Level.WARNING, "Failed to add message attempt to queue");
-            continue;
-          }
+          tmpQueue.add(attempt);
           break;
       }
     }
@@ -434,12 +406,8 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
       // Wake thread after some time
       waker.wake(5 * 1000);
     }
-
-    for (MessageAttempt message : tmpQueue) {
-      if (!messageQueue.offer(message)) {
-        logger.log(Level.WARNING, "Failed to add message attempt to queue");
-      }
-    }
+    
+    messageQueue.addAll(tmpQueue);
   }
 
   private void processClosedConnections() {
@@ -466,9 +434,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
       if (identifier != null) {
         for (MessageAttempt attempt : messageAttempts) {
           if (identifier.equals(attempt.getDestination()) && attempt.isAddedToChannel()) {
-            if (!messageQueue.offer(attempt)) {
-              logger.log(Level.WARNING, "Failed to readd message attempt to queue");
-            }
+            messageQueue.add(attempt);
           }
         }
       }
@@ -554,9 +520,8 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
         } else {
           logger.log(Level.INFO, "Authenticating connection to " + identifier + " failed");
         }
-        if (!closedConnections.offer(channel)) {
-          logger.log(Level.WARNING, "Failed to add connection to close to queue");
-        }
+
+        closedConnections.add(channel);
       } else {
         // Auth was successfull
         connectionStates.put(channel, ConnectionState.AUTHENTICATED);
