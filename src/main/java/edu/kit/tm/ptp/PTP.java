@@ -339,11 +339,14 @@ public class PTP implements ReceiveListener {
     // Close the socket TTL manager.
     manager.stop();
 
-    try {
-      hiddenServiceConfig.deleteHiddenService();
-    } catch (IOException ioe) {
-      logger.log(Level.WARNING,
-          "Received IOException while deleting the hidden service directory: " + ioe.getMessage());
+    if (!reuse) {
+      try {
+        hiddenServiceConfig.deleteHiddenService();
+      } catch (IOException ioe) {
+        logger.log(Level.WARNING,
+            "Received IOException while deleting the hidden service directory: "
+                + ioe.getMessage());
+      }
     }
 
     // Close the Tor process manager.
@@ -383,7 +386,7 @@ public class PTP implements ReceiveListener {
     Object obj;
     try {
       obj = serializer.deserialize(data);
-      
+
       if (obj instanceof ByteArrayMessage) {
         ByteArrayMessage message = (ByteArrayMessage) obj;
         receiveListener.messageReceived(message.getData(), source);
