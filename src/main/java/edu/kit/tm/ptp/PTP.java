@@ -21,18 +21,6 @@ import java.util.logging.Logger;
  *
  */
 public class PTP implements ReceiveListener {
-
-
-  /**
-   * A response enumeration for the send method. * SUCCESS indicates a successfully sent message. *
-   * CLOSED indicates that the socket connection is not open. * FAIL indicates a failure when
-   * sending the message.
-   */
-  public enum SendResponse {
-    SUCCESS, TIMEOUT, FAIL
-  }
-
-
   /** The logger for this class. */
   private final Logger logger;
   /** The configuration of the client. */
