@@ -13,7 +13,7 @@ public class DummyAuthenticator extends Authenticator implements ChannelListener
   private boolean received;
   private byte[] response;
 
-  DummyAuthenticator(AuthenticationListener listener, MessageChannel channel,
+  public DummyAuthenticator(AuthenticationListener listener, MessageChannel channel,
       Serializer serializer) {
     super(listener, channel);
     this.serializer = serializer;

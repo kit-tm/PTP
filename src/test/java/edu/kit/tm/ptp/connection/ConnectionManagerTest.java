@@ -1,5 +1,11 @@
-package edu.kit.tm.ptp;
+package edu.kit.tm.ptp.connection;
 
+import edu.kit.tm.ptp.Identifier;
+import edu.kit.tm.ptp.PTP;
+import edu.kit.tm.ptp.SendListener;
+import edu.kit.tm.ptp.SendReceiveListener;
+import edu.kit.tm.ptp.SendListener.State;
+import edu.kit.tm.ptp.connection.ConnectionManager;
 import edu.kit.tm.ptp.raw.Configuration;
 import edu.kit.tm.ptp.serialization.Serializer;
 import edu.kit.tm.ptp.utility.Constants;
