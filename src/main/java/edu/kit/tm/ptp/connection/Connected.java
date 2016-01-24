@@ -6,8 +6,8 @@ import edu.kit.tm.ptp.channels.MessageChannel;
 import java.util.logging.Level;
 
 /**
- * State of a channel which is connected to a hidden service.
- * A state transition is triggered by a successful authentication.
+ * State of a channel which is connected to a hidden service. A state transition is triggered by a
+ * successful authentication.
  * 
  * @author Timon Hackenjos
  *
@@ -38,16 +38,19 @@ public class Connected extends ChannelState {
       // Auth was successfull
       context.setState(context.getConcreteAuthenticated());
       // TODO check for other connections to identifier
-      
+
       MessageChannel other = manager.identifierMap.get(identifier);
-      
+
       if (other != null && !other.equals(channel)) {
-        manager.channelClosed(channel);
+        // Commented out because it prevents sending messages to own identifier
+        // manager.channelClosed(channel);
+        manager.logger.log(Level.WARNING,
+            "Another connection to identifier is open. Overwriting entry in identifierMap");
       }
-      
+
       manager.identifierMap.put(identifier, channel);
       manager.channelMap.put(channel, identifier);
-      
+
       manager.logger.log(Level.INFO,
           "Connection to " + identifier + " has been authenticated successfully");
     }
