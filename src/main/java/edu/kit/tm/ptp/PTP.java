@@ -1,5 +1,6 @@
 package edu.kit.tm.ptp;
 
+import edu.kit.tm.ptp.connection.ConnectionManager;
 import edu.kit.tm.ptp.raw.Configuration;
 import edu.kit.tm.ptp.raw.ExpireListener;
 import edu.kit.tm.ptp.raw.TorManager;
@@ -31,12 +32,8 @@ public class PTP implements ReceiveListener {
   private final TTLManager manager;
   /** A dummy sending listener to use when no listener is specified upon message sending. */
   private ReceiveListener receiveListener = new ReceiveListenerAdapter();
-  /** The identifier of the currently used hidden service. */
-  private Identifier current = null;
-  /** Indicates whether this API wrapper should reuse a hidden service. */
-  private final boolean reuse;
 
-  private final HiddenServiceManager hiddenServiceConfig;
+  private final HiddenServiceManager hiddenServiceManager;
   private final ConnectionManager connectionManager;
   private int hiddenServicePort;
   private final Serializer serializer = new Serializer();
@@ -79,9 +76,6 @@ public class PTP implements ReceiveListener {
     // Start the Tor process.
     tor.start();
 
-    // Did not receive a hidden service directory to reuse.
-    reuse = directory != null;
-
     // Wait until the Tor bootstrapping is complete.
     final long start = System.currentTimeMillis();
     final long timeout = config.getTorBootstrapTimeout();
@@ -109,9 +103,6 @@ public class PTP implements ReceiveListener {
     // Set the control ports.
     config.setTorConfiguration(tor.directory(), tor.controlport(), tor.socksport());
 
-    // Create the client with the read configuration and set its receiving listener.
-    // client = new Client(config, directory);
-
     connectionManager = new ConnectionManager(Constants.localhost, config.getTorSOCKSProxyPort(),
         config.getHiddenServicePort());
     connectionManager.setSerializer(serializer);
@@ -120,16 +111,12 @@ public class PTP implements ReceiveListener {
     connectionManager.start();
     hiddenServicePort = connectionManager.startBindServer();
 
-    hiddenServiceConfig = new HiddenServiceManager(config, directory, hiddenServicePort);
+    hiddenServiceManager = new HiddenServiceManager(config, directory, hiddenServicePort);
 
 
     // Create and start the manager with the given TTL.
     manager = new TTLManager(getTTLManagerListener(), config.getTTLPoll());
     manager.start();
-
-    // Create and start the message dispatcher.
-    // dispatcher = new MessageDispatcher(getMessageDispatcherListener(),
-    // config.getDispatcherThreadsNumber(), config.getSocketTimeout());
   }
 
   /**
@@ -175,10 +162,7 @@ public class PTP implements ReceiveListener {
 
     // Set the control ports.
     config.setTorConfiguration(workingDirectory, controlPort, socksPort);
-    // Create the client with the read configuration and set its hidden service directory if given.
-    reuse = directory != null;
 
-    // client = new Client(config, localPort, directory);
     connectionManager = new ConnectionManager(Constants.localhost, config.getTorSOCKSProxyPort(),
         config.getHiddenServicePort());
     connectionManager.setSerializer(serializer);
@@ -187,14 +171,11 @@ public class PTP implements ReceiveListener {
     connectionManager.start();
     hiddenServicePort = connectionManager.startBindServer();
 
-    hiddenServiceConfig = new HiddenServiceManager(config, directory, hiddenServicePort);
+    hiddenServiceManager = new HiddenServiceManager(config, directory, hiddenServicePort);
 
     // Create and start the manager with the given TTL.
     manager = new TTLManager(getTTLManagerListener(), config.getTTLPoll());
     manager.start();
-    // Create and start the message dispatcher.
-    // dispatcher = new MessageDispatcher(getMessageDispatcherListener(),
-    // config.getDispatcherThreadsNumber(), config.getSocketTimeout());
   }
 
 
@@ -215,7 +196,7 @@ public class PTP implements ReceiveListener {
    * @see Client
    */
   public Identifier getIdentifier() {
-    return current;
+    return hiddenServiceManager.getHiddenServiceIdentifier();
   }
 
   /**
@@ -228,26 +209,8 @@ public class PTP implements ReceiveListener {
    * @see Client
    */
   public void reuseHiddenService() throws IOException {
-    reuseHiddenService(false);
-  }
-
-  /**
-   * Creates a hidden service, if possible reuses the hidden service indicated at API wrapper
-   * creation.
-   *
-   * @param renew A switch stating whether the Tor process should be contacted for the hidden
-   *        service creation. Set to true if the Tor server was restarted without closing the
-   *        client.
-   * @throws IOException Propagates any IOException the API received while creating the hidden
-   *         service.
-   *
-   * @see Client
-   */
-  public void reuseHiddenService(boolean renew) throws IOException {
-    if (renew || current == null) {
-      current = new Identifier(hiddenServiceConfig.identifier(!reuse));
-    }
-    connectionManager.setLocalIdentifier(current);
+    hiddenServiceManager.reuseHiddenService();
+    connectionManager.setLocalIdentifier(getIdentifier());
   }
 
   /**
@@ -260,8 +223,8 @@ public class PTP implements ReceiveListener {
    */
   public void createHiddenService() throws IOException {
     // Create a fresh hidden service identifier.
-    current = new Identifier(hiddenServiceConfig.identifier(true));
-    connectionManager.setLocalIdentifier(current);
+    hiddenServiceManager.createHiddenService();
+    connectionManager.setLocalIdentifier(getIdentifier());
   }
 
   public long sendMessage(byte[] data, Identifier destination, long timeout) {
@@ -306,8 +269,16 @@ public class PTP implements ReceiveListener {
    */
   public int getLocalPort() {
     // Get the local port from the client.
-    // return client.localPort();
     return hiddenServicePort;
+  }
+
+  public void deleteHiddenService() {
+    try {
+      hiddenServiceManager.deleteHiddenService();
+    } catch (IOException ioe) {
+      logger.log(Level.WARNING,
+          "Received IOException while deleting the hidden service directory: " + ioe.getMessage());
+    }
   }
 
   /**
@@ -327,20 +298,12 @@ public class PTP implements ReceiveListener {
     // Close the socket TTL manager.
     manager.stop();
 
-    if (!reuse) {
-      try {
-        hiddenServiceConfig.deleteHiddenService();
-      } catch (IOException ioe) {
-        logger.log(Level.WARNING,
-            "Received IOException while deleting the hidden service directory: "
-                + ioe.getMessage());
-      }
-    }
-
     // Close the Tor process manager.
     if (tor != null) {
       tor.stop();
     }
+    
+    hiddenServiceManager.close();
   }
 
 

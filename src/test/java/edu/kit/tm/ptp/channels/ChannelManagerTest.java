@@ -29,6 +29,7 @@ public class ChannelManagerTest {
   private ServerSocketChannel server = null;
   private ChannelManager channelManager;
   private Listener listener;
+  private PTP ptp = null;
 
   @Before
   public void setUp() throws IOException {
@@ -36,7 +37,7 @@ public class ChannelManagerTest {
     server.socket()
         .bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), Constants.anyport));
     server.configureBlocking(false);
-    
+
     listener = new Listener();
     channelManager = new ChannelManager(listener);
   }
@@ -46,9 +47,13 @@ public class ChannelManagerTest {
     if (server != null) {
       server.close();
     }
-    
+
     if (channelManager != null) {
       channelManager.stop();
+    }
+
+    if (ptp != null) {
+      ptp.exit();
     }
   }
 
@@ -107,9 +112,9 @@ public class ChannelManagerTest {
   public void testConnectThroughSOCKS() throws IOException {
     channelManager.start();
 
-    PTP ptp = new PTP();
+    ptp = new PTP();
     ptp.createHiddenService();
-    
+
     // wait for hidden service to become available
     TestHelper.sleep(TestConstants.hiddenServiceSetupTimeout);
 
@@ -130,7 +135,7 @@ public class ChannelManagerTest {
     socksChannel.connetThroughSOCKS(ptp.getIdentifier().toString(),
         ptp.getConfiguration().getHiddenServicePort());
     channelManager.addChannel(socksChannel);
-    
+
     // hidden service should be immediately available
     TestHelper.wait(listener.conOpen, 2, TestConstants.socketConnectTimeout);
 
@@ -140,11 +145,13 @@ public class ChannelManagerTest {
     assertEquals(0, listener.conClosed.get());
 
     ptp.exit();
+    ptp = null;
 
     TestHelper.wait(listener.conClosed, 1, TestConstants.listenerTimeout);
 
     assertEquals(1, listener.conClosed.get());
     assertEquals(socksChannel, listener.passedChannel);
+
   }
 
   @Test
@@ -157,7 +164,7 @@ public class ChannelManagerTest {
         new InetSocketAddress(InetAddress.getLoopbackAddress(), server.socket().getLocalPort()));
 
     TestHelper.wait(listener.conOpen, 1, TestConstants.socketConnectTimeout);
-    
+
     assertEquals(1, listener.conOpen.get());
     assertEquals(true, client.isConnected());
     assertEquals(0, listener.conClosed.get());
@@ -166,9 +173,9 @@ public class ChannelManagerTest {
 
     channelManager.addChannel(clientChannel);
     channelManager.removeChannel(clientChannel);
-    
+
     TestHelper.sleep(TestConstants.listenerTimeout);
-    
+
     assertEquals(1, listener.conOpen.get());
     assertEquals(0, listener.conClosed.get());
     assertEquals(0, listener.read.get());

@@ -13,10 +13,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.RandomAccessFile;
 import java.net.Socket;
-import java.nio.channels.FileChannel;
-import java.nio.channels.FileLock;
 import java.util.LinkedList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -27,30 +24,26 @@ import java.util.logging.Logger;
  * @author Timon Hackenjos
  */
 public class HiddenServiceManager {
-  /**
-   * The logger for this class.
-   */
+  /** The logger for this class. */
   private Logger logger = Logger.getLogger(Constants.clientlogger);
-  /**
-   * The parameters of this client.
-   */
+
+  /** The parameters of this client. */
   private final Configuration configuration;
-  /**
-   * The raw API lock file.
-   */
-  private final File lockFile;
-  /**
-   * The current hidden service identifier.
-   */
-  private String identifier = null;
-  /**
-   * The hidden service sub-directory of this client.
-   */
+
+  /** The current hidden service sub-directory. */
   private String directory = null;
-  /**
-   * The port the hidden service is listening on.
-   */
+
+  /** The currently used hidden service identifier. */
+  private Identifier currentIdentifier = null;
+
+  /** The port the current hidden service is listening on. */
   private int port;
+
+  /** The raw API lock file. */
+  private LockFile apiLock = null;
+
+  /** Hidden service lock file. */
+  private File hiddenServiceLock = null;
 
   public HiddenServiceManager(Configuration configuration, String directory, int port)
       throws IOException {
@@ -61,12 +54,6 @@ public class HiddenServiceManager {
     this.directory = directory == null ? Constants.hiddenserviceprefix + port
         : Constants.hiddenserviceprefix + directory;
 
-    // If no hidden service directory is specified, use the / make a hidden service directory for
-    // the port we are listening on.
-    if (directory == null) {
-      this.directory = Constants.hiddenserviceprefix + port;
-    }
-    
     this.port = port;
 
     // Check if the hidden service directory exists, if not create it.
@@ -76,94 +63,146 @@ public class HiddenServiceManager {
     }
 
     // Check if the lock file exists, if not create it.
-    lockFile =
+    File lockFile =
         new File(configuration.getWorkingDirectory() + File.separator + Constants.rawapilockfile);
     if (!lockFile.exists() && !lockFile.createNewFile()) {
       throw new IOException("Could not create raw API lock file!");
     }
-
-    // Set a default identifier.
-    identifier = configuration.getDefaultIdentifier();
-
-    logger.log(Level.INFO, "Client object created (port: " + port + ").");
+    apiLock = new LockFile(lockFile);
   }
 
-  /**
-   * Returns the local Tor hidden service identifier. Will create a hidden service if none is
-   * present by using JTorCtl.
-   *
-   * @param fresh If true, will always generate a new identifier, even if one is already present.
-   * @return The hidden service identifier.
-   * @throws IOException Throws an exception when unable to read the Tor hostname file, or when
-   *         unable to connect to Tors control socket.
-   */
-  public String identifier(boolean fresh) throws IOException {
-    logger.log(Level.INFO,
-        (fresh ? "Fetching a fresh" : "Attempting to reuse (if present) the") + " identifier.");
+  public void createHiddenService() throws IOException {
+    setUpHiddenService(false);
+  }
 
-    RandomAccessFile raf = null;
-    FileChannel channel = null;
-    FileLock lock = null;
-    ObjectOutputStream stream = null;
+  public void reuseHiddenService() throws IOException {
+    setUpHiddenService(true);
+  }
 
+  public void deleteHiddenService() throws IOException {
+    try {
+      apiLock.lock();
+      deleteHiddenServiceDirectory(directory);
+
+      directory = null;
+      currentIdentifier = null;
+    } finally {
+      apiLock.release();
+    }
+  }
+
+  public Identifier getHiddenServiceIdentifier() {
+    return currentIdentifier;
+  }
+
+  public void close() {
+    if (hiddenServiceLock != null && hiddenServiceLock.exists()) {
+      hiddenServiceLock.delete();
+    }
+  }
+
+  private void setUpHiddenService(boolean reuse) throws IOException {
     try {
       // Block until a lock on the raw API lock file is available.
       logger.log(Level.INFO, "Client acquiring lock on raw API lock file.");
-      raf = new RandomAccessFile(lockFile, Constants.readwriterights);
-      channel = raf.getChannel();
-      lock = channel.lock();
-
-      logger.log(Level.INFO, "Client acquired the lock on raw API lock file.");
-
-      File dir = new File(configuration.getHiddenServiceDirectory() + File.separator + directory);
-      File portfile = new File(dir + File.separator + Constants.portfile);
-      File hostname = new File(dir + File.separator + Constants.hostname);
-      boolean create = !dir.exists() || !hostname.exists()
-          || !new File(dir + File.separator + Constants.prkey).exists() || !portfile.exists();
-
-      // If a fresh identifier is requested, delete the current hidden service directory.
-      if (fresh && !create) {
-        deleteHiddenService();
+      apiLock.lock();
+      
+      if (hiddenServiceLock != null && hiddenServiceLock.exists()) {
+        hiddenServiceLock.delete();
       }
 
-      // Create the hidden service directory if necessary.
-      if (!dir.exists() && !dir.mkdir()) {
-        throw new IOException("Unable to create the hidden service directory!");
+      String freeHsDir = checkHiddenServices(reuse);
+
+      if (freeHsDir != null) {
+        directory = freeHsDir;
+        logger.log(Level.INFO, "Reusing hidden service directory " + freeHsDir);
+      } else {
+        logger.log(Level.INFO, "Creating new hidden service directory " + directory);
+        newHiddenService();
       }
 
-      // Create a hidden service with JTorCtl.
-      // Write the port of the receiver to the port file of the hidden service directory.
-      logger.log(Level.INFO, "Writing to port file.");
-      // final int port = receiver.getPort();
-      stream = new ObjectOutputStream(new FileOutputStream(portfile, false));
-      stream.writeInt(port);
-      stream.close();
-      stream = null;
+      writePortFile();
 
-      logger.log(Level.INFO, "Creating hidden service.");
-      createHiddenService();
+      registerHiddenServices();
 
-      // Read the content of the Tor hidden service hostname file.
-      identifier = readIdentifier(hostname);
-      logger.log(Level.INFO, "Fetched hidden service identifier: " + identifier);
+      currentIdentifier = new Identifier(readIdentifier(directory));
 
-      return identifier;
     } finally {
       // Release the lock, if acquired.
       logger.log(Level.INFO, "Client releasing the lock on the raw API lock file.");
+      apiLock.release();
 
-      if (lock != null) {
-        lock.release();
-        // Close the lock file.
-        channel.close();
-        raf.close();
-      }
-
-      if (stream != null) {
-        stream.close();
-      }
     }
   }
+
+
+  private String checkHiddenServices(boolean reuse) throws IOException {
+    File hiddenServiceDirectory = new File(configuration.getHiddenServiceDirectory());
+    String freeHsDir = null;
+
+    // Search for a valid hidden service directory
+    for (File hiddenService : hiddenServiceDirectory.listFiles()) {
+      // Skip over any files in the directory.
+      if (!hiddenService.isDirectory()) {
+        continue;
+      }
+
+      // Skip over any directories without the hidden service prefix.
+      String name = hiddenService.getName();
+      if (!name.startsWith(Constants.hiddenserviceprefix)) {
+        continue;
+      }
+
+      // Get the hidden service lock file
+      File hsLockFile = new File(hiddenService + File.separator + Constants.hiddenservicelockfile);
+      if (hsLockFile.exists()) {
+        continue;
+      }
+
+      if (!reuse) {
+        logger.log(Level.INFO, "Deleting hidden service directory " + name);
+        deleteHiddenServiceDirectory(name);
+      }
+
+      if (reuse && freeHsDir == null) {
+        if (!hsLockFile.createNewFile()) {
+          continue;
+        }
+
+        // We reuse the dir. Save the lock and release it later
+        freeHsDir = name;
+        hiddenServiceLock = hsLockFile;
+
+        logger.log(Level.INFO, "Found hidden service directory to reuse " + freeHsDir);
+      }
+    }
+
+    return freeHsDir;
+  }
+
+  private void newHiddenService() throws IOException {
+    File hsDir = new File(configuration.getHiddenServiceDirectory() + File.separator + directory);
+    File hsLockFile = new File(hsDir + File.separator + Constants.hiddenservicelockfile);
+
+    if (!hsDir.exists() && !hsDir.mkdir()) {
+      throw new IOException("Unable to create the hidden service directory!");
+    }
+
+    if (!hsLockFile.exists() && !hsLockFile.createNewFile()) {
+      throw new IOException("Unable to create the hidden service lock file!");
+    }
+
+    hiddenServiceLock = hsLockFile;
+  }
+
+  private void writePortFile() throws IOException {
+    File portFile = new File(configuration.getHiddenServiceDirectory() + File.separator + directory
+        + File.separator + Constants.portfile);
+    ObjectOutputStream stream = new ObjectOutputStream(new FileOutputStream(portFile, false));
+    stream.writeInt(port);
+    stream.close();
+  }
+
 
   /**
    * Creates a Tor hidden service by connecting to the Tor control port and invoking JTorCtl. The
@@ -172,8 +211,8 @@ public class HiddenServiceManager {
    * @throws IOException Throws an IOException when the Tor control socket is not reachable, or if
    *         the Tor authentication fails.
    */
-  private void createHiddenService() throws IOException {
-    logger.log(Level.INFO, "Creating hidden service.");
+  private void registerHiddenServices() throws IOException {
+    logger.log(Level.INFO, "Registering hidden services.");
     logger.log(Level.INFO, "Opening socket on " + Constants.localhost + ":"
         + configuration.getTorControlPort() + " to control Tor.");
     // Connect to the Tor control port.
@@ -207,7 +246,7 @@ public class HiddenServiceManager {
       // Skip over any directories without the hidden service prefix.
       String name = hiddenService.getName();
       if (!name.startsWith(Constants.hiddenserviceprefix)) {
-        ;
+        continue;
       }
       // Get the port file.
       File portFile = new File(hiddenService + File.separator + Constants.portfile);
@@ -237,15 +276,17 @@ public class HiddenServiceManager {
     logger.log(Level.INFO, "Setting configuration:" + Constants.newline + properties.toString());
     conn.setConf(properties);
 
-    logger.log(Level.INFO, "Created hidden service.");
+    logger.log(Level.INFO, "Registered hidden services.");
   }
+
+
 
   /**
    * Deletes the hidden service directory.
    *
    * @throws IOException Propagates any IOException that occured during deletion.
    */
-  public void deleteHiddenService() throws IOException {
+  private void deleteHiddenServiceDirectory(String directory) throws IOException {
     // If the hidden service was not created, there is nothing to delete.
     if (directory == null) {
       return;
@@ -260,6 +301,8 @@ public class HiddenServiceManager {
         + directory + File.separator + Constants.prkey);
     File port = new File(configuration.getHiddenServiceDirectory() + File.separator + directory
         + File.separator + Constants.portfile);
+    File lockFile = new File(configuration.getHiddenServiceDirectory() + File.separator + directory
+        + File.separator + Constants.hiddenservicelockfile);
 
     boolean hostnameDeleted = hostname.delete();
     logger.log(Level.INFO, "Deleted hostname file: " + (hostnameDeleted ? "yes" : "no"));
@@ -267,29 +310,26 @@ public class HiddenServiceManager {
     logger.log(Level.INFO, "Deleted private key file: " + (prkeyDeleted ? "yes" : "no"));
     boolean portDeleted = port.delete();
     logger.log(Level.INFO, "Deleted port file: " + (portDeleted ? "yes" : "no"));
+    boolean lockFileDeleted = lockFile.delete();
+    logger.log(Level.INFO, "Deleted hidden service lock file: " + (lockFileDeleted ? "yes" : "no"));
     boolean directoryDeleted = hiddenservice.delete();
     logger.log(Level.INFO,
         "Deleted hidden service directory: " + (directoryDeleted ? "yes" : "no"));
 
-    if (!directoryDeleted || !hostnameDeleted || !prkeyDeleted || !portDeleted) {
+    if (!directoryDeleted) {
       throw new IOException(
           "Client failed to delete hidden service directory: " + hiddenservice.getAbsolutePath());
     }
   }
 
-  /**
-   * Reads the Tor hidden service identifier from the hostname file.
-   *
-   * @param hostname The file from which the Tor hidden service identifier should be read.
-   * @return The string identifier representing the Tor hidden service identifier.
-   * @throws IOException Throws an IOException when unable to read the Tor hidden service hostname
-   *         file.
-   */
-  private String readIdentifier(File hostname) throws IOException {
+  private String readIdentifier(String hsDir) throws IOException {
+    File hostname = new File(configuration.getHiddenServiceDirectory() + File.separator + hsDir
+        + File.separator + Constants.hostname);
+
     logger.log(Level.INFO, "Reading identifier from file: " + hostname);
-    FileInputStream stream = new FileInputStream(hostname);
-    InputStreamReader reader = new InputStreamReader(stream);
-    BufferedReader buffer = new BufferedReader(reader);
+
+    BufferedReader buffer =
+        new BufferedReader(new InputStreamReader(new FileInputStream(hostname)));
 
     logger.log(Level.INFO, "Reading line.");
     String identifier = buffer.readLine();
@@ -298,6 +338,7 @@ public class HiddenServiceManager {
     buffer.close();
 
     logger.log(Level.INFO, "Read identifier: " + identifier);
+
     return identifier;
   }
 }
