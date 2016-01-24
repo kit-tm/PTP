@@ -55,8 +55,10 @@ public abstract class ChannelState {
           manager.messageQueue.add(attempt);
         }
       }
+      
+      MessageChannel registeredChannel = manager.identifierMap.get(identifier);
 
-      if (manager.identifierMap.get(identifier).equals(channel)) {
+      if (registeredChannel != null && registeredChannel.equals(channel)) {
         manager.identifierMap.remove(identifier);
       }
     }
