@@ -66,12 +66,11 @@ public class TTLManager extends Suspendable {
     while (condition.get()) {
       long start = System.currentTimeMillis();
       long elapsed = 0;
-      long minSleep = 10;
             
       // Sleep until the next update.
       do {
         try {
-          Thread.sleep(step - elapsed > minSleep ? step - elapsed : minSleep);
+          Thread.sleep(step - elapsed);
         } catch (InterruptedException e) {
           // Just continue
         }

@@ -291,8 +291,8 @@ public class PTP implements ReceiveListener {
     try {
       connectionManager.stop();
     } catch (IOException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
+      logger.log(Level.WARNING, "Error occurred while stopping the ConnectionManager: "
+          + e.getMessage());
     }
 
     // Close the socket TTL manager.

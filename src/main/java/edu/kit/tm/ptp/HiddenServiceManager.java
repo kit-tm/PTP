@@ -107,15 +107,23 @@ public class HiddenServiceManager {
       logger.log(Level.INFO, "Client acquiring lock on raw API lock file.");
       apiLock.lock();
       
+      if (reuse && currentIdentifier != null) {
+        // Hidden service is already setup
+        return;
+      }
+      
       if (hiddenServiceLock != null && hiddenServiceLock.exists()) {
+        // New identifier is requested. Delete lock file of last hidden service directory
         hiddenServiceLock.delete();
       }
 
+      // Search for hidden services to reuse
+      // or delete them if a new identifier is requested
       String freeHsDir = checkHiddenServices(reuse);
 
       if (freeHsDir != null) {
-        directory = freeHsDir;
         logger.log(Level.INFO, "Reusing hidden service directory " + freeHsDir);
+        directory = freeHsDir;
       } else {
         logger.log(Level.INFO, "Creating new hidden service directory " + directory);
         newHiddenService();

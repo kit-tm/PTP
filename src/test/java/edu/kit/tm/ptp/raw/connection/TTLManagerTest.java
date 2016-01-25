@@ -1,5 +1,7 @@
 package edu.kit.tm.ptp.raw.connection;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import edu.kit.tm.ptp.Identifier;
@@ -116,10 +118,17 @@ public class TTLManagerTest {
    * Test method for {@link edu.kit.tm.ptp.raw.connection.TTLManager#Remove(java.lang.String)}.
    * Removes the identifier from the running TTLManager
    * and checks whether an expire notification is still sent.
-   * Fails if the notififaction is received.
+   * Fails if the notification is received.
+   * 
    */
   @Test
   public void testRemove() {
+    /*
+     * The result of the test is dependent on the scheduling. 
+     * If the TTLManager notifies the client before we call remove
+     * than the test fails.
+     */
+    
     // Set the TTL of the identifier.
     runningManager.set(identifier, expiration);
     runningManager.remove(identifier);
@@ -127,10 +136,8 @@ public class TTLManagerTest {
     // Wait for the TTL to expire.    
     TestHelper.sleep(2 * step + expiration);
 
-    // Check if the listener was notified of the expiration.
-    if (client.disconnected.get()) {
-      fail("Listener was not notified of the expired TTL.");
-    }
+    // Check if the listener was notified of the expiration.   
+    assertFalse("Listener was notified of the expired TTL.", client.disconnected.get());
   }
 
   /**
@@ -155,9 +162,7 @@ public class TTLManagerTest {
     }
 
     // Check if the listener was notified of the expiration.
-    if (!client.disconnected.get()) {
-      fail("Listener was not notified of the expired TTL.");
-    }
+    assertTrue("Listener was not notified of the expired TTL.", client.disconnected.get());
   }
 
   /**
@@ -182,9 +187,7 @@ public class TTLManagerTest {
     runningManager.stop();
 
     // Check if the stopped running TTLManager tells its state correctly.
-    if (runningManager.running()) {
-      fail("Stopped TTLManager running check returns true.");
-    }
+    assertFalse("Stopped TTLManager running check returns true.", runningManager.running());
   }
 
 }

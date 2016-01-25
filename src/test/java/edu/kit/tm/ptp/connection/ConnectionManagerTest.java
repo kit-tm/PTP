@@ -7,6 +7,7 @@ import edu.kit.tm.ptp.SendReceiveListener;
 import edu.kit.tm.ptp.SendListener.State;
 import edu.kit.tm.ptp.connection.ConnectionManager;
 import edu.kit.tm.ptp.raw.Configuration;
+import edu.kit.tm.ptp.serialization.ByteArrayMessage;
 import edu.kit.tm.ptp.serialization.Serializer;
 import edu.kit.tm.ptp.utility.Constants;
 import edu.kit.tm.ptp.utility.TestConstants;
@@ -24,11 +25,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class ConnectionManagerTest {
   private ConnectionManager manager;
+  private PTP ptp = null;
 
   @After
   public void tearDown() throws IOException {
     if (manager != null) {
       manager.stop();
+    }
+
+    if (ptp != null) {
+      ptp.exit();
     }
   }
 
@@ -49,20 +55,24 @@ public class ConnectionManagerTest {
   @Test
   public void testSend() throws IOException {
     SendReceiveListener listener = new SendReceiveListener();
-    PTP ptp = new PTP();
+    ptp = new PTP();
     ptp.createHiddenService();
 
     Configuration config = ptp.getConfiguration();
+
+    Serializer serializer = new Serializer();
 
     ConnectionManager manager = new ConnectionManager(Constants.localhost,
         config.getTorSOCKSProxyPort(), config.getHiddenServicePort());
     manager.setSendListener(listener);
     manager.setLocalIdentifier(new Identifier("bla.onion"));
-    manager.setSerializer(new Serializer());
+    manager.setSerializer(serializer);
     manager.start();
 
     byte[] data = new byte[] {0x0, 0x1, 0x2, 0x3};
-    long id = manager.send(data, ptp.getIdentifier(), TestConstants.hiddenServiceSetupTimeout);
+    ByteArrayMessage message = new ByteArrayMessage(data);
+    long id = manager.send(serializer.serialize(message), ptp.getIdentifier(),
+        TestConstants.hiddenServiceSetupTimeout);
 
     TestHelper.wait(listener.sent, 1, TestConstants.hiddenServiceSetupTimeout);
 

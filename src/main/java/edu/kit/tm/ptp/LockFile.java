@@ -45,6 +45,7 @@ public class LockFile {
     if (lock != null) {
       lock.release();
       raf.close();
+      lock = null;
     }
   }
 }
