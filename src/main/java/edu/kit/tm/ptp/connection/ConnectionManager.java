@@ -39,7 +39,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
   private String socksHost;
   private int socksPort;
   protected int hsPort;
-  private Thread thread;
+  private Thread thread = new Thread(this);
   protected Serializer serializer;
   private SendListener sendListener = null;
   private ReceiveListener receiveListener = null;
@@ -112,27 +112,26 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
 
   public void start() throws IOException {
     logger.log(Level.INFO, "Starting ConnectionManager");
-    thread = new Thread(this);
     thread.start();
     channelManager.start();
     waker.start();
     logger.log(Level.INFO, "ConnectionManager started");
   }
 
-  public void stop() throws IOException {
+  public void stop() {
     logger.log(Level.INFO, "Stopping ConnectionManager");
+
     thread.interrupt();
     semaphore.release();
 
     logger.log(Level.INFO, "Waiting for Thread to stop");
 
-    while (thread.isAlive()) {
-      try {
-        Thread.sleep(100);
-      } catch (InterruptedException e) {
-        // Sleeping was interrupted
-      }
+    try {
+      thread.join();
+    } catch (InterruptedException e) {
+      // TODO log
     }
+
 
     logger.log(Level.INFO, "Stopping channel manager");
 
@@ -372,7 +371,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
       }
     }
   }
-  
+
   private void processAuthAttempts() {
     ChannelIdentifier channelIdentifier;
     MessageChannel channel;
@@ -383,7 +382,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
       channel = channelIdentifier.channel;
       identifier = channelIdentifier.identifier;
       context = channelContexts.get(channel);
-      
+
       context.authenticate(channel, identifier);
     }
   }

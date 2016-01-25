@@ -16,7 +16,7 @@ import java.util.Set;
  */
 
 public class ChannelManager implements Runnable {
-  private Selector selector;
+  private Selector selector = null;
   private ChannelListener listener;
   private Thread thread;
 
@@ -35,9 +35,15 @@ public class ChannelManager implements Runnable {
     thread.start();
   }
 
-  public void stop() throws IOException {
+  public void stop() {
     thread.interrupt();
-    selector.close();
+    try {
+      if (selector != null) {
+        selector.close();
+      }
+    } catch (IOException e) {
+      // TODO log error
+    }
   }
 
   public void run() {
@@ -129,7 +135,7 @@ public class ChannelManager implements Runnable {
 
     if (key != null) {
       key.cancel();
-    }   
+    }
   }
 
   public ChannelListener getChannelListener() {

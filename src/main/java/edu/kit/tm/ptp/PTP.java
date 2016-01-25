@@ -29,7 +29,7 @@ public class PTP implements ReceiveListener {
   /** The Tor process manager. */
   private final TorManager tor;
   /** The manager that closes sockets when their TTL expires. */
-  private final TTLManager manager;
+  private final TTLManager ttlManager;
   /** A dummy sending listener to use when no listener is specified upon message sending. */
   private ReceiveListener receiveListener = new ReceiveListenerAdapter();
 
@@ -66,6 +66,7 @@ public class PTP implements ReceiveListener {
    * @see TorManager
    */
   public PTP(String directory) throws IOException {
+    addShutdownHook();
     // Read the configuration.
     config = new Configuration(Constants.configfile);
     // Create the logger after the configuration sets the logger properties file.
@@ -113,10 +114,9 @@ public class PTP implements ReceiveListener {
 
     hiddenServiceManager = new HiddenServiceManager(config, directory, hiddenServicePort);
 
-
     // Create and start the manager with the given TTL.
-    manager = new TTLManager(getTTLManagerListener(), config.getTTLPoll());
-    manager.start();
+    ttlManager = new TTLManager(getTTLManagerListener(), config.getTTLPoll());
+    ttlManager.start();
   }
 
   /**
@@ -152,6 +152,7 @@ public class PTP implements ReceiveListener {
    */
   public PTP(String workingDirectory, int controlPort, int socksPort, int localPort,
       String directory) throws IOException {
+    addShutdownHook();
     // Read the configuration.
     config = new Configuration(workingDirectory + "/" + Constants.configfile);
     // Create the logger after the configuration sets the logger properties file.
@@ -174,8 +175,17 @@ public class PTP implements ReceiveListener {
     hiddenServiceManager = new HiddenServiceManager(config, directory, hiddenServicePort);
 
     // Create and start the manager with the given TTL.
-    manager = new TTLManager(getTTLManagerListener(), config.getTTLPoll());
-    manager.start();
+    ttlManager = new TTLManager(getTTLManagerListener(), config.getTTLPoll());
+    ttlManager.start();
+  }
+
+  private void addShutdownHook() {
+    Runtime.getRuntime().addShutdownHook(new Thread() {
+      public void run() {
+        logger.log(Level.INFO, "Shutdown hook called");
+        exit();
+      }
+    });
   }
 
 
@@ -288,22 +298,22 @@ public class PTP implements ReceiveListener {
    * @see Client
    */
   public void exit() {
-    try {
+    if (connectionManager != null) {
       connectionManager.stop();
-    } catch (IOException e) {
-      logger.log(Level.WARNING, "Error occurred while stopping the ConnectionManager: "
-          + e.getMessage());
     }
 
-    // Close the socket TTL manager.
-    manager.stop();
+    if (ttlManager != null) {
+      ttlManager.stop();
+    }
 
     // Close the Tor process manager.
     if (tor != null) {
       tor.stop();
     }
-    
-    hiddenServiceManager.close();
+
+    if (hiddenServiceManager != null) {
+      hiddenServiceManager.close();
+    }
   }
 
 
@@ -324,8 +334,6 @@ public class PTP implements ReceiveListener {
        */
       @Override
       public void expired(Identifier identifier) throws IOException {
-        // client.send(identifier.getTorAddress(),
-        // MessageHandler.wrapRaw("", Constants.messagedisconnectflag));
         connectionManager.disconnect(identifier);
       }
 
@@ -345,8 +353,7 @@ public class PTP implements ReceiveListener {
         listeners.callListener(obj, source);
       }
     } catch (IOException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
+      logger.log(Level.WARNING, "Error occurred while deserializing data: " + e.getMessage());
     }
   }
 }

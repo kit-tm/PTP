@@ -4,7 +4,7 @@ import java.util.concurrent.Semaphore;
 
 public class Waker implements Runnable {
   private Semaphore semaphore = new Semaphore(0);
-  private Thread thread;
+  private Thread thread = new Thread(this);
   private Semaphore release;
   Long sleep;
   private volatile boolean sleeping = false;
@@ -14,7 +14,6 @@ public class Waker implements Runnable {
   }
 
   public void start() {
-    thread = new Thread(this);
     thread.start();
   }
 

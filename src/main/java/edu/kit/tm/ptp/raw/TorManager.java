@@ -97,15 +97,6 @@ public class TorManager extends Suspendable {
     logger.log(Level.INFO, "Tor manager lock file is: " + lockFile.getAbsolutePath());
     logger.log(Level.INFO, "Tor manager ports file is: " + portsFile.getAbsolutePath());
     logger.log(Level.INFO, "TorManager object created.");
-
-    // If the application is terminated nicely, check if the Tor process needs to be stopped.
-    Runtime.getRuntime().addShutdownHook(new Thread() {
-
-      public void run() {
-        stoptor();
-      }
-
-    });
   }
 
   @Override
