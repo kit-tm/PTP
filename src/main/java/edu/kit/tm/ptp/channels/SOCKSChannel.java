@@ -3,11 +3,20 @@ package edu.kit.tm.ptp.channels;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
+/**
+ * MessageChannel which allows to connect through a SOCKS proxy.
+ * 
+ * @author Timon Hackenjos
+ *
+ */
 public class SOCKSChannel extends MessageChannel {
   private boolean connected;
   private ByteBuffer socksReceiveBuffer;
   private ByteBuffer socksWriteBuffer;
+  private static final Logger logger = Logger.getLogger(SOCKSChannel.class.getName());
 
   public SOCKSChannel(MessageChannel messageChannel, ChannelManager manager) {
     super(messageChannel.getChannel(), manager);
@@ -19,8 +28,17 @@ public class SOCKSChannel extends MessageChannel {
     connected = false;
   }
 
+  /**
+   * Opens a connection through a SOCKS proxy. The MessageChannel needs to be connected to the SOCKS
+   * proxy already. Informs the ChannelListener about a sucessfull connection by calling
+   * channelOpenend().
+   * 
+   * @param host The host to connect to.
+   * @param port The port to connect to.
+   */
   public void connetThroughSOCKS(String host, int port) {
     if (connected) {
+      logger.log(Level.SEVERE, "A connection through the proxy has already been established.");
       throw new IllegalStateException();
     }
 
@@ -51,7 +69,11 @@ public class SOCKSChannel extends MessageChannel {
         if (!socksReceiveBuffer.hasRemaining()) {
           socksReceiveBuffer.flip();
 
-          if (socksReceiveBuffer.get() != 0x0 || socksReceiveBuffer.get() != 0x5a) {
+          byte nullbyte = socksReceiveBuffer.get();
+          byte status = socksReceiveBuffer.get();
+
+          if (nullbyte != 0x0 || status != 0x5a) {
+            logger.log(Level.WARNING, "SOCKS proxy rejected request: " + nullbyte + " " + status);
             closeChannel();
             return;
           }
@@ -59,9 +81,12 @@ public class SOCKSChannel extends MessageChannel {
           connected = true;
           listener.channelOpened(this);
         } else if (read == -1) {
+          logger.log(Level.WARNING, "Reached end of stream while waiting for answer from proxy.");
           closeChannel();
         }
       } catch (IOException e) {
+        logger.log(Level.WARNING,
+            "Caught exception while reading answer from proxy: " + e.getMessage());
         closeChannel();
       }
     }
@@ -78,14 +103,20 @@ public class SOCKSChannel extends MessageChannel {
           manager.registerWrite(this, false);
         }
       } catch (IOException e) {
+        logger.log(Level.WARNING,
+            "Caught exception while writing request to proxy: " + e.getMessage());
         closeChannel();
       }
     }
   }
 
+  /**
+   * It's not allowed to call this method while it establishes a connection through the SOCKS proxy.
+   */
   @Override
   public void addMessage(byte[] data, long id) {
     if (!connected) {
+      logger.log(Level.SEVERE, "Tried to add message to an unconnected SOCKSChannel.");
       throw new IllegalStateException();
     }
 

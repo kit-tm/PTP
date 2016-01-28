@@ -5,9 +5,12 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
- * Class.
+ * Reads and writes messages to a SocketChannel.
+ * A message is always prepended by it's length.
  *
  * @author Timon Hackenjos
  */
@@ -34,7 +37,15 @@ public class MessageChannel {
   private long currentId;
   private Lock writeLock = new ReentrantLock();
   protected ChannelManager manager;
+  private static final Logger logger = Logger.getLogger(MessageChannel.class.getName());
 
+  /**
+   * Initializes a new MessageChannel.
+   * 
+   * @param channel The SocketChannel to read from and write to.
+   * @param manager The ChannelManager to get the ChannelListener from
+   *                and register if this channel has data to write.
+   */
   public MessageChannel(SocketChannel channel, ChannelManager manager) {
     if (channel == null || manager == null) {
       throw new NullPointerException();
@@ -43,12 +54,18 @@ public class MessageChannel {
     this.channel = channel;
     this.manager = manager;
     this.listener = manager.getChannelListener();
+    
     // Initialize buffers
     receiveBuffer = ByteBuffer.allocate(bufferLength);
     sendLengthBuffer = ByteBuffer.allocate(lenLength);
     receiveLengthBuffer = ByteBuffer.allocate(lenLength);
   }
 
+  /**
+   * Reads data from the channel.
+   * Needs possibly to be called several times to read a whole message.
+   * Informs the ChannelListener when a whole message has been read.
+   */
   public void read() {
     try {
       int read;
@@ -58,6 +75,7 @@ public class MessageChannel {
           read = channel.read(receiveLengthBuffer);
 
           if (read == -1) {
+            logger.log(Level.INFO, "Reading reached end of stream");
             closeChannel();
             return;
           }
@@ -68,7 +86,7 @@ public class MessageChannel {
             receiveLengthBuffer.clear();
             
             if (readLength > maxBufferLength) {
-              // TODO log
+              logger.log(Level.WARNING, "Read length exceeded maximum buffer size");
               closeChannel();
               return;
             }
@@ -99,6 +117,9 @@ public class MessageChannel {
     }
   }
 
+  /**
+   * Closes the channel.
+   */
   protected void closeChannel() {
     readState = State.CLOSED;
 
@@ -109,15 +130,18 @@ public class MessageChannel {
     try {
       channel.close();
     } catch (IOException e) {
-      // TODO log error
+      logger.log(Level.INFO, "Failed to close channel " + e.getMessage());
     }
 
     listener.channelClosed(this);
   }
 
+  /**
+   * Writes a previously added Message to the channel.
+   * Needs possibly to be called several times to write a whole message.
+   * Informs the ChannelListener when a whole message has been written.
+   */
   public void write() {
-    // write object length
-    // write object
     writeLock.lock();
 
     try {
@@ -147,15 +171,27 @@ public class MessageChannel {
 
       }
     } catch (IOException ioe) {
+      logger.log(Level.WARNING, "Caught exception while writing: " + ioe.getMessage());
       closeChannel();
     }
 
     writeLock.unlock();
   }
 
+  /**
+   * Adds a message to write to the MessageChannel.
+   * A MessageChannel can only have one message to write at a time.
+   * It's only allowed to call the method again, when the
+   * ChannelListener is informed, that the last message was
+   * sent successfully.
+   * 
+   * @param data The bytes to send.
+   * @param id The id to use when informing the ChannelListener about a sent message.
+   */
   public void addMessage(byte[] data, long id) {
     writeLock.lock();
     if (writeState != State.IDLE) {
+      logger.log(Level.SEVERE, "Tried to add message to busy channel");
       throw new IllegalStateException();
     }
     sendLengthBuffer.putInt(data.length);
