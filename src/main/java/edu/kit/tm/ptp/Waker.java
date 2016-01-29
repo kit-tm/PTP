@@ -2,11 +2,17 @@ package edu.kit.tm.ptp;
 
 import java.util.concurrent.Semaphore;
 
+/**
+ * Thread to wake other threads by releasing a semaphore.
+ * 
+ * @author Timon Hackenjos
+ *
+ */
 public class Waker implements Runnable {
   private Semaphore semaphore = new Semaphore(0);
   private Thread thread = new Thread(this);
   private Semaphore release;
-  Long sleep;
+  private Long sleep;
   private volatile boolean sleeping = false;
 
   public Waker(Semaphore release) {
@@ -44,6 +50,12 @@ public class Waker implements Runnable {
     }
   }
 
+  /**
+   * Instructs the thread to release the semaphore after the specified time.
+   * Does nothing if another request to release the semaphore is still pending.
+   * 
+   * @param millis The time in milliseconds to wait until the semaphore should be released.
+   */
   public void wake(long millis) {
     if (millis < 0) {
       throw new IllegalArgumentException();

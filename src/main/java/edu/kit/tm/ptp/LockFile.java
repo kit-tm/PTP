@@ -7,6 +7,12 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileLock;
 
+/**
+ * Use files to synchronize between several java processes.
+ * 
+ * @author Timon Hackenjos
+ */
+
 public class LockFile {
   private RandomAccessFile raf;
   private FileLock lock;
@@ -39,7 +45,6 @@ public class LockFile {
 
   /**
    * Releases a previously acquired lock.
-   * 
    */
   public void release() throws IOException {
     if (lock != null) {

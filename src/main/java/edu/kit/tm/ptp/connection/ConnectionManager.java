@@ -31,7 +31,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Class.
+ * Manages sending and receiving messages from several hidden services.
  *
  * @author Timon Hackenjos
  */
@@ -129,9 +129,8 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
     try {
       thread.join();
     } catch (InterruptedException e) {
-      // TODO log
+      logger.log(Level.WARNING, "Failed to wait for thread to stop: " + e.getMessage());
     }
-
 
     logger.log(Level.INFO, "Stopping channel manager");
 
