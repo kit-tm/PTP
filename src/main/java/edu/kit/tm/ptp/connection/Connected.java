@@ -36,23 +36,21 @@ public class Connected extends ChannelState {
       close(channel);
     } else {
       // Auth was successfull
+      manager.logger.log(Level.INFO,
+          "Connection to " + identifier + " has been authenticated successfully");
+      
       context.setState(context.getConcreteAuthenticated());
-      // TODO check for other connections to identifier
 
       MessageChannel other = manager.identifierMap.get(identifier);
 
-      if (other != null && !other.equals(channel)) {
-        // Commented out because it prevents sending messages to own identifier
-        // manager.channelClosed(channel);
+      if (other != null && !other.equals(channel) && !identifier.equals(manager.localIdentifier)) {
+        manager.channelClosed(other);
         manager.logger.log(Level.WARNING,
             "Another connection to identifier is open. Overwriting entry in identifierMap");
       }
 
       manager.identifierMap.put(identifier, channel);
       manager.channelMap.put(channel, identifier);
-
-      manager.logger.log(Level.INFO,
-          "Connection to " + identifier + " has been authenticated successfully");
     }
   }
 
