@@ -70,9 +70,10 @@ public class ChannelManager implements Runnable {
     while (!thread.isInterrupted()) {
       try {
         readyChannels = selector.select(timeout);
-      } catch (IOException e1) {
+      } catch (IOException e) {
+        logger.log(Level.WARNING, "Error occurred during selection operation: " + e.getMessage());
         thread.interrupt();
-        // TODO log error
+        continue;
       }
 
       if (readyChannels == 0) {
@@ -199,7 +200,8 @@ public class ChannelManager implements Runnable {
     SelectionKey key = channel.getChannel().keyFor(selector);
 
     if (key == null) {
-      logger.log(Level.WARNING, "Unregistered channel tries to register writing.");
+      // Can happen for incoming connections
+      logger.log(Level.INFO, "Unregistered channel tries to register writing.");
       return;
     }
 
