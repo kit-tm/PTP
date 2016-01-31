@@ -1,3 +1,5 @@
+import static groovy.io.FileType.*
+
 apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'checkstyle'
@@ -47,11 +49,12 @@ checkstyle {
 
 // Create tasks to create a jar file for each example
 File srcDir = file(sourceSets.main.java.srcDirs[0].getAbsolutePath() + '/edu/kit/tm/ptp/examples')
-FileCollection collection = files { srcDir.listFiles() }
+def names = []
+srcDir.eachFileMatch FILES, ~/.*\.java/, { file -> names << file.name  }
 String exName
 
-collection.each {File file ->
-   	exName = file.getName().split("\\.")[0]
+names.each { fileName -> 
+   	exName = fileName.split("\\.")[0]
 	tasks.create(name: exName, type:Jar) {
 		from sourceSets.main.output
 		manifest {
