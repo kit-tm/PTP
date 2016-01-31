@@ -1,7 +1,5 @@
 package edu.kit.tm.ptp.thread;
 
-import edu.kit.tm.ptp.utility.Constants;
-
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -16,7 +14,7 @@ import java.util.logging.Logger;
 public abstract class Suspendable implements Runnable {
 
   /** The logger for this class. */
-  protected final Logger logger = Logger.getLogger(Constants.managerlogger);
+  protected final Logger logger = Logger.getLogger(Suspendable.class.getName());
   /** The thread executing the run method of a deriving class. */
   protected Thread thread;
   /** Atomic boolean, telling the manager whether it should exit its execution loop. */

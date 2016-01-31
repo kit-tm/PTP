@@ -2,7 +2,6 @@ package edu.kit.tm.ptp.connection;
 
 import edu.kit.tm.ptp.Identifier;
 import edu.kit.tm.ptp.thread.Suspendable;
-import edu.kit.tm.ptp.utility.Constants;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -36,7 +35,7 @@ public class TTLManager extends Suspendable {
 
 
   /** The logger for this class. */
-  private final Logger logger = Logger.getLogger(Constants.managerlogger);
+  private final Logger logger = Logger.getLogger(TTLManager.class.getName());
   /** The client whos connections should be automatically closed. */
   private final ExpireListener listener;
   /** The mapping from identifiers to TTL. */

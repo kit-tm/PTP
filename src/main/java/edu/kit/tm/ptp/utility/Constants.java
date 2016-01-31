@@ -55,14 +55,6 @@ public class Constants {
 
   /* API constants. */
 
-  /** A delimiter to separate message length from message content. */
-  public static final char messagelengthdelimiter = '.';
-  /** A flag to indicate a message origin. */
-  public static final char messageoriginflag = 'o';
-  /** A flag to indicate a disconnection message. */
-  public static final char messagedisconnectflag = 'd';
-  /** A flag to indicate a standard message. */
-  public static final char messagestandardflag = 's';
   /** The path to and the name of the configuration file. */
   public static final String configfile = "config/ptp.ini";
   /** The timestamp format used as a prefix for the temporary Tor working directory creation. */
@@ -87,32 +79,13 @@ public class Constants {
   public static final String hiddenservicelockfile = "PTPHSLock";
   /** The Tor hidden service origin identifier placeholder when no information is available. */
   public static final String niaorigin = "N/A";
+  /** The time in milliseconds to wait between two connection attempts to the same identifier. */
+  public static final long connectInterval = 30 * 1000;
 
   /* Logger constants */
 
   /** The java logger config file system property name. */
   public static final String loggerconfig = "java.util.logging.config.file";
-
-  /** The name of the logger for the PTP class. */
-  public static final String ptplogger = "edu.kit.tm.ptp.PTP";
-  /** The name of the logger for the Client class. */
-  public static final String clientlogger = "edu.kit.tm.ptp.raw.Client";
-  /** The name of the logger for the Waiter class. */
-  public static final String waiterlogger = "edu.kit.tm.ptp.raw.threads.Waiter";
-  /** The name of the logger for the socket TTL manager class. */
-  public static final String managerlogger = "edu.kit.tm.ptp.raw.threads.TTLManager";
-  /** The name of the logger for the socket TTL manager class. */
-  public static final String dispatcherlogger = "edu.kit.tm.ptp.raw.threads.Dispatcher";
-  /** The name of the logger for the socket TTL manager class. */
-  public static final String receiverlogger = "edu.kit.tm.ptp.raw.threads.Receiver";
-  /** The name of the logger for the Configuration class. */
-  public static final String configlogger = "edu.kit.tm.ptp.raw.Configuration";
-  /** The name of the logger for the MessageHandler class. */
-  public static final String receivethreadlogger = "edu.kit.tm.ptp.ReceiveThread";
-  /** The name of the logger for the ConnectionManager class. */
-  public static final String connectionManagerLogger = "edu.kit.tm.ptp.ConnectionManager";
-
-
 
   /* JVM constants */
 

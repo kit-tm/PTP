@@ -26,7 +26,7 @@ import java.util.logging.Logger;
  */
 public class HiddenServiceManager {
   /** The logger for this class. */
-  private Logger logger = Logger.getLogger(Constants.clientlogger);
+  private Logger logger = Logger.getLogger(HiddenServiceManager.class.getName());
 
   /** The parameters of this client. */
   private final Configuration configuration;

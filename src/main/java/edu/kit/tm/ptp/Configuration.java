@@ -135,7 +135,7 @@ public class Configuration {
       loggerConfiguration = "";
     }
     // Create the logger AFTER its configuration file has been set.
-    logger = Logger.getLogger(Constants.configlogger);
+    logger = Logger.getLogger(Configuration.class.getName());
     logger.info("Set the logger properties file to: " + loggerConfiguration);
 
     // Check if all the needed properties are in the configuration file.

@@ -43,7 +43,6 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
   private ReceiveListener receiveListener = null;
   protected Identifier localIdentifier = null;
   protected final Logger logger = Logger.getLogger(ConnectionManager.class.getName());
-  protected static final long connectInterval = 30 * 1000;
   protected ChannelManager channelManager = new ChannelManager(this);
 
   protected Map<Identifier, MessageChannel> identifierMap = new HashMap<>();
@@ -336,6 +335,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
 
       if (context == null) {
         logger.log(Level.WARNING, "Closing unregistered channel");
+        continue;
       }
 
       context.close(channel);

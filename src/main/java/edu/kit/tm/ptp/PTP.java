@@ -59,7 +59,7 @@ public class PTP implements ReceiveListener {
     // Read the configuration.
     config = new Configuration(Constants.configfile);
     // Create the logger after the configuration sets the logger properties file.
-    logger = Logger.getLogger(Constants.ptplogger);
+    logger = Logger.getLogger(PTP.class.getName());
 
     // Create the Tor process manager and start the Tor process.
     tor = new TorManager();
@@ -137,7 +137,7 @@ public class PTP implements ReceiveListener {
     // Read the configuration.
     config = new Configuration(workingDirectory + "/" + Constants.configfile);
     // Create the logger after the configuration sets the logger properties file.
-    logger = Logger.getLogger(Constants.ptplogger);
+    logger = Logger.getLogger(PTP.class.getName());
 
     // We will use an already running Tor instance, instead of managing one.
     tor = null;

@@ -4,6 +4,7 @@ import edu.kit.tm.ptp.Identifier;
 import edu.kit.tm.ptp.auth.Authenticator;
 import edu.kit.tm.ptp.auth.DummyAuthenticator;
 import edu.kit.tm.ptp.channels.MessageChannel;
+import edu.kit.tm.ptp.utility.Constants;
 
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
@@ -61,7 +62,7 @@ public class Init extends ChannelState {
 
     manager.logger.log(Level.INFO, "Connection to destination " + identifier + " is closed");
     if (manager.lastTry.get(identifier) == null || System.currentTimeMillis()
-        - manager.lastTry.get(identifier) >= ConnectionManager.connectInterval) {
+        - manager.lastTry.get(identifier) >= Constants.connectInterval) {
       manager.logger.log(Level.INFO, "Opening new connection to destination " + identifier);
       manager.lastTry.put(identifier, System.currentTimeMillis());
       try {
