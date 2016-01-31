@@ -1,4 +1,4 @@
-package edu.kit.tm.ptp.raw.connection;
+package edu.kit.tm.ptp.utility;
 
 import java.util.Random;
 

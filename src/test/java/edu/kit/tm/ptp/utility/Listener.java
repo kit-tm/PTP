@@ -1,10 +1,13 @@
-package edu.kit.tm.ptp.channels;
+package edu.kit.tm.ptp.utility;
+
+import edu.kit.tm.ptp.channels.ChannelListener;
+import edu.kit.tm.ptp.channels.MessageChannel;
 
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public   class Listener implements ChannelListener {
+public class Listener implements ChannelListener {
   public MessageChannel passedChannel;
   public AtomicInteger conOpen = new AtomicInteger(0);
   public AtomicInteger conClosed = new AtomicInteger(0);

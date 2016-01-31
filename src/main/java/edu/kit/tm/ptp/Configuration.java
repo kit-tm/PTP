@@ -42,8 +42,6 @@ public class Configuration {
   // TODO: eventually support authentication types
   // public static final String AuthenticationType = "AuthenticationType";
   public static final String TorBootstrapTimeout = "TorBootstrapTimeout";
-  public static final String DispatcherThreadsNumber = "DispatcherThreads";
-  public static final String ReceiverThreadsNumber = "ReceiverThreads";
   public static final String SocketConnectTimeout = "SocketConnectTimeout";
   public static final String SocketReceivePoll = "SocketReceivePoll";
   public static final String SocketTTL = "SocketTTL";
@@ -61,10 +59,6 @@ public class Configuration {
   private final byte[] authenticationBytes;
   /** The timeout (in milliseconds) for the Tor bootstrapping. */
   private final int bootstrapTimeout;
-  /** The maximum number of message dispatcher threads. */
-  private final int dispatcherThreadsNumber;
-  /** The maximum number of message receiver threads. */
-  private final int receiverThreadsNumber;
   /** The timeout (in milliseconds) for a socket connection to a hidden service identifier. */
   private final int socketTimeout;
   /** The interval (in milliseconds) at which the open sockets are polled for incoming data. */
@@ -166,12 +160,6 @@ public class Configuration {
     bootstrapTimeout = parse(properties, TorBootstrapTimeout);
     logger.info("Read " + TorBootstrapTimeout + " = " + bootstrapTimeout);
 
-    dispatcherThreadsNumber = parse(properties, DispatcherThreadsNumber);
-    logger.info("Read " + DispatcherThreadsNumber + " = " + dispatcherThreadsNumber);
-
-    receiverThreadsNumber = parse(properties, ReceiverThreadsNumber);
-    logger.info("Read " + ReceiverThreadsNumber + " = " + receiverThreadsNumber);
-
     socketTimeout = parse(properties, SocketConnectTimeout);
     logger.info("Read " + SocketConnectTimeout + " = " + socketTimeout);
 
@@ -218,14 +206,6 @@ public class Configuration {
 
     sb.append("\tTor control port number = ");
     sb.append(torControlPort);
-    sb.append("\n");
-
-    sb.append("\tnumber of dispatcher threads = ");
-    sb.append(dispatcherThreadsNumber);
-    sb.append("\n");
-
-    sb.append("\tnumber of receiver threads = ");
-    sb.append(receiverThreadsNumber);
     sb.append("\n");
 
     sb.append("\tsocket connection timeout = ");
@@ -348,24 +328,6 @@ public class Configuration {
    */
   public int getTorSOCKSProxyPort() {
     return torSocksProxyPort;
-  }
-
-  /**
-   * Returns the maximum number of message dispatcher threads.
-   *
-   * @return The socket connection timeout.
-   */
-  public int getDispatcherThreadsNumber() {
-    return dispatcherThreadsNumber;
-  }
-
-  /**
-   * Returns the maximum number of message receiver threads.
-   *
-   * @return The socket connection timeout.
-   */
-  public int getReceiverThreadsNumber() {
-    return receiverThreadsNumber;
   }
 
   /**

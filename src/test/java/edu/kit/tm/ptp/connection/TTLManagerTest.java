@@ -1,4 +1,4 @@
-package edu.kit.tm.ptp.raw.connection;
+package edu.kit.tm.ptp.connection;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -7,6 +7,7 @@ import static org.junit.Assert.fail;
 import edu.kit.tm.ptp.Identifier;
 import edu.kit.tm.ptp.connection.ExpireListener;
 import edu.kit.tm.ptp.connection.TTLManager;
+import edu.kit.tm.ptp.utility.RNG;
 import edu.kit.tm.ptp.utility.TestHelper;
 
 import org.junit.After;

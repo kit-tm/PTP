@@ -1,4 +1,4 @@
-package edu.kit.tm.ptp.raw;
+package edu.kit.tm.ptp;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
@@ -45,8 +45,6 @@ public class ConfigurationTest {
   private int torBootstrapTimeout = -1;
   private int torControlPort = -1;
   private int torSocksProxyPort = -1;
-  private int dispatcherThreadsNumber = -1;
-  private int receiverThreadsNumber = -1;
   private int socketTimeout = -1;
   private int socketReceivePoll = -1;
   private int socketTtl = -1;
@@ -77,8 +75,6 @@ public class ConfigurationTest {
     torSocksProxyPort = random.nextInt();
     hiddenServicePort = random.nextInt();
     torBootstrapTimeout = random.nextInt();
-    dispatcherThreadsNumber = random.nextInt();
-    receiverThreadsNumber = random.nextInt();
     socketTimeout = random.nextInt();
     socketReceivePoll = random.nextInt();
     socketTtl = random.nextInt();
@@ -88,8 +84,6 @@ public class ConfigurationTest {
     FileWriter writer = new FileWriter(file);
 
     System.out.println(Configuration.HiddenServicePort + " " + hiddenServicePort);
-    System.out
-        .println(Configuration.DispatcherThreadsNumber + " " + dispatcherThreadsNumber + newline);
     System.out.println(Configuration.SocketConnectTimeout + " " + socketTimeout + newline);
     System.out.println(Configuration.SocketTTL + " " + socketTtl + newline);
     System.out.println(Configuration.SocketTTLPoll + " " + ttlPoll + newline);
@@ -98,8 +92,6 @@ public class ConfigurationTest {
     output.write(Configuration.DefaultIdentifier + " " + defaultIdentifier + newline);
     output.write(Configuration.HiddenServicePort + " " + hiddenServicePort + newline);
     output.write(Configuration.TorBootstrapTimeout + " " + torBootstrapTimeout + newline);
-    output.write(Configuration.DispatcherThreadsNumber + " " + dispatcherThreadsNumber + newline);
-    output.write(Configuration.ReceiverThreadsNumber + " " + receiverThreadsNumber + newline);
     output.write(Configuration.SocketConnectTimeout + " " + socketTimeout + newline);
     output.write(Configuration.SocketReceivePoll + " " + socketReceivePoll + newline);
     output.write(Configuration.SocketTTL + " " + socketTtl + newline);
@@ -221,20 +213,6 @@ public class ConfigurationTest {
     if (torSocksProxyPort != configuration.getTorSOCKSProxyPort()) {
       fail("Tor SOCKS proxy port property does not match: " + torSocksProxyPort + " != "
           + configuration.getTorSOCKSProxyPort());
-    }
-  }
-
-  /**
-   * Test method for {@link edu.kit.tm.ptp.Configuration#getConnectionPoll()}.
-   *
-   * <p>Checks whether the configuration read the connection poll property correctly.
-   * Fails iff the read property is not equal to the written property.
-   */
-  @Test
-  public void testGetDispatcherThreadsNumber() {
-    if (dispatcherThreadsNumber != configuration.getDispatcherThreadsNumber()) {
-      fail("Connection poll property does not match: " + dispatcherThreadsNumber + " != "
-          + configuration.getDispatcherThreadsNumber());
     }
   }
 
