@@ -205,7 +205,7 @@ public class ChannelManager implements Runnable {
       return;
     }
 
-    if (enable) {
+    if (enable && key.isValid()) {
       key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
     } else {
       key.interestOps(key.interestOps() & (~SelectionKey.OP_WRITE));
