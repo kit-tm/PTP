@@ -1,6 +1,6 @@
 package edu.kit.tm.ptp.channels;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import edu.kit.tm.ptp.utility.Constants;
 import edu.kit.tm.ptp.utility.Listener;

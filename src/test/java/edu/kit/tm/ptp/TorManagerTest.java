@@ -4,7 +4,6 @@ import static org.junit.Assert.fail;
 
 import edu.kit.tm.ptp.TorManager;
 import edu.kit.tm.ptp.utility.Constants;
-import edu.kit.tm.ptp.utility.TestHelper;
 import net.freehaven.tor.control.TorControlConnection;
 
 import org.junit.After;

@@ -1,5 +1,7 @@
 package edu.kit.tm.ptp.connection;
 
+import static org.junit.Assert.assertEquals;
+
 import edu.kit.tm.ptp.Configuration;
 import edu.kit.tm.ptp.Identifier;
 import edu.kit.tm.ptp.PTP;
@@ -13,7 +15,6 @@ import edu.kit.tm.ptp.utility.TestConstants;
 import edu.kit.tm.ptp.utility.TestHelper;
 
 import org.junit.After;
-import static org.junit.Assert.*;
 import org.junit.Test;
 
 import java.io.IOException;

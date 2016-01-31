@@ -1,5 +1,10 @@
 package edu.kit.tm.ptp;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import edu.kit.tm.ptp.Identifier;
 import edu.kit.tm.ptp.PTP;
 import edu.kit.tm.ptp.ReceiveListener;
@@ -11,11 +16,6 @@ import edu.kit.tm.ptp.utility.TestHelper;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.util.HashSet;

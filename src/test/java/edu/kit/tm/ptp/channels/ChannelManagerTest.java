@@ -1,6 +1,6 @@
 package edu.kit.tm.ptp.channels;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import edu.kit.tm.ptp.PTP;
 import edu.kit.tm.ptp.utility.Constants;
@@ -18,7 +18,6 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Test class for the ChannelManager.
