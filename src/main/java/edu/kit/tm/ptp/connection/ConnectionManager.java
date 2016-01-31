@@ -11,7 +11,6 @@ import edu.kit.tm.ptp.channels.ChannelListener;
 import edu.kit.tm.ptp.channels.ChannelManager;
 import edu.kit.tm.ptp.channels.MessageChannel;
 import edu.kit.tm.ptp.serialization.Serializer;
-import edu.kit.tm.ptp.utility.Constants;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -44,7 +43,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
   private SendListener sendListener = null;
   private ReceiveListener receiveListener = null;
   protected Identifier localIdentifier = null;
-  protected final Logger logger = Logger.getLogger(Constants.connectionManagerLogger);
+  protected final Logger logger = Logger.getLogger(ConnectionManager.class.getName());
   protected static final long connectInterval = 30 * 1000;
   protected ChannelManager channelManager = new ChannelManager(this);
 
@@ -92,6 +91,13 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
     }
   }
 
+  /**
+   * Construct a new ConnectionManager.
+   * 
+   * @param socksHost The host the socks proxy is listening on.
+   * @param socksPort The port the socks proxy is listening on.
+   * @param hsPort The port to reach PTP hidden services from remote.
+   */
   public ConnectionManager(String socksHost, int socksPort, int hsPort) {
     this.socksHost = socksHost;
     this.socksPort = socksPort;
@@ -110,6 +116,9 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
     this.receiveListener = listener;
   }
 
+  /**
+   * Starts an own thread for the ConnectionManager.
+   */
   public void start() throws IOException {
     logger.log(Level.INFO, "Starting ConnectionManager");
     thread.start();
@@ -118,6 +127,9 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
     logger.log(Level.INFO, "ConnectionManager started");
   }
 
+  /**
+   * Stops the thread.
+   */
   public void stop() {
     logger.log(Level.INFO, "Stopping ConnectionManager");
 
@@ -143,11 +155,17 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
     logger.log(Level.INFO, "ConnectionManager stopped");
   }
 
-  public int startBindServer() throws IOException {
+  /**
+   * Runs a new bind server on the loopback interface.
+   * 
+   * @return The port the server listens on.
+   * @throws IOException If the binding fails.
+   */
+  public int startBindServer(int localPort) throws IOException {
     logger.log(Level.INFO, "Starting bind server");
     ServerSocketChannel server = ServerSocketChannel.open();
     server.socket()
-        .bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), Constants.anyport));
+        .bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), localPort));
     server.configureBlocking(false);
 
     channelManager.addServerSocket(server);
@@ -157,6 +175,14 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
     return server.socket().getLocalPort();
   }
 
+  /**
+   * Sends a message to the specified destination.
+   * 
+   * @param data The bytes to send.
+   * @param destination The destination to send to.
+   * @param timeout How long to wait for a successful sending.
+   * @return Identifier for the message.
+   */
   public long send(byte[] data, Identifier destination, long timeout) {
     long id = messageId.getAndIncrement();
     MessageAttempt attempt =
@@ -171,6 +197,9 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
     return id;
   }
 
+  /**
+   * Closes an open connection to the supplied identifier.
+   */
   public void disconnect(Identifier destination) {
     logger.log(Level.INFO, "Disconnecting channel to identifier " + destination);
     MessageChannel channel = identifierMap.get(destination);

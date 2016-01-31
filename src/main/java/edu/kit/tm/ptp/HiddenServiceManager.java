@@ -19,7 +19,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Class.
+ * Manages the hidden service directory.
  *
  * @author Timon Hackenjos
  */
@@ -45,6 +45,12 @@ public class HiddenServiceManager {
   /** Hidden service lock file. */
   private File hiddenServiceLock = null;
 
+  /**
+   * Constructs a new HiddenServiceManager.
+   * 
+   * @param directory The directory to use for the hidden service or null.
+   * @param port The port the hidden service is listening on.
+   */
   public HiddenServiceManager(Configuration configuration, String directory, int port)
       throws IOException {
 
@@ -79,6 +85,11 @@ public class HiddenServiceManager {
     setUpHiddenService(true);
   }
 
+  /**
+   * Deletes the currently used hidden service directory.
+   * 
+   * @throws IOException If an error occurs while deleting the directory.
+   */
   public void deleteHiddenService() throws IOException {
     try {
       apiLock.lock();
@@ -95,6 +106,9 @@ public class HiddenServiceManager {
     return currentIdentifier;
   }
 
+  /**
+   * Removes the lock from the hidden service directory.
+   */
   public void close() {
     if (hiddenServiceLock != null && hiddenServiceLock.exists()) {
       hiddenServiceLock.delete();

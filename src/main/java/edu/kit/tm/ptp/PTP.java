@@ -15,10 +15,10 @@ import java.util.logging.Logger;
 
 
 /**
- * Wrapper class for the PeerTorPeer raw API. Provides the following on top of the raw API: *
- * automatic socket management * sets configuration parameters * uses a shared Tor instance
+ * Provides the PTP API.
  *
  * @author Simeon Andreev
+ * @author Timon Hackenjos
  *
  */
 public class PTP implements ReceiveListener {
@@ -40,30 +40,20 @@ public class PTP implements ReceiveListener {
   private ListenerContainer listeners = new ListenerContainer();
 
   /**
-   * Constructor method. Creates an API wrapper which manages a Tor process.
+   * Constructs a new PTP object. Manages a own Tor process.
    *
-   * @throws IOException Propagates any IOException thrown by the construction of the raw API, the
-   *         configuration, or the Tor process manager.
-   *
-   * @see Client
-   * @see Configuration
-   * @see TorManager
+   * @throws IOException If an error occurs.
    */
   public PTP() throws IOException {
     this(null);
   }
 
   /**
-   * Constructor method. Creates an API wrapper which manages a Tor process.
+   * Constructs a new PTP object using the supplied hidden service directory name. Manages a own Tor
+   * process.
    *
-   * @param directory The name of the hidden service to reuse. May be null to indicate no specific
-   *        reuse request.
-   * @throws IOException Propagates any IOException thrown by the construction of the raw API, the
-   *         configuration, or the Tor process manager.
-   *
-   * @see Client
-   * @see Configuration
-   * @see TorManager
+   * @param directory The name of the hidden service directory.
+   * @throws IOException If an error occurs.
    */
   public PTP(String directory) throws IOException {
     addShutdownHook();
@@ -110,7 +100,7 @@ public class PTP implements ReceiveListener {
     connectionManager.setSendListener(new SendListenerAdapter());
     connectionManager.setReceiveListener(this);
     connectionManager.start();
-    hiddenServicePort = connectionManager.startBindServer();
+    hiddenServicePort = connectionManager.startBindServer(Constants.anyport);
 
     hiddenServiceManager = new HiddenServiceManager(config, directory, hiddenServicePort);
 
@@ -120,35 +110,27 @@ public class PTP implements ReceiveListener {
   }
 
   /**
-   * Constructor method. Creates an API wrapper which uses a Tor process running outside the API.
+   * Constructs a new PTP object. Uses an already running Tor process.
    *
    * @param workingDirectory The working directory of the Tor process.
    * @param controlPort The control port of the Tor process.
    * @param socksPort The SOCKS port of the Tor process.
-   * @throws IOException Propagates any IOException thrown by the construction of the raw API, the
-   *         configuration, or the Tor process manager.
-   *
-   * @see Client
-   * @see Configuration
+   * @throws IOException If an error occurs.
    */
   public PTP(String workingDirectory, int controlPort, int socksPort) throws IOException {
     this(workingDirectory, controlPort, socksPort, Constants.anyport, null);
   }
 
   /**
-   * Constructor method. Creates an API wrapper which uses a Tor process running outside the API.
+   * Constructs a new PTP object. Uses an already running Tor process.
    *
    * @param workingDirectory The working directory of the Tor process.
    * @param controlPort The control port of the Tor process.
    * @param socksPort The SOCKS port of the Tor process.
    * @param localPort The port on which the local hidden service should run.
-   * @param directory The name of the hidden service to reuse. May be null to indicate no specific
-   *        reuse request.
-   * @throws IOException Propagates any IOException thrown by the construction of the raw API, the
-   *         configuration, or the Tor process manager.
+   * @param directory The name of the hidden service directory.
+   * @throws IOException If an error occurs.
    *
-   * @see Client
-   * @see Configuration
    */
   public PTP(String workingDirectory, int controlPort, int socksPort, int localPort,
       String directory) throws IOException {
@@ -170,7 +152,7 @@ public class PTP implements ReceiveListener {
     connectionManager.setSendListener(new SendListenerAdapter());
     connectionManager.setReceiveListener(this);
     connectionManager.start();
-    hiddenServicePort = connectionManager.startBindServer();
+    hiddenServicePort = connectionManager.startBindServer(localPort);
 
     hiddenServiceManager = new HiddenServiceManager(config, directory, hiddenServicePort);
 
@@ -179,20 +161,8 @@ public class PTP implements ReceiveListener {
     ttlManager.start();
   }
 
-  private void addShutdownHook() {
-    Runtime.getRuntime().addShutdownHook(new Thread() {
-      public void run() {
-        logger.log(Level.INFO, "Shutdown hook called");
-        exit();
-      }
-    });
-  }
-
-
   /**
    * Returns the currently used API configuration.
-   *
-   * @return The currently used API configuration.
    */
   public Configuration getConfiguration() {
     return config;
@@ -200,23 +170,13 @@ public class PTP implements ReceiveListener {
 
   /**
    * Returns the currently used hidden service identifier.
-   *
-   * @return The hidden service identifier of the used/created hidden service.
-   *
-   * @see Client
    */
   public Identifier getIdentifier() {
     return hiddenServiceManager.getHiddenServiceIdentifier();
   }
 
   /**
-   * Creates a hidden service, if possible reuses the hidden service indicated at API wrapper
-   * creation.
-   *
-   * @throws IOException Propagates any IOException the API received while creating the hidden
-   *         service.
-   *
-   * @see Client
+   * Reuses a hidden service or creates a new one if no hidden service to reuse exists.
    */
   public void reuseHiddenService() throws IOException {
     hiddenServiceManager.reuseHiddenService();
@@ -225,11 +185,6 @@ public class PTP implements ReceiveListener {
 
   /**
    * Creates a fresh hidden service.
-   *
-   * @throws IOException Propagates any IOException the API received while creating the hidden
-   *         service.
-   *
-   * @see Client
    */
   public void createHiddenService() throws IOException {
     // Create a fresh hidden service identifier.
@@ -237,26 +192,64 @@ public class PTP implements ReceiveListener {
     connectionManager.setLocalIdentifier(getIdentifier());
   }
 
+  /**
+   * Sends bytes to the supplied destination.
+   * 
+   * @param data The data to send.
+   * @param destination The hidden service identifier of the destination.
+   * @param timeout How long to wait for a successful transmission.
+   * @return Identifier of the message.
+   */
   public long sendMessage(byte[] data, Identifier destination, long timeout) {
     ByteArrayMessage msg = new ByteArrayMessage(data);
     return sendMessage(msg, destination, timeout);
   }
 
+  /**
+   * Sends bytes to the supplied destination.
+   * 
+   * @param data The data to send.
+   * @param destination The hidden service identifier of the destination.
+   */
   public long sendMessage(byte[] data, Identifier destination) {
     // TODO set appropriate default timeout
     return sendMessage(data, destination, -1);
   }
 
+  /**
+   * Send an object of a previously registered class to the supplied destination.
+   * 
+   * @param message The object to send.
+   * @param destination The hidden service identifier of the destination.
+   * @return Identifier of the message.
+   * @see registerMessage
+   */
   public long sendMessage(Object message, Identifier destination) {
     // TODO set appropriate default timeout
     return sendMessage(message, destination, -1);
   }
 
+  /**
+   * Send an object of a previously registered class to the supplied destination.
+   * 
+   * @param message The object to send.
+   * @param destination The hidden service identifier of the destination.
+   * @param timeout How long to wait for a successful transmission.
+   * @return Identifier of the message.
+   * @see registerMessage
+   */
   public long sendMessage(Object message, Identifier destination, long timeout) {
     byte[] data = serializer.serialize(message);
     return connectionManager.send(data, destination, timeout);
   }
 
+  /**
+   * Register class to be able to send and receive objects of the class as message and registers an
+   * appropriate listener.
+   * 
+   * @param type The class to register.
+   * @param listener Listener to be informed about received objects of the class.
+   */
   public <T> void registerMessage(Class<T> type, MessageReceivedListener<T> listener) {
     serializer.registerClass(type);
     listeners.putListener(type, listener);
@@ -271,17 +264,15 @@ public class PTP implements ReceiveListener {
   }
 
   /**
-   * Returns the local port on which the local hidden service is available.
-   *
-   * @return The local port on which the local hidden service is available.
-   *
-   * @see Client
+   * Returns the local port on which the local hidden service is listening.
    */
   public int getLocalPort() {
-    // Get the local port from the client.
     return hiddenServicePort;
   }
 
+  /**
+   * Delete the currently used hidden service directory.
+   */
   public void deleteHiddenService() {
     try {
       hiddenServiceManager.deleteHiddenService();
@@ -292,10 +283,8 @@ public class PTP implements ReceiveListener {
   }
 
   /**
-   * Closes the local socket and any open connections. Stops the socket TTL manager and the Tor
-   * process manager.
-   *
-   * @see Client
+   * Closes the local hidden service and any open connections. Stops the socket TTL manager and the
+   * Tor process manager.
    */
   public void exit() {
     if (connectionManager != null) {
@@ -315,12 +304,27 @@ public class PTP implements ReceiveListener {
       hiddenServiceManager.close();
     }
   }
+  
+  @Override
+  public void messageReceived(byte[] data, Identifier source) {
+    Object obj;
+    try {
+      obj = serializer.deserialize(data);
+
+      if (obj instanceof ByteArrayMessage) {
+        ByteArrayMessage message = (ByteArrayMessage) obj;
+        receiveListener.messageReceived(message.getData(), source);
+      } else {
+        listeners.callListener(obj, source);
+      }
+    } catch (IOException e) {
+      logger.log(Level.WARNING, "Error occurred while deserializing data: " + e.getMessage());
+    }
+  }
 
 
   /**
    * Returns a manager listener that will close socket connections with expired TTL.
-   *
-   * @return The manager listener which closes sockets with no TTL left.
    */
   private ExpireListener getTTLManagerListener() {
     return new ExpireListener() {
@@ -340,20 +344,12 @@ public class PTP implements ReceiveListener {
     };
   }
 
-  @Override
-  public void messageReceived(byte[] data, Identifier source) {
-    Object obj;
-    try {
-      obj = serializer.deserialize(data);
-
-      if (obj instanceof ByteArrayMessage) {
-        ByteArrayMessage message = (ByteArrayMessage) obj;
-        receiveListener.messageReceived(message.getData(), source);
-      } else {
-        listeners.callListener(obj, source);
+  private void addShutdownHook() {
+    Runtime.getRuntime().addShutdownHook(new Thread() {
+      public void run() {
+        logger.log(Level.INFO, "Shutdown hook called");
+        exit();
       }
-    } catch (IOException e) {
-      logger.log(Level.WARNING, "Error occurred while deserializing data: " + e.getMessage());
-    }
+    });
   }
 }

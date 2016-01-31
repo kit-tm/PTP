@@ -4,7 +4,6 @@ import edu.kit.tm.ptp.Identifier;
 import edu.kit.tm.ptp.PTP;
 import edu.kit.tm.ptp.SendListener;
 import edu.kit.tm.ptp.SendReceiveListener;
-import edu.kit.tm.ptp.SendListener.State;
 import edu.kit.tm.ptp.connection.ConnectionManager;
 import edu.kit.tm.ptp.raw.Configuration;
 import edu.kit.tm.ptp.serialization.ByteArrayMessage;
@@ -21,7 +20,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class ConnectionManagerTest {
   private ConnectionManager manager;
@@ -42,7 +40,7 @@ public class ConnectionManagerTest {
   public void testStartBindServer() throws IOException {
     ConnectionManager manager = new ConnectionManager(Constants.localhost, 1000, 1001);
     manager.start();
-    int port = manager.startBindServer();
+    int port = manager.startBindServer(Constants.anyport);
 
     Socket socket = new Socket();
     socket.connect(new InetSocketAddress(InetAddress.getLoopbackAddress(), port),

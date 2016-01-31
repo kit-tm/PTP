@@ -36,6 +36,11 @@ public abstract class ChannelState {
     return false;
   }
 
+  /**
+   * Closes a channel and removes it from the configuration.
+   * 
+   * @param channel The channel to close.
+   */
   public void close(MessageChannel channel) {
     ConnectionManager manager = context.getConnectionManager();
 

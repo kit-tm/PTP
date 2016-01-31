@@ -22,6 +22,11 @@ public class ChannelContext {
   private ChannelState concreteClosed;
   private ConnectionManager manager;
   
+  /**
+   * Contructs a new ChannelContext.
+   * 
+   * @param manager The ConnectionManager to use.
+   */
   public ChannelContext(ConnectionManager manager) {
     this.manager = manager;
     
