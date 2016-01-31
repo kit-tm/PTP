@@ -1,4 +1,6 @@
-package edu.kit.tm.ptp;
+package edu.kit.tm.ptp.connection;
+
+import edu.kit.tm.ptp.Identifier;
 
 /**
  * An attempt to send a message.

@@ -1,5 +1,6 @@
-package edu.kit.tm.ptp;
+package edu.kit.tm.ptp.auth;
 
+import edu.kit.tm.ptp.Identifier;
 import edu.kit.tm.ptp.channels.ChannelListener;
 import edu.kit.tm.ptp.channels.MessageChannel;
 import edu.kit.tm.ptp.serialization.Serializer;

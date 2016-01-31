@@ -1,16 +1,15 @@
 package edu.kit.tm.ptp.connection;
 
-import edu.kit.tm.ptp.AuthenticationListener;
 import edu.kit.tm.ptp.Identifier;
-import edu.kit.tm.ptp.MessageAttempt;
 import edu.kit.tm.ptp.ReceiveListener;
 import edu.kit.tm.ptp.SendListener;
 import edu.kit.tm.ptp.SendListener.State;
-import edu.kit.tm.ptp.Waker;
+import edu.kit.tm.ptp.auth.AuthenticationListener;
 import edu.kit.tm.ptp.channels.ChannelListener;
 import edu.kit.tm.ptp.channels.ChannelManager;
 import edu.kit.tm.ptp.channels.MessageChannel;
 import edu.kit.tm.ptp.serialization.Serializer;
+import edu.kit.tm.ptp.thread.Waker;
 
 import java.io.IOException;
 import java.net.InetAddress;

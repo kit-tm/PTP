@@ -4,7 +4,7 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 
-import edu.kit.tm.ptp.DummyAuthenticator.AuthenticationMessage;
+import edu.kit.tm.ptp.auth.DummyAuthenticator.AuthenticationMessage;
 
 import java.io.IOException;
 

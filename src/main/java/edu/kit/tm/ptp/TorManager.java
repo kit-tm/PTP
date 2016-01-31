@@ -1,6 +1,6 @@
-package edu.kit.tm.ptp.raw;
+package edu.kit.tm.ptp;
 
-import edu.kit.tm.ptp.raw.thread.Suspendable;
+import edu.kit.tm.ptp.thread.Suspendable;
 import edu.kit.tm.ptp.utility.Constants;
 
 import net.freehaven.tor.control.TorControlConnection;

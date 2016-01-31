@@ -3,7 +3,7 @@ package edu.kit.tm.ptp.raw;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 
-import edu.kit.tm.ptp.raw.Configuration;
+import edu.kit.tm.ptp.Configuration;
 import edu.kit.tm.ptp.utility.Constants;
 
 import org.junit.After;
@@ -125,7 +125,7 @@ public class ConfigurationTest {
 
 
   /**
-   * Test method for {@link edu.kit.tm.ptp.raw.Configuration#getDefaultIdentifier()}.
+   * Test method for {@link edu.kit.tm.ptp.Configuration#getDefaultIdentifier()}.
    *
    * <p>Checks whether the configuration read the hidden service directory property correctly.
    * Fails iff the read property is not equal to the written property.
@@ -140,7 +140,7 @@ public class ConfigurationTest {
   }
 
   /**
-   * Test method for {@link edu.kit.tm.ptp.raw.Configuration#getHiddenServiceDirectory()}.
+   * Test method for {@link edu.kit.tm.ptp.Configuration#getHiddenServiceDirectory()}.
    *
    * <p>Checks whether the configuration read the hidden service directory property correctly.
    * Fails if the read property is not equal to the written property.
@@ -155,7 +155,7 @@ public class ConfigurationTest {
   }
 
   /**
-   * Test method for {@link edu.kit.tm.ptp.raw.Configuration#getHiddenServicePort()}.
+   * Test method for {@link edu.kit.tm.ptp.Configuration#getHiddenServicePort()}.
    *
    * <p>Checks whether the configuration read the hidden service port number property correctly.
    * Fails if the read property is not equal to the written property.
@@ -169,7 +169,7 @@ public class ConfigurationTest {
   }
 
   /**
-   * Test method for {@link edu.kit.tm.ptp.raw.Configuration#getTorBootstrapTimeout()}.
+   * Test method for {@link edu.kit.tm.ptp.Configuration#getTorBootstrapTimeout()}.
    *
    * <p>Checks whether the configuration read the Tor bootstrap timeout property correctly.
    * Fails if the read property is not equal to the written property.
@@ -183,7 +183,7 @@ public class ConfigurationTest {
   }
 
   /**
-   * Test method for {@link edu.kit.tm.ptp.raw.Configuration#getAuthenticationBytes()}.
+   * Test method for {@link edu.kit.tm.ptp.Configuration#getAuthenticationBytes()}.
    *
    * <p>Checks whether the configuration read the authentication bytes property correctly.
    * Fails if the read property is not equal to the written property.
@@ -197,7 +197,7 @@ public class ConfigurationTest {
   }
 
   /**
-   * Test method for {@link edu.kit.tm.ptp.raw.Configuration#getTorControlPort()}.
+   * Test method for {@link edu.kit.tm.ptp.Configuration#getTorControlPort()}.
    *
    * <p>Checks whether the configuration read the Tor control port number property correctly.
    * Fails if the read property is not equal to the written property.
@@ -211,7 +211,7 @@ public class ConfigurationTest {
   }
 
   /**
-   * Test method for {@link edu.kit.tm.ptp.raw.Configuration#getTorSOCKSProxyPort()}.
+   * Test method for {@link edu.kit.tm.ptp.Configuration#getTorSOCKSProxyPort()}.
    *
    * <p>Checks whether the configuration read the SOCKS proxy port number property correctly.
    * Fails iff the read property is not equal to the written property.
@@ -225,7 +225,7 @@ public class ConfigurationTest {
   }
 
   /**
-   * Test method for {@link edu.kit.tm.ptp.raw.Configuration#getConnectionPoll()}.
+   * Test method for {@link edu.kit.tm.ptp.Configuration#getConnectionPoll()}.
    *
    * <p>Checks whether the configuration read the connection poll property correctly.
    * Fails iff the read property is not equal to the written property.
@@ -239,7 +239,7 @@ public class ConfigurationTest {
   }
 
   /**
-   * Test method for {@link edu.kit.tm.ptp.raw.Configuration#getSocketTimeout()}.
+   * Test method for {@link edu.kit.tm.ptp.Configuration#getSocketTimeout()}.
    *
    * <p>Checks whether the configuration read the socket timeout property correctly.
    * Fails iff the read property is not equal to the written property.
@@ -253,7 +253,7 @@ public class ConfigurationTest {
   }
 
   /**
-   * Test method for {@link edu.kit.tm.ptp.raw.Configuration#getSocketTTL()}.
+   * Test method for {@link edu.kit.tm.ptp.Configuration#getSocketTTL()}.
    *
    * <p>Checks whether the configuration read the socket TTL property correctly.
    * Fails iff the read property is not equal to the written property.
@@ -267,7 +267,7 @@ public class ConfigurationTest {
   }
 
   /**
-   * Test method for {@link edu.kit.tm.ptp.raw.Configuration#getTTLPoll()}.
+   * Test method for {@link edu.kit.tm.ptp.Configuration#getTTLPoll()}.
    *
    * <p>Checks whether the configuration read the TTL poll property correctly.
    * Fails iff the read property is not equal to the written property.

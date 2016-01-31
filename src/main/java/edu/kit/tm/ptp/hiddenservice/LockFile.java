@@ -1,4 +1,4 @@
-package edu.kit.tm.ptp;
+package edu.kit.tm.ptp.hiddenservice;
 
 import edu.kit.tm.ptp.utility.Constants;
 

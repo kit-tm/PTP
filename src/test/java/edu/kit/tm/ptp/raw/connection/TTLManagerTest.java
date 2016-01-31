@@ -5,8 +5,8 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import edu.kit.tm.ptp.Identifier;
-import edu.kit.tm.ptp.raw.ExpireListener;
-import edu.kit.tm.ptp.raw.connection.TTLManager;
+import edu.kit.tm.ptp.connection.ExpireListener;
+import edu.kit.tm.ptp.connection.TTLManager;
 import edu.kit.tm.ptp.utility.TestHelper;
 
 import org.junit.After;
@@ -115,7 +115,7 @@ public class TTLManagerTest {
   }
 
   /**
-   * Test method for {@link edu.kit.tm.ptp.raw.connection.TTLManager#Remove(java.lang.String)}.
+   * Test method for {@link edu.kit.tm.ptp.connection.TTLManager#Remove(java.lang.String)}.
    * Removes the identifier from the running TTLManager
    * and checks whether an expire notification is still sent.
    * Fails if the notification is received.
@@ -141,7 +141,7 @@ public class TTLManagerTest {
   }
 
   /**
-   * Test method for {@link edu.kit.tm.ptp.raw.connection.TTLManager#set(java.lang.String, int)}.
+   * Test method for {@link edu.kit.tm.ptp.connection.TTLManager#set(java.lang.String, int)}.
    * Checks whether an expire notification is sent for the random identifier by the TTLManager.
    * Fails iff the notififaction is not received shorty after the expiration time.
    */
@@ -166,7 +166,7 @@ public class TTLManagerTest {
   }
 
   /**
-   * Test method for {@link edu.kit.tm.ptp.raw.thread.Suspendable#running()}.
+   * Test method for {@link edu.kit.tm.ptp.thread.Suspendable#running()}.
    * Checks whether the running TTLManager, the not started TTLManager and the stopped running
    * TTLManager tell their states correctly.
    * Fails iff any of the returned states are incorrect.

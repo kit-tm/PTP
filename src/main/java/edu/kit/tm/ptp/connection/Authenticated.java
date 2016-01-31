@@ -1,7 +1,6 @@
 package edu.kit.tm.ptp.connection;
 
 import edu.kit.tm.ptp.Identifier;
-import edu.kit.tm.ptp.MessageAttempt;
 import edu.kit.tm.ptp.channels.MessageChannel;
 
 import java.util.logging.Level;

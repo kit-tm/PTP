@@ -1,4 +1,4 @@
-package edu.kit.tm.ptp;
+package edu.kit.tm.ptp.thread;
 
 import java.util.concurrent.Semaphore;
 

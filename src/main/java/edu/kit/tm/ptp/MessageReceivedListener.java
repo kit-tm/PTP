@@ -1,7 +1,7 @@
 package edu.kit.tm.ptp;
 
 /**
- * Interface.
+ * Interface for subscribers to received objects.
  *
  * @author Timon Hackenjos
  */

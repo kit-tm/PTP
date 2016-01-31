@@ -1,4 +1,4 @@
-package edu.kit.tm.ptp.raw;
+package edu.kit.tm.ptp;
 
 import edu.kit.tm.ptp.utility.Constants;
 

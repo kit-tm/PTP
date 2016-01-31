@@ -1,8 +1,8 @@
 package edu.kit.tm.ptp.connection;
 
-import edu.kit.tm.ptp.Authenticator;
-import edu.kit.tm.ptp.DummyAuthenticator;
 import edu.kit.tm.ptp.Identifier;
+import edu.kit.tm.ptp.auth.Authenticator;
+import edu.kit.tm.ptp.auth.DummyAuthenticator;
 import edu.kit.tm.ptp.channels.MessageChannel;
 
 import java.util.logging.Level;

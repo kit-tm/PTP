@@ -1,6 +1,7 @@
-package edu.kit.tm.ptp;
+package edu.kit.tm.ptp.hiddenservice;
 
-import edu.kit.tm.ptp.raw.Configuration;
+import edu.kit.tm.ptp.Configuration;
+import edu.kit.tm.ptp.Identifier;
 import edu.kit.tm.ptp.utility.Constants;
 
 import net.freehaven.tor.control.TorControlConnection;

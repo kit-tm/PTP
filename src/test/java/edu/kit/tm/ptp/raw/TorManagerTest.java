@@ -2,7 +2,7 @@ package edu.kit.tm.ptp.raw;
 
 import static org.junit.Assert.fail;
 
-import edu.kit.tm.ptp.raw.TorManager;
+import edu.kit.tm.ptp.TorManager;
 import edu.kit.tm.ptp.utility.Constants;
 import edu.kit.tm.ptp.utility.TestHelper;
 import net.freehaven.tor.control.TorControlConnection;
@@ -88,7 +88,7 @@ public class TorManagerTest {
   }
 
   /**
-   * Test method for {@link edu.kit.tm.ptp.raw.TorManager#stop()}.
+   * Test method for {@link edu.kit.tm.ptp.TorManager#stop()}.
    * Checks whether the ready TorManager returns a non-running state after being stopped and deletes
    * its working directory.
    * Fails if the ready TorManager returns a running state after being stopped, or if the ready
@@ -126,7 +126,7 @@ public class TorManagerTest {
   }
 
   /**
-   * Test method for {@link edu.kit.tm.ptp.raw.TorManager#directory()}.
+   * Test method for {@link edu.kit.tm.ptp.TorManager#directory()}.
    * Checks whether the working directory indicated by the ready TorManager exists.
    * Fails iff the working directory indicated by the ready TorManager does not exist.
    */
@@ -138,7 +138,7 @@ public class TorManagerTest {
   }
 
   /**
-   * Test method for {@link edu.kit.tm.ptp.raw.TorManager#ready()}.
+   * Test method for {@link edu.kit.tm.ptp.TorManager#ready()}.
    * Checks whether the ready TorManager returns a ready state and if the TorManager returns a
    * non-ready state.
    * Fails iff the ready TorManager returns a non-ready states, or if the TorManager returns a ready
@@ -155,7 +155,7 @@ public class TorManagerTest {
   }
 
   /**
-   * Test method for {@link edu.kit.tm.ptp.raw.TorManager#controlport()}.
+   * Test method for {@link edu.kit.tm.ptp.TorManager#controlport()}.
    * Attempts to connect to the control port of the Tor process started by the ready TorManager.
    * Fails if the connection to the control port failed.
    */
@@ -171,7 +171,7 @@ public class TorManagerTest {
   }
 
   /**
-   * Test method for {@link edu.kit.tm.ptp.raw.TorManager#socksport()}.
+   * Test method for {@link edu.kit.tm.ptp.TorManager#socksport()}.
    * Attempts to use the SOCKS proxy of the Tor process (started by the ready TorManager) to connect
    * to a destination address.
    * Fails iff connecting to the destination fails.
@@ -198,7 +198,7 @@ public class TorManagerTest {
   }
 
   /**
-   * Test method for {@link edu.kit.tm.ptp.raw.thread.Suspendable#running()}.
+   * Test method for {@link edu.kit.tm.ptp.thread.Suspendable#running()}.
    * Checks whether the ready TorManager returns a running state and if the TorManager returns a
    * non-running state.
    * Fails if the ready TorManager returns a non-running states, or if the TorManager returns a

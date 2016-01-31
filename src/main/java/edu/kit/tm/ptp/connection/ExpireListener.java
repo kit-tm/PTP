@@ -1,4 +1,4 @@
-package edu.kit.tm.ptp.raw;
+package edu.kit.tm.ptp.connection;
 
 import edu.kit.tm.ptp.Identifier;
 

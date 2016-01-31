@@ -1,10 +1,9 @@
 package edu.kit.tm.ptp;
 
 import edu.kit.tm.ptp.connection.ConnectionManager;
-import edu.kit.tm.ptp.raw.Configuration;
-import edu.kit.tm.ptp.raw.ExpireListener;
-import edu.kit.tm.ptp.raw.TorManager;
-import edu.kit.tm.ptp.raw.connection.TTLManager;
+import edu.kit.tm.ptp.connection.ExpireListener;
+import edu.kit.tm.ptp.connection.TTLManager;
+import edu.kit.tm.ptp.hiddenservice.HiddenServiceManager;
 import edu.kit.tm.ptp.serialization.ByteArrayMessage;
 import edu.kit.tm.ptp.serialization.Serializer;
 import edu.kit.tm.ptp.utility.Constants;

@@ -1,4 +1,4 @@
-package edu.kit.tm.ptp.raw.thread;
+package edu.kit.tm.ptp.thread;
 
 import edu.kit.tm.ptp.utility.Constants;
 

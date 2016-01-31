@@ -1,8 +1,7 @@
-package edu.kit.tm.ptp.raw.connection;
+package edu.kit.tm.ptp.connection;
 
 import edu.kit.tm.ptp.Identifier;
-import edu.kit.tm.ptp.raw.ExpireListener;
-import edu.kit.tm.ptp.raw.thread.Suspendable;
+import edu.kit.tm.ptp.thread.Suspendable;
 import edu.kit.tm.ptp.utility.Constants;
 
 import java.io.IOException;
