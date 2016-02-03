@@ -13,8 +13,8 @@ import java.util.logging.Level;
  *
  */
 
-public class Connected extends ChannelState {
-  public Connected(ChannelContext context) {
+public class StateConnected extends AbstractState {
+  public StateConnected(Context context) {
     super(context);
   }
 

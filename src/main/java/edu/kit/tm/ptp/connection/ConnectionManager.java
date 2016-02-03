@@ -48,7 +48,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
   protected Map<Identifier, MessageChannel> identifierMap = new HashMap<>();
   protected Map<MessageChannel, Identifier> channelMap = new HashMap<>();
 
-  protected Map<MessageChannel, ChannelContext> channelContexts = new HashMap<>();
+  protected Map<MessageChannel, Context> channelContexts = new HashMap<>();
 
   protected Map<Identifier, Long> lastTry = new HashMap<>();
 
@@ -254,7 +254,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
 
   private void processNewConnections() {
     MessageChannel channel;
-    ChannelContext context;
+    Context context;
 
     while ((channel = newConnections.poll()) != null) {
       context = channelContexts.get(channel);
@@ -263,7 +263,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
       if (context == null) {
         // if it's an incoming connection there is no context object
         // create one
-        context = new ChannelContext(this);
+        context = new Context(this);
         channelContexts.put(channel, context);
       }
 
@@ -287,7 +287,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
     MessageChannel channel;
     MessageAttempt attempt;
     Queue<MessageAttempt> tmpQueue = new LinkedList<MessageAttempt>();
-    ChannelContext context;
+    Context context;
 
     while ((attempt = messageQueue.poll()) != null) {
       identifier = attempt.getDestination();
@@ -309,7 +309,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
       context = channelContexts.get(channel);
 
       if (context == null) {
-        context = new ChannelContext(this);
+        context = new Context(this);
       }
 
       if (!context.sendMessage(attempt)) {
@@ -328,7 +328,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
 
   private void processClosedConnections() {
     MessageChannel channel;
-    ChannelContext context;
+    Context context;
 
     while ((channel = closedConnections.poll()) != null) {
       context = channelContexts.get(channel);
@@ -403,7 +403,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
     ChannelIdentifier channelIdentifier;
     MessageChannel channel;
     Identifier identifier;
-    ChannelContext context;
+    Context context;
 
     while ((channelIdentifier = authQueue.poll()) != null) {
       channel = channelIdentifier.channel;

@@ -13,10 +13,10 @@ import java.util.logging.Level;
  * @author Timon Hackenjos
  *
  */
-public abstract class ChannelState {
-  protected ChannelContext context;
+public abstract class AbstractState {
+  protected Context context;
 
-  public ChannelState(ChannelContext context) {
+  public AbstractState(Context context) {
     this.context = context;
   }
 

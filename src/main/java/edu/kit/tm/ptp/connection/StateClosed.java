@@ -7,8 +7,8 @@ package edu.kit.tm.ptp.connection;
  *
  */
 
-public class Closed extends ChannelState {
-  public Closed(ChannelContext context) {
+public class StateClosed extends AbstractState {
+  public StateClosed(Context context) {
     super(context);
   }
 

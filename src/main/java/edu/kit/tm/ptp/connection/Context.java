@@ -11,14 +11,14 @@ import edu.kit.tm.ptp.channels.MessageChannel;
  *
  */
 
-public class ChannelContext {
-  private ChannelState state;
-  private ChannelState concreteInit;
-  private ChannelState concreteConnect;
-  private ChannelState concreteConnectSOCKS;
-  private ChannelState concreteConnected;
-  private ChannelState concreteAuthenticated;
-  private ChannelState concreteClosed;
+public class Context {
+  private AbstractState state;
+  private AbstractState concreteInit;
+  private AbstractState concreteConnect;
+  private AbstractState concreteConnectSOCKS;
+  private AbstractState concreteConnected;
+  private AbstractState concreteAuthenticated;
+  private AbstractState concreteClosed;
   private ConnectionManager manager;
   
   /**
@@ -26,20 +26,20 @@ public class ChannelContext {
    * 
    * @param manager The ConnectionManager to use.
    */
-  public ChannelContext(ConnectionManager manager) {
+  public Context(ConnectionManager manager) {
     this.manager = manager;
     
-    concreteInit = new Init(this);
-    concreteConnect = new Connect(this);
-    concreteConnectSOCKS = new ConnectSOCKS(this);
-    concreteConnected = new Connected(this);
-    concreteAuthenticated = new Authenticated(this);
-    concreteClosed = new Closed(this);
+    concreteInit = new StateInit(this);
+    concreteConnect = new StateConnect(this);
+    concreteConnectSOCKS = new StateConnectSOCKS(this);
+    concreteConnected = new StateConnected(this);
+    concreteAuthenticated = new StateAuthenticated(this);
+    concreteClosed = new StateClosed(this);
     
     state = concreteInit;
   }
   
-  public void setState(ChannelState state) {
+  public void setState(AbstractState state) {
     this.state = state;
   }
   
@@ -63,27 +63,27 @@ public class ChannelContext {
     return manager;
   }
   
-  public ChannelState getConcreteInit() {
+  public AbstractState getConcreteInit() {
     return concreteInit;
   }
 
-  public ChannelState getConcreteConnect() {
+  public AbstractState getConcreteConnect() {
     return concreteConnect;
   }
 
-  public ChannelState getConcreteConnectSOCKS() {
+  public AbstractState getConcreteConnectSOCKS() {
     return concreteConnectSOCKS;
   }
 
-  public ChannelState getConcreteConnected() {
+  public AbstractState getConcreteConnected() {
     return concreteConnected;
   }
 
-  public ChannelState getConcreteAuthenticated() {
+  public AbstractState getConcreteAuthenticated() {
     return concreteAuthenticated;
   }
 
-  public ChannelState getConcreteClosed() {
+  public AbstractState getConcreteClosed() {
     return concreteClosed;
   }
 }

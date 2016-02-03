@@ -16,8 +16,8 @@ import java.util.logging.Level;
  * @author Timon Hackenjos
  *
  */
-public class Connect extends ChannelState {
-  public Connect(ChannelContext context) {
+public class StateConnect extends AbstractState {
+  public StateConnect(Context context) {
     super(context);
   }
 

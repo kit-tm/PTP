@@ -20,8 +20,8 @@ import java.util.logging.Level;
  *
  */
 
-public class Init extends ChannelState {
-  public Init(ChannelContext context) {
+public class StateInit extends AbstractState {
+  public StateInit(Context context) {
     super(context);
   }
 

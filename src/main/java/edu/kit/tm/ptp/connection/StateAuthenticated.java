@@ -13,8 +13,8 @@ import java.util.logging.Level;
  *
  */
 
-public class Authenticated extends Connected {
-  public Authenticated(ChannelContext context) {
+public class StateAuthenticated extends StateConnected {
+  public StateAuthenticated(Context context) {
     super(context);
   }
   

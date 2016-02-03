@@ -18,8 +18,8 @@ import java.util.logging.Level;
  *
  */
 
-public class ConnectSOCKS extends ChannelState {
-  public ConnectSOCKS(ChannelContext context) {
+public class StateConnectSOCKS extends AbstractState {
+  public StateConnectSOCKS(Context context) {
     super(context);
   }
 
