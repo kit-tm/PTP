@@ -20,15 +20,28 @@ public abstract class AbstractState {
     this.context = context;
   }
 
+  /**
+   * Gets called when an incoming or an outgoing connection has been opened.
+   * 
+   * @param channel The connection.
+   */
   public void open(MessageChannel channel) {
     throw new IllegalStateException();
   }
 
+  /**
+   * Gets called when a connection has been authenticated.
+   * 
+   * @param channel The connection.
+   * @param identifier The Identifier supplied by the remote end.
+   */
   public void authenticate(MessageChannel channel, Identifier identifier) {
     throw new IllegalStateException();
   }
 
   /**
+   * Try to send the message.
+   * Opens a new connection to the destination if necessary.
    * Return true if the message has been added to a channel.
    */
   public boolean sendMessage(MessageAttempt attempt) {
