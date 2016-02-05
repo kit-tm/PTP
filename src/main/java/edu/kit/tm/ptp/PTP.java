@@ -108,9 +108,8 @@ public class PTP implements ReceiveListener {
   }
 
   /**
-   * Initializes the PTP object. 
-   * Reads the configuration file and starts Tor if PTP manages the Tor process.
-   * Sets up necessary managers.
+   * Initializes the PTP object. Reads the configuration file and starts Tor if PTP manages the Tor
+   * process. Sets up necessary managers.
    * 
    * @throws IOException If starting Tor or starting another service fails.
    */
@@ -297,7 +296,8 @@ public class PTP implements ReceiveListener {
   }
 
   /**
-   * Delete the currently used hidden service directory.
+   * Delete the currently used hidden service directory. Should only be called after {@link #init()
+   * init} and {@link #exit() exit} have been called in that order.
    */
   public void deleteHiddenService() {
     if (!initialized) {
