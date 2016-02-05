@@ -112,9 +112,13 @@ public class ChannelManager implements Runnable {
             try {
               // unregister channel
               key.interestOps(0);
-              channel.getChannel().finishConnect();
-
-              listener.channelOpened(channel);
+              
+              if (channel.getChannel().finishConnect()) {
+                listener.channelOpened(channel);
+              } else {
+                key.cancel();
+                listener.channelClosed(channel);
+              }
             } catch (IOException ioe) {
               logger.log(Level.WARNING,
                   "Caught exception while handling connectable channel: " + ioe.getMessage());

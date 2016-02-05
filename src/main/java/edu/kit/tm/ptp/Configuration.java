@@ -33,10 +33,6 @@ public class Configuration {
   private byte[] authenticationBytes;
   /** The timeout (in milliseconds) for the Tor bootstrapping. */
   private int bootstrapTimeout;
-  /** The timeout (in milliseconds) for a socket connection to a hidden service identifier. */
-  private int socketTimeout;
-  /** The interval (in milliseconds) at which the open sockets are polled for incoming data. */
-  private int receivePoll;
   /** The TTL (in milliseconds) for a socket connection to a hidden service identifier. */
   private int socketTtl;
   /** The interval (in milliseconds) at each the TTL of all sockets is checked. */
@@ -89,14 +85,6 @@ public class Configuration {
 
     sb.append("\tTor control port number = ");
     sb.append(torControlPort);
-    sb.append("\n");
-
-    sb.append("\tsocket connection timeout = ");
-    sb.append(socketTimeout);
-    sb.append("\n");
-
-    sb.append("\tsocket receive poll = ");
-    sb.append(receivePoll);
     sb.append("\n");
 
     sb.append("\tsocket connection TTL = ");
@@ -157,12 +145,6 @@ public class Configuration {
   public void setAuthenticationBytes(byte[] authenticationBytes) {
     this.authenticationBytes = authenticationBytes;
   }
-
-
-  public void setSocketTimeout(int socketTimeout) {
-    this.socketTimeout = socketTimeout;
-  }
-
 
   public void setWorkingDirectory(String workingDirectory) {
     this.workingDirectory = workingDirectory;
@@ -273,25 +255,6 @@ public class Configuration {
    */
   public int getTorSOCKSProxyPort() {
     return torSocksProxyPort;
-  }
-
-  /**
-   * Returns the socket connection timeout (in milliseconds) when connecting to a hidden service
-   * identifier.
-   *
-   * @return The socket connection timeout.
-   */
-  public int getSocketTimeout() {
-    return socketTimeout;
-  }
-
-  /**
-   * Returns the interval (in milliseconds) at which open sockets are polled for incoming data.
-   *
-   * @return The socket read poll interval.
-   */
-  public int getSocketReceivePoll() {
-    return receivePoll;
   }
 
   /**

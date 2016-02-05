@@ -45,8 +45,6 @@ public class ConfigurationTest {
   private int torBootstrapTimeout = -1;
   private int torControlPort = -1;
   private int torSocksProxyPort = -1;
-  private int socketTimeout = -1;
-  private int socketReceivePoll = -1;
   private int socketTtl = -1;
   private int ttlPoll;
 
@@ -75,8 +73,6 @@ public class ConfigurationTest {
     torSocksProxyPort = random.nextInt();
     hiddenServicePort = random.nextInt();
     torBootstrapTimeout = random.nextInt();
-    socketTimeout = random.nextInt();
-    socketReceivePoll = random.nextInt();
     socketTtl = random.nextInt();
     ttlPoll = random.nextInt();
 
@@ -84,8 +80,6 @@ public class ConfigurationTest {
     FileWriter writer = new FileWriter(file);
 
     System.out.println(ConfigurationFileReader.HiddenServicePort + " " + hiddenServicePort);
-    System.out
-        .println(ConfigurationFileReader.SocketConnectTimeout + " " + socketTimeout + newline);
     System.out.println(ConfigurationFileReader.SocketTTL + " " + socketTtl + newline);
     System.out.println(ConfigurationFileReader.SocketTTLPoll + " " + ttlPoll + newline);
 
@@ -93,8 +87,6 @@ public class ConfigurationTest {
     output.write(ConfigurationFileReader.DefaultIdentifier + " " + defaultIdentifier + newline);
     output.write(ConfigurationFileReader.HiddenServicePort + " " + hiddenServicePort + newline);
     output.write(ConfigurationFileReader.TorBootstrapTimeout + " " + torBootstrapTimeout + newline);
-    output.write(ConfigurationFileReader.SocketConnectTimeout + " " + socketTimeout + newline);
-    output.write(ConfigurationFileReader.SocketReceivePoll + " " + socketReceivePoll + newline);
     output.write(ConfigurationFileReader.SocketTTL + " " + socketTtl + newline);
     output.write(ConfigurationFileReader.SocketTTLPoll + " " + ttlPoll + newline);
 
@@ -222,21 +214,6 @@ public class ConfigurationTest {
     if (torSocksProxyPort != configuration.getTorSOCKSProxyPort()) {
       fail("Tor SOCKS proxy port property does not match: " + torSocksProxyPort + " != "
           + configuration.getTorSOCKSProxyPort());
-    }
-  }
-
-  /**
-   * Test method for {@link edu.kit.tm.ptp.Configuration#getSocketTimeout()}.
-   *
-   * <p>
-   * Checks whether the configuration read the socket timeout property correctly. Fails iff the read
-   * property is not equal to the written property.
-   */
-  @Test
-  public void testGetSocketTimeout() {
-    if (socketTimeout != configuration.getSocketTimeout()) {
-      fail("Socket timeout property does not match: " + socketTimeout + " != "
-          + configuration.getSocketTimeout());
     }
   }
 

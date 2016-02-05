@@ -29,8 +29,6 @@ public class ConfigurationFileReader {
   // TODO: eventually support authentication types
   // public static final String AuthenticationType = "AuthenticationType";
   public static final String TorBootstrapTimeout = "TorBootstrapTimeout";
-  public static final String SocketConnectTimeout = "SocketConnectTimeout";
-  public static final String SocketReceivePoll = "SocketReceivePoll";
   public static final String SocketTTL = "SocketTTL";
   public static final String SocketTTLPoll = "TTLPoll";
   public static final String LoggerConfigFile = "LoggerConfigFile";
@@ -111,8 +109,6 @@ public class ConfigurationFileReader {
     check(properties, DefaultIdentifier);
     check(properties, HiddenServicePort);
     check(properties, TorBootstrapTimeout);
-    check(properties, SocketConnectTimeout);
-    check(properties, SocketReceivePoll);
     check(properties, SocketTTL);
     check(properties, SocketTTLPoll);
 
@@ -132,14 +128,6 @@ public class ConfigurationFileReader {
     int bootstrapTimeout = parse(properties, TorBootstrapTimeout);
     config.setBootstrapTimeout(bootstrapTimeout);
     logger.info("Read " + TorBootstrapTimeout + " = " + bootstrapTimeout);
-
-    int socketTimeout = parse(properties, SocketConnectTimeout);
-    config.setSocketTimeout(socketTimeout);
-    logger.info("Read " + SocketConnectTimeout + " = " + socketTimeout);
-
-    int receivePoll = parse(properties, SocketReceivePoll);
-    config.getSocketReceivePoll();
-    logger.info("Read " + SocketReceivePoll + " = " + receivePoll);
 
     int socketTtl = parse(properties, SocketTTL);
     config.setSocketTtl(socketTtl);
