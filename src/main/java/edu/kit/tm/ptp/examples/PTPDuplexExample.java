@@ -102,13 +102,13 @@ public class PTPDuplexExample {
    * @param args Program parameters, ignored.
    */
   public static void main(String[] args) {
-    PTP client1 = null;
-    PTP client2 = null;
+    PTP client1 = new PTP();
+    PTP client2 = new PTP();
 
     try {
       // Create API wrapper objects.
-      client1 = new PTP();
-      client2 = new PTP();
+      client1.init();
+      client2.init();
 
       client1.createHiddenService();
 
@@ -122,7 +122,7 @@ public class PTPDuplexExample {
       final AtomicBoolean connected = new AtomicBoolean(false);
       final long timeout = 120 * 1000;
       final String m = "Hello.";
-      
+
       client2.setSendListener(new SendListener() {
         @Override
         public void messageSent(long id, Identifier destination, State state) {
@@ -195,12 +195,8 @@ public class PTPDuplexExample {
 
     // Done, exit.
     System.out.println("Exiting clients.");
-    if (client1 != null) {
-      client1.exit();
-    }
-    if (client2 != null) {
-      client2.exit();
-    }
+    client1.exit();
+    client2.exit();
   }
 
 }

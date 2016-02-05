@@ -24,12 +24,12 @@ public class PTPSendExample {
    * @param args Not used.
    */
   public static void main(String[] args) {
-    PTP client = null;
+    PTP client = new PTP();
 
     try {
       // Create an API wrapper object.
       System.out.println("Initializing API.");
-      client = new PTP();
+      client.init();
 
       // Setup Identifier
       client.createHiddenService();
@@ -103,9 +103,7 @@ public class PTPSendExample {
 
     // Done, exit.
     System.out.println("Exiting client.");
-    if (client != null) {
-      client.exit();
-    }
+    client.exit();
   }
 
 }

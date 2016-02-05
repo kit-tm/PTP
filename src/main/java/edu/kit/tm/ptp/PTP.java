@@ -22,90 +22,48 @@ import java.util.logging.Logger;
  */
 public class PTP implements ReceiveListener {
   /** The logger for this class. */
-  private final Logger logger;
+  private Logger logger;
   /** The configuration of the client. */
-  private final Configuration config;
+  private Configuration config;
+  private final ConfigurationFileReader configReader;
   /** The Tor process manager. */
-  private final TorManager tor;
+  private TorManager tor;
   /** The manager that closes sockets when their TTL expires. */
-  private final TTLManager ttlManager;
+  private TTLManager ttlManager;
   /** A dummy sending listener to use when no listener is specified upon message sending. */
   private ReceiveListener receiveListener = new ReceiveListenerAdapter();
 
-  private final HiddenServiceManager hiddenServiceManager;
-  private final ConnectionManager connectionManager;
+  private HiddenServiceManager hiddenServiceManager;
+  private ConnectionManager connectionManager;
   private int hiddenServicePort;
   private final Serializer serializer = new Serializer();
-  private ListenerContainer listeners = new ListenerContainer();
+  private final ListenerContainer listeners = new ListenerContainer();
+  private boolean initialized = false;
+  private String hiddenServiceDirectory;
+  private String workingDirectory;
+  private int controlPort;
+  private int socksPort;
+  private final boolean usePTPTor;
 
   /**
    * Constructs a new PTP object. Manages a own Tor process.
    *
    * @throws IOException If an error occurs.
    */
-  public PTP() throws IOException {
+  public PTP() {
     this(null);
   }
 
   /**
-   * Constructs a new PTP object using the supplied hidden service directory name. Manages a own Tor
-   * process.
+   * Constructs a new PTP object using the supplied hidden service directory name. Manages an own
+   * Tor process.
    *
    * @param directory The name of the hidden service directory.
    * @throws IOException If an error occurs.
    */
-  public PTP(String directory) throws IOException {
-    addShutdownHook();
-    // Read the configuration.
-    config = new Configuration(Constants.configfile);
-    // Create the logger after the configuration sets the logger properties file.
-    logger = Logger.getLogger(PTP.class.getName());
-
-    // Create the Tor process manager and start the Tor process.
-    tor = new TorManager();
-    // Start the Tor process.
-    tor.start();
-
-    // Wait until the Tor bootstrapping is complete.
-    final long start = System.currentTimeMillis();
-    final long timeout = config.getTorBootstrapTimeout();
-
-    logger.log(Level.INFO, "Waiting for Tors bootstrapping to finish.");
-    while (!tor.ready() && tor.running() && System.currentTimeMillis() - start < timeout) {
-      try {
-        Thread.sleep(250);
-      } catch (InterruptedException e) {
-        // Waiting was interrupted. Do nothing.
-      }
-    }
-
-    // Check if Tor is not running.
-    if (!tor.running()) {
-      throw new IOException("Starting Tor failed!");
-    }
-
-    // Check if we reached the timeout without a finished boostrapping.
-    if (!tor.ready()) {
-      tor.killtor();
-      throw new IOException("Tor bootstrapping timeout expired!");
-    }
-
-    // Set the control ports.
-    config.setTorConfiguration(tor.directory(), tor.controlport(), tor.socksport());
-
-    connectionManager = new ConnectionManager(Constants.localhost, config.getTorSOCKSProxyPort(),
-        config.getHiddenServicePort());
-    connectionManager.setSerializer(serializer);
-    connectionManager.setSendListener(new SendListenerAdapter());
-    connectionManager.setReceiveListener(this);
-    connectionManager.start();
-    hiddenServicePort = connectionManager.startBindServer(Constants.anyport);
-
-    hiddenServiceManager = new HiddenServiceManager(config, directory, hiddenServicePort);
-
-    // Create and start the manager with the given TTL.
-    ttlManager = new TTLManager(getTTLManagerListener(), config.getTTLPoll());
-    ttlManager.start();
+  public PTP(String directory) {
+    this(directory, true);
+    hiddenServicePort = Constants.anyport;
   }
 
   /**
@@ -116,7 +74,7 @@ public class PTP implements ReceiveListener {
    * @param socksPort The SOCKS port of the Tor process.
    * @throws IOException If an error occurs.
    */
-  public PTP(String workingDirectory, int controlPort, int socksPort) throws IOException {
+  public PTP(String workingDirectory, int controlPort, int socksPort) {
     this(workingDirectory, controlPort, socksPort, Constants.anyport, null);
   }
 
@@ -132,32 +90,89 @@ public class PTP implements ReceiveListener {
    *
    */
   public PTP(String workingDirectory, int controlPort, int socksPort, int localPort,
-      String directory) throws IOException {
+      String directory) {
+    this(directory, false);
+
+    hiddenServicePort = localPort;
+
+    this.workingDirectory = workingDirectory;
+    this.controlPort = controlPort;
+    this.socksPort = socksPort;
+  }
+
+  private PTP(String directory, boolean usePTPTor) {
+    configReader = new ConfigurationFileReader(Constants.configfile);
+
+    this.hiddenServiceDirectory = directory;
+    this.usePTPTor = usePTPTor;
+  }
+
+  /**
+   * Initializes the PTP object. 
+   * Reads the configuration file and starts Tor if PTP manages the Tor process.
+   * Sets up necessary managers.
+   * 
+   * @throws IOException If starting Tor or starting another service fails.
+   */
+  public void init() throws IOException {
     addShutdownHook();
-    // Read the configuration.
-    config = new Configuration(workingDirectory + "/" + Constants.configfile);
+
+    // read the configuration file
+    config = configReader.readFromFile();
+
     // Create the logger after the configuration sets the logger properties file.
     logger = Logger.getLogger(PTP.class.getName());
 
-    // We will use an already running Tor instance, instead of managing one.
-    tor = null;
+    if (usePTPTor) {
+      tor = new TorManager();
+      // Start the Tor process.
+      tor.start();
 
-    // Set the control ports.
-    config.setTorConfiguration(workingDirectory, controlPort, socksPort);
+      // Wait until the Tor bootstrapping is complete.
+      final long start = System.currentTimeMillis();
+      final long timeout = config.getTorBootstrapTimeout();
+
+      logger.log(Level.INFO, "Waiting for Tors bootstrapping to finish.");
+      while (!tor.ready() && tor.running() && System.currentTimeMillis() - start < timeout) {
+        try {
+          Thread.sleep(250);
+        } catch (InterruptedException e) {
+          // Waiting was interrupted. Do nothing.
+        }
+      }
+
+      // Check if Tor is not running.
+      if (!tor.running()) {
+        throw new IOException("Starting Tor failed!");
+      }
+
+      // Check if we reached the timeout without a finished boostrapping.
+      if (!tor.ready()) {
+        tor.killtor();
+        throw new IOException("Tor bootstrapping timeout expired!");
+      }
+
+      config.setTorConfiguration(tor.directory(), tor.controlport(), tor.socksport());
+    } else {
+      config.setTorConfiguration(workingDirectory, controlPort, socksPort);
+    }
 
     connectionManager = new ConnectionManager(Constants.localhost, config.getTorSOCKSProxyPort(),
         config.getHiddenServicePort());
     connectionManager.setSerializer(serializer);
     connectionManager.setSendListener(new SendListenerAdapter());
     connectionManager.setReceiveListener(this);
+
     connectionManager.start();
-    hiddenServicePort = connectionManager.startBindServer(localPort);
+    hiddenServicePort = connectionManager.startBindServer(hiddenServicePort);
+    hiddenServiceManager =
+        new HiddenServiceManager(config, hiddenServiceDirectory, hiddenServicePort);
 
-    hiddenServiceManager = new HiddenServiceManager(config, directory, hiddenServicePort);
-
-    // Create and start the manager with the given TTL.
+    // Create the manager with the given TTL.
     ttlManager = new TTLManager(getTTLManagerListener(), config.getTTLPoll());
+    // Start the manager with the given TTL.
     ttlManager.start();
+    initialized = true;
   }
 
   /**
@@ -178,6 +193,10 @@ public class PTP implements ReceiveListener {
    * Reuses a hidden service or creates a new one if no hidden service to reuse exists.
    */
   public void reuseHiddenService() throws IOException {
+    if (!initialized) {
+      throw new IllegalStateException();
+    }
+
     hiddenServiceManager.reuseHiddenService();
     connectionManager.setLocalIdentifier(getIdentifier());
   }
@@ -186,6 +205,10 @@ public class PTP implements ReceiveListener {
    * Creates a fresh hidden service.
    */
   public void createHiddenService() throws IOException {
+    if (!initialized) {
+      throw new IllegalStateException();
+    }
+
     // Create a fresh hidden service identifier.
     hiddenServiceManager.createHiddenService();
     connectionManager.setLocalIdentifier(getIdentifier());
@@ -238,6 +261,10 @@ public class PTP implements ReceiveListener {
    * @see registerMessage
    */
   public long sendMessage(Object message, Identifier destination, long timeout) {
+    if (!initialized) {
+      throw new IllegalStateException();
+    }
+
     byte[] data = serializer.serialize(message);
     return connectionManager.send(data, destination, timeout);
   }
@@ -273,6 +300,10 @@ public class PTP implements ReceiveListener {
    * Delete the currently used hidden service directory.
    */
   public void deleteHiddenService() {
+    if (!initialized) {
+      throw new IllegalStateException();
+    }
+
     try {
       hiddenServiceManager.deleteHiddenService();
     } catch (IOException ioe) {
@@ -283,9 +314,13 @@ public class PTP implements ReceiveListener {
 
   /**
    * Closes the local hidden service and any open connections. Stops the socket TTL manager and the
-   * Tor process manager.
+   * Tor process manager. Does nothing if exit has already been called before.
    */
   public void exit() {
+    if (!initialized) {
+      return;
+    }
+
     if (connectionManager != null) {
       connectionManager.stop();
     }
@@ -303,7 +338,7 @@ public class PTP implements ReceiveListener {
       hiddenServiceManager.close();
     }
   }
-  
+
   @Override
   public void messageReceived(byte[] data, Identifier source) {
     Object obj;
@@ -331,7 +366,7 @@ public class PTP implements ReceiveListener {
       /**
        * Set the listener to disconnect connections with expired TTL.
        *
-       * @param identifier The identifier with the expired socket connection.
+       * @param identifier The identifier with:00 the expired socket connection.
        *
        * @see TTLManager.Listener
        */
@@ -346,8 +381,10 @@ public class PTP implements ReceiveListener {
   private void addShutdownHook() {
     Runtime.getRuntime().addShutdownHook(new Thread() {
       public void run() {
-        logger.log(Level.INFO, "Shutdown hook called");
-        exit();
+        if (initialized) {
+          logger.log(Level.INFO, "Shutdown hook called");
+          exit();
+        }
       }
     });
   }

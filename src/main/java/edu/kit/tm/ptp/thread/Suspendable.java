@@ -1,5 +1,6 @@
 package edu.kit.tm.ptp.thread;
 
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -35,7 +36,7 @@ public abstract class Suspendable implements Runnable {
   /**
    * Start the suspendable, executing the run method on the thread.
    */
-  public void start() {
+  public void start() throws IOException {
     condition.set(true);
     logger.log(Level.INFO, "Starting suspendable thread.");
     // Execute the run method of the deriving class.

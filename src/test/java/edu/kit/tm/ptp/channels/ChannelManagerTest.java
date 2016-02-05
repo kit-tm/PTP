@@ -29,7 +29,7 @@ public class ChannelManagerTest {
   private ServerSocketChannel server = null;
   private ChannelManager channelManager;
   private Listener listener;
-  private PTP ptp = null;
+  private PTP ptp;
 
   @Before
   public void setUp() throws IOException {
@@ -40,6 +40,8 @@ public class ChannelManagerTest {
 
     listener = new Listener();
     channelManager = new ChannelManager(listener);
+    
+    ptp = new PTP();
   }
 
   @After
@@ -112,7 +114,7 @@ public class ChannelManagerTest {
   public void testConnectThroughSOCKS() throws IOException {
     channelManager.start();
 
-    ptp = new PTP();
+    ptp.init();
     ptp.createHiddenService();
 
     // wait for hidden service to become available

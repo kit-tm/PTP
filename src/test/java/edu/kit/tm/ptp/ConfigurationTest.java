@@ -66,7 +66,7 @@ public class ConfigurationTest {
     hiddenServiceDirectory = Paths.get("").toString() + File.separator + Constants.hiddenservicedir;
     // Set the authentication bytes.
     authenticationBytes = new byte[] {};
-    
+
     // Create the RNG.
     Random random = new Random();
 
@@ -83,25 +83,27 @@ public class ConfigurationTest {
     // Write the properties to the input file.
     FileWriter writer = new FileWriter(file);
 
-    System.out.println(Configuration.HiddenServicePort + " " + hiddenServicePort);
-    System.out.println(Configuration.SocketConnectTimeout + " " + socketTimeout + newline);
-    System.out.println(Configuration.SocketTTL + " " + socketTtl + newline);
-    System.out.println(Configuration.SocketTTLPoll + " " + ttlPoll + newline);
+    System.out.println(ConfigurationFileReader.HiddenServicePort + " " + hiddenServicePort);
+    System.out
+        .println(ConfigurationFileReader.SocketConnectTimeout + " " + socketTimeout + newline);
+    System.out.println(ConfigurationFileReader.SocketTTL + " " + socketTtl + newline);
+    System.out.println(ConfigurationFileReader.SocketTTLPoll + " " + ttlPoll + newline);
 
     BufferedWriter output = new BufferedWriter(writer);
-    output.write(Configuration.DefaultIdentifier + " " + defaultIdentifier + newline);
-    output.write(Configuration.HiddenServicePort + " " + hiddenServicePort + newline);
-    output.write(Configuration.TorBootstrapTimeout + " " + torBootstrapTimeout + newline);
-    output.write(Configuration.SocketConnectTimeout + " " + socketTimeout + newline);
-    output.write(Configuration.SocketReceivePoll + " " + socketReceivePoll + newline);
-    output.write(Configuration.SocketTTL + " " + socketTtl + newline);
-    output.write(Configuration.SocketTTLPoll + " " + ttlPoll + newline);
+    output.write(ConfigurationFileReader.DefaultIdentifier + " " + defaultIdentifier + newline);
+    output.write(ConfigurationFileReader.HiddenServicePort + " " + hiddenServicePort + newline);
+    output.write(ConfigurationFileReader.TorBootstrapTimeout + " " + torBootstrapTimeout + newline);
+    output.write(ConfigurationFileReader.SocketConnectTimeout + " " + socketTimeout + newline);
+    output.write(ConfigurationFileReader.SocketReceivePoll + " " + socketReceivePoll + newline);
+    output.write(ConfigurationFileReader.SocketTTL + " " + socketTtl + newline);
+    output.write(ConfigurationFileReader.SocketTTLPoll + " " + ttlPoll + newline);
 
     output.flush();
     output.close();
 
+    ConfigurationFileReader reader = new ConfigurationFileReader(file.getCanonicalPath());
     // Create the configuration.
-    configuration = new Configuration(file.getCanonicalPath());
+    configuration = reader.readFromFile();
     configuration.setTorConfiguration(Paths.get("").toString(), torControlPort, torSocksProxyPort);
   }
 
@@ -119,8 +121,9 @@ public class ConfigurationTest {
   /**
    * Test method for {@link edu.kit.tm.ptp.Configuration#getDefaultIdentifier()}.
    *
-   * <p>Checks whether the configuration read the hidden service directory property correctly.
-   * Fails iff the read property is not equal to the written property.
+   * <p>
+   * Checks whether the configuration read the hidden service directory property correctly. Fails
+   * iff the read property is not equal to the written property.
    */
   @Test
   public void testGetDefaultIdentifier() {
@@ -134,8 +137,9 @@ public class ConfigurationTest {
   /**
    * Test method for {@link edu.kit.tm.ptp.Configuration#getHiddenServiceDirectory()}.
    *
-   * <p>Checks whether the configuration read the hidden service directory property correctly.
-   * Fails if the read property is not equal to the written property.
+   * <p>
+   * Checks whether the configuration read the hidden service directory property correctly. Fails if
+   * the read property is not equal to the written property.
    */
   @Test
   public void testGetHiddenServiceDirectory() {
@@ -149,8 +153,9 @@ public class ConfigurationTest {
   /**
    * Test method for {@link edu.kit.tm.ptp.Configuration#getHiddenServicePort()}.
    *
-   * <p>Checks whether the configuration read the hidden service port number property correctly.
-   * Fails if the read property is not equal to the written property.
+   * <p>
+   * Checks whether the configuration read the hidden service port number property correctly. Fails
+   * if the read property is not equal to the written property.
    */
   @Test
   public void testGetHiddenServicePort() {
@@ -163,8 +168,9 @@ public class ConfigurationTest {
   /**
    * Test method for {@link edu.kit.tm.ptp.Configuration#getTorBootstrapTimeout()}.
    *
-   * <p>Checks whether the configuration read the Tor bootstrap timeout property correctly.
-   * Fails if the read property is not equal to the written property.
+   * <p>
+   * Checks whether the configuration read the Tor bootstrap timeout property correctly. Fails if
+   * the read property is not equal to the written property.
    */
   @Test
   public void testGetTorBootstrapTimeout() {
@@ -177,8 +183,9 @@ public class ConfigurationTest {
   /**
    * Test method for {@link edu.kit.tm.ptp.Configuration#getAuthenticationBytes()}.
    *
-   * <p>Checks whether the configuration read the authentication bytes property correctly.
-   * Fails if the read property is not equal to the written property.
+   * <p>
+   * Checks whether the configuration read the authentication bytes property correctly. Fails if the
+   * read property is not equal to the written property.
    */
   @Test
   public void testGetAuthenticationBytes() {
@@ -191,8 +198,9 @@ public class ConfigurationTest {
   /**
    * Test method for {@link edu.kit.tm.ptp.Configuration#getTorControlPort()}.
    *
-   * <p>Checks whether the configuration read the Tor control port number property correctly.
-   * Fails if the read property is not equal to the written property.
+   * <p>
+   * Checks whether the configuration read the Tor control port number property correctly. Fails if
+   * the read property is not equal to the written property.
    */
   @Test
   public void testGetTorControlPort() {
@@ -205,8 +213,9 @@ public class ConfigurationTest {
   /**
    * Test method for {@link edu.kit.tm.ptp.Configuration#getTorSOCKSProxyPort()}.
    *
-   * <p>Checks whether the configuration read the SOCKS proxy port number property correctly.
-   * Fails iff the read property is not equal to the written property.
+   * <p>
+   * Checks whether the configuration read the SOCKS proxy port number property correctly. Fails iff
+   * the read property is not equal to the written property.
    */
   @Test
   public void testGetTorSOCKSProxyPort() {
@@ -219,8 +228,9 @@ public class ConfigurationTest {
   /**
    * Test method for {@link edu.kit.tm.ptp.Configuration#getSocketTimeout()}.
    *
-   * <p>Checks whether the configuration read the socket timeout property correctly.
-   * Fails iff the read property is not equal to the written property.
+   * <p>
+   * Checks whether the configuration read the socket timeout property correctly. Fails iff the read
+   * property is not equal to the written property.
    */
   @Test
   public void testGetSocketTimeout() {
@@ -233,8 +243,9 @@ public class ConfigurationTest {
   /**
    * Test method for {@link edu.kit.tm.ptp.Configuration#getSocketTTL()}.
    *
-   * <p>Checks whether the configuration read the socket TTL property correctly.
-   * Fails iff the read property is not equal to the written property.
+   * <p>
+   * Checks whether the configuration read the socket TTL property correctly. Fails iff the read
+   * property is not equal to the written property.
    */
   @Test
   public void testGetSocketTTL() {
@@ -247,8 +258,9 @@ public class ConfigurationTest {
   /**
    * Test method for {@link edu.kit.tm.ptp.Configuration#getTTLPoll()}.
    *
-   * <p>Checks whether the configuration read the TTL poll property correctly.
-   * Fails iff the read property is not equal to the written property.
+   * <p>
+   * Checks whether the configuration read the TTL poll property correctly. Fails iff the read
+   * property is not equal to the written property.
    */
   @Test
   public void testGetTTLPoll() {

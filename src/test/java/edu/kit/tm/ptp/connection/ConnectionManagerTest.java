@@ -53,13 +53,13 @@ public class ConnectionManagerTest {
 
   @Test
   public void testSend() throws IOException {
-    SendReceiveListener listener = new SendReceiveListener();
     ptp = new PTP();
+    ptp.init();
     ptp.createHiddenService();
 
     Configuration config = ptp.getConfiguration();
-
     Serializer serializer = new Serializer();
+    SendReceiveListener listener = new SendReceiveListener();
 
     ConnectionManager manager = new ConnectionManager(Constants.localhost,
         config.getTorSOCKSProxyPort(), config.getHiddenServicePort());

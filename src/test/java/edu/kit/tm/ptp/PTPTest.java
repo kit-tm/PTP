@@ -74,8 +74,8 @@ public class PTPTest {
     testString = random.string(minMessageLength, maxMessageLength);
 
     // Create the API wrapper objects.
-    // client1 = new PTP();
-    // client2 = new PTP();
+    client1 = new PTP();
+    client2 = new PTP();
   }
 
   /**
@@ -84,13 +84,8 @@ public class PTPTest {
   @After
   public void tearDown() {
     // Clean up the APIs.
-    if (client1 != null) {
-      client1.exit();
-    }
-    
-    if (client2 != null) {
-      client2.exit();
-    }
+    client1.exit();
+    client2.exit();
   }
 
   /**
@@ -98,7 +93,7 @@ public class PTPTest {
    */
   @Test
   public void testGetIdentifier() throws IOException {
-    client1 = new PTP();
+    client1.init();
 
     Identifier id1 = null;
     Identifier id2 = null;
@@ -115,7 +110,7 @@ public class PTPTest {
    */
   @Test
   public void testSendFail() throws IOException {
-    client1 = new PTP();
+    client1.init();
 
     // An atomic boolean used to check whether the sent message was received.
     final AtomicBoolean sendSuccess = new AtomicBoolean();
@@ -186,7 +181,7 @@ public class PTPTest {
    */
   @Test
   public void testSelfSend() throws IOException {
-    client1 = new PTP();
+    client1.init();
     // Make sure there is a hidden service identifier.
 
     client1.reuseHiddenService();
@@ -243,8 +238,8 @@ public class PTPTest {
    */
   @Test
   public void testPingPong() throws IOException {
-    client1 = new PTP();
-    client2 = new PTP();
+    client1.init();
+    client2.init();
     // The maximum number of received messages during the ping-pong.
     final int max = 25;
 
@@ -333,8 +328,8 @@ public class PTPTest {
    */
   @Test
   public void testSendBig() throws IOException {
-    client1 = new PTP();
-    client2 = new PTP();
+    client1.init();
+    client2.init();
 
     // Make sure both instances have hidden service identifiers.
     client1.reuseHiddenService();
@@ -409,9 +404,9 @@ public class PTPTest {
    */
   @Test
   public void testSendClass() throws IOException {
-    client1 = new PTP();
-    client2 = new PTP();
-    
+    client1.init();
+    client2.init();
+
     final AtomicBoolean received = new AtomicBoolean(false);
     final AtomicBoolean messageMatches = new AtomicBoolean(false);
     final AtomicBoolean sourceMatches = new AtomicBoolean(false);
@@ -455,45 +450,45 @@ public class PTPTest {
    */
   @Test
   public void testReuseHiddenService() throws IOException {
-    PTP client;
-    client = new PTP();
+    client1.init();
 
     Identifier identifier1;
     Identifier identifier2;
 
-    client.reuseHiddenService();
-    identifier1 = client.getIdentifier();
-    client.reuseHiddenService();
-    identifier2 = client.getIdentifier();
+    client1.reuseHiddenService();
+    identifier1 = client1.getIdentifier();
+    client1.reuseHiddenService();
+    identifier2 = client1.getIdentifier();
     assertEquals(identifier1, identifier2);
 
-    client.exit();
-    client = new PTP();
+    client1.exit();
+    client1 = new PTP();
+    client1.init();
 
-    client.reuseHiddenService();
-    identifier2 = client.getIdentifier();
+    client1.reuseHiddenService();
+    identifier2 = client1.getIdentifier();
     assertEquals(identifier1, identifier2);
 
-    client.createHiddenService();
-    identifier1 = client.getIdentifier();
-    client.reuseHiddenService();
-    identifier2 = client.getIdentifier();
+    client1.createHiddenService();
+    identifier1 = client1.getIdentifier();
+    client1.reuseHiddenService();
+    identifier2 = client1.getIdentifier();
     assertEquals(identifier1, identifier2);
 
-    client.exit();
-    client = new PTP();
+    client1.exit();
+    client1 = new PTP();
+    client1.init();
 
-    client.createHiddenService();
-    identifier1 = client.getIdentifier();
+    client1.createHiddenService();
+    identifier1 = client1.getIdentifier();
 
-    client.exit();
-    client = new PTP();
+    client1.exit();
+    client1 = new PTP();
+    client1.init();
 
-    client.reuseHiddenService();
-    identifier2 = client.getIdentifier();
+    client1.reuseHiddenService();
+    identifier2 = client1.getIdentifier();
     assertEquals(identifier1, identifier2);
-
-    client.exit();
   }
 
   /**
@@ -501,53 +496,53 @@ public class PTPTest {
    */
   @Test
   public void testCreateHiddenService() throws IOException {
-    PTP client;
-    client = new PTP();
+    client1.init();
 
     Identifier identifier;
     Set<Identifier> pastIdentifiers = new HashSet<Identifier>();
 
-    client.createHiddenService();
-    identifier = client.getIdentifier();
+    client1.createHiddenService();
+    identifier = client1.getIdentifier();
     assertFalse(pastIdentifiers.contains(identifier));
     pastIdentifiers.add(identifier);
 
-    client.createHiddenService();
-    identifier = client.getIdentifier();
+    client1.createHiddenService();
+    identifier = client1.getIdentifier();
     assertFalse(pastIdentifiers.contains(identifier));
     pastIdentifiers.add(identifier);
 
-    client.exit();
-    client = new PTP();
+    client1.exit();
+    client1 = new PTP();
+    client1.init();
 
-    client.createHiddenService();
-    identifier = client.getIdentifier();
+    client1.createHiddenService();
+    identifier = client1.getIdentifier();
     assertFalse(pastIdentifiers.contains(identifier));
 
-    client.reuseHiddenService();
-    identifier = client.getIdentifier();
-    assertFalse(pastIdentifiers.contains(identifier));
-    pastIdentifiers.add(identifier);
-
-    client.createHiddenService();
-    identifier = client.getIdentifier();
-    assertFalse(pastIdentifiers.contains(identifier));
-
-    client.exit();
-    client = new PTP();
-
-    client.reuseHiddenService();
-    identifier = client.getIdentifier();
+    client1.reuseHiddenService();
+    identifier = client1.getIdentifier();
     assertFalse(pastIdentifiers.contains(identifier));
     pastIdentifiers.add(identifier);
 
-    client.exit();
-    client = new PTP();
-
-    client.createHiddenService();
-    identifier = client.getIdentifier();
+    client1.createHiddenService();
+    identifier = client1.getIdentifier();
     assertFalse(pastIdentifiers.contains(identifier));
 
-    client.exit();
+    client1.exit();
+    client1 = new PTP();
+    client1.init();
+
+    client1.reuseHiddenService();
+    identifier = client1.getIdentifier();
+    assertFalse(pastIdentifiers.contains(identifier));
+    pastIdentifiers.add(identifier);
+
+    client1.exit();
+    client1 = new PTP();
+    client1.init();
+
+    client1.createHiddenService();
+    identifier = client1.getIdentifier();
+    assertFalse(pastIdentifiers.contains(identifier));
   }
 }

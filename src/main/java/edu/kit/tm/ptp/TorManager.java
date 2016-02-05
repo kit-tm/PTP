@@ -37,9 +37,9 @@ public class TorManager extends Suspendable {
   /** The Tor working directory path. */
   private final String workingDirectory;
   /** The Tor manager running file. */
-  private final File portsFile;
+  private File portsFile;
   /** The Tor manager lock file. */
-  private final File lockFile;
+  private File lockFile;
   /** The managed Tor process. */
   private Process process = null;
   /** The thread reading the stdout of the Tor process. */
@@ -65,7 +65,7 @@ public class TorManager extends Suspendable {
    *
    * @throws IOException Propagates any IOException thrown by the temporary directory creation.
    */
-  public TorManager() throws IOException {
+  public TorManager() {
     super();
 
     // Read the PTP home directory from the system environment variable/passed property at runtime.
@@ -75,28 +75,6 @@ public class TorManager extends Suspendable {
       ptphome = Constants.ptphomedefault;
     }
     workingDirectory = ptphome;
-
-    // Check if the home directory exists, if not try to create it.
-    File directory = new File(workingDirectory);
-    if (!directory.exists() && !directory.mkdirs()) {
-      // Home directory does not exist and was not created.
-      throw new IOException("Unable to create missing PTP home directory.");
-    }
-
-    // Check if the lock file exists, if not create it.
-    lockFile = new File(workingDirectory + File.separator + Constants.tormanagerlockfile);
-    if (!lockFile.exists() && !lockFile.createNewFile()) {
-      // Lock file does not exist and was not created.
-      throw new IOException("Unable to create missing PTP Tor manager lock file.");
-    }
-
-    // Get a handle on the Tor manager ports file.
-    portsFile = new File(workingDirectory + File.separator + Constants.tormanagerportsfile);
-
-    logger.log(Level.INFO, "Read Tor working directory: " + workingDirectory.toString());
-    logger.log(Level.INFO, "Tor manager lock file is: " + lockFile.getAbsolutePath());
-    logger.log(Level.INFO, "Tor manager ports file is: " + portsFile.getAbsolutePath());
-    logger.log(Level.INFO, "TorManager object created.");
   }
 
   @Override
@@ -195,7 +173,29 @@ public class TorManager extends Suspendable {
 
 
   @Override
-  public void start() {
+  public void start() throws IOException {
+    // Check if the home directory exists, if not try to create it.
+    File directory = new File(workingDirectory);
+    if (!directory.exists() && !directory.mkdirs()) {
+      // Home directory does not exist and was not created.
+      throw new IOException("Unable to create missing PTP home directory.");
+    }
+
+    // Check if the lock file exists, if not create it.
+    lockFile = new File(workingDirectory + File.separator + Constants.tormanagerlockfile);
+    if (!lockFile.exists() && !lockFile.createNewFile()) {
+      // Lock file does not exist and was not created.
+      throw new IOException("Unable to create missing PTP Tor manager lock file.");
+    }
+
+    // Get a handle on the Tor manager ports file.
+    portsFile = new File(workingDirectory + File.separator + Constants.tormanagerportsfile);
+
+    logger.log(Level.INFO, "Read Tor working directory: " + workingDirectory.toString());
+    logger.log(Level.INFO, "Tor manager lock file is: " + lockFile.getAbsolutePath());
+    logger.log(Level.INFO, "Tor manager ports file is: " + portsFile.getAbsolutePath());
+    logger.log(Level.INFO, "TorManager object created.");
+    
     running.set(true);
     condition.set(true);
     logger.log(Level.INFO, "Starting waiter thread.");

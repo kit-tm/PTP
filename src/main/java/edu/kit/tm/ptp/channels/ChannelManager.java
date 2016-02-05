@@ -48,10 +48,17 @@ public class ChannelManager implements Runnable {
   }
 
   /**
-   * Stops a previously started thread.
+   * Stops a previously started thread. Does nothing if the thread has been stopped before.
    */
   public void stop() {
     thread.interrupt();
+    try {
+      // Does nothing if thread isn't running
+      thread.join();
+    } catch (InterruptedException e) {
+      logger.log(Level.WARNING, "Failed to wait for thread to stop: " + e.getMessage());
+    }
+    
     try {
       if (selector != null) {
         selector.close();

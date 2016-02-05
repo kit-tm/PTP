@@ -1,7 +1,6 @@
 package edu.kit.tm.ptp.connection;
 
 import edu.kit.tm.ptp.Identifier;
-import edu.kit.tm.ptp.thread.Suspendable;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -14,10 +13,11 @@ import java.util.logging.Logger;
 /**
  * A manager for the open connections. Will notify a listener of connections with TTL below zero.
  *
+ * @author Timon Hackenjos
  * @author Simeon Andreev
  *
  */
-public class TTLManager extends Suspendable {
+public class TTLManager implements Runnable  {
 
 
   /**
@@ -33,7 +33,6 @@ public class TTLManager extends Suspendable {
 
   }
 
-
   /** The logger for this class. */
   private final Logger logger = Logger.getLogger(TTLManager.class.getName());
   /** The client whos connections should be automatically closed. */
@@ -42,6 +41,7 @@ public class TTLManager extends Suspendable {
   private final HashMap<Identifier, Timeout> map = new HashMap<Identifier, Timeout>();
   /** The interval in milliseconds at which the socket TTLs are updated. */
   private final int step;
+  private Thread thread = new Thread(this);
 
 
   /**
@@ -59,22 +59,22 @@ public class TTLManager extends Suspendable {
   @Override
   public void run() {
     logger.log(Level.INFO, "TTLManager entering execution loop.");
-    running.set(true);
-    
-    while (condition.get()) {
+
+    while (!thread.isInterrupted()) {
       long start = System.currentTimeMillis();
       long elapsed = 0;
-            
+
       // Sleep until the next update.
       do {
         try {
           Thread.sleep(step - elapsed);
         } catch (InterruptedException e) {
-          // Just continue
+          // Thread should stop
+          return;
         }
         elapsed = System.currentTimeMillis() - start;
       } while (elapsed < step);
-      
+
       try {
         // Update the socket TTLs.
         substract();
@@ -82,26 +82,33 @@ public class TTLManager extends Suspendable {
         logger.log(Level.WARNING, "Received IOException while closing a socket: " + e.getMessage());
       }
     }
-    running.set(false);
     logger.log(Level.INFO, "TTLManager exiting execution loop.");
   }
+  
+  /**
+   * Start the TTLManager.
+   */
+  public void start() {
+    logger.log(Level.INFO, "Starting TTLManager");
+    thread.start();
+    logger.log(Level.INFO, "TTLManager started");
+  }
 
-  @Override
+  /**
+   * Stops the TTLManager and clears timeouts.
+   * Does nothing if the manager has been stopped before.
+   */
   public void stop() {
     logger.log(Level.INFO, "Stopping TTLManager.");
-    condition.set(false);
-    clear();
+    thread.interrupt();
 
-    while (running.get()) {
-      try {
-        logger.log(Level.INFO, "Waiting on the manager thread.");
-        thread.join();
-        logger.log(Level.INFO, "Manager thread finished.");
-      } catch (InterruptedException e) {
-        logger.log(Level.INFO,
-            "TTL manager was interrupted while waiting for the manager thread: " + e.getMessage());
-      }
+    try {
+      thread.join();
+    } catch (InterruptedException e) {
+      logger.log(Level.INFO, "TTL manager was interrupted while waiting for the thread");
     }
+    
+    clear();
 
     logger.log(Level.INFO, "Stopped TTLManager.");
   }
@@ -177,6 +184,10 @@ public class TTLManager extends Suspendable {
    */
   private synchronized void clear() {
     map.clear();
+  }
+  
+  public boolean isRunning() {
+    return thread.isAlive();
   }
 
 }

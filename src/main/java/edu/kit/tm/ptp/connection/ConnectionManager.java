@@ -126,7 +126,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
   }
 
   /**
-   * Stops the thread.
+   * Stops the thread. Does nothing if the thread has been stopped before.
    */
   public void stop() {
     logger.log(Level.INFO, "Stopping ConnectionManager");
@@ -137,6 +137,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
     logger.log(Level.INFO, "Waiting for Thread to stop");
 
     try {
+      // Does nothing if thread isn't running
       thread.join();
     } catch (InterruptedException e) {
       logger.log(Level.WARNING, "Failed to wait for thread to stop: " + e.getMessage());

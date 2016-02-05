@@ -134,11 +134,11 @@ public class PTPPingPongExample {
    * @param args Program parameters, ignored.
    */
   public static void main(String[] args) {
-    PTP client = null;
+    PTP client = new PTP();
 
     try {
       // Create an API wrapper object.
-      client = new PTP();
+      client.init();
 
       client.createHiddenService();
 
@@ -256,9 +256,7 @@ public class PTPPingPongExample {
 
     // Done, exit.
     System.out.println("Exiting client.");
-    if (client != null) {
-      client.exit();
-    }
+    client.exit();
   }
 
 }

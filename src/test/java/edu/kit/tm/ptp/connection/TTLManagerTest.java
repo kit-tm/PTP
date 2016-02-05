@@ -14,6 +14,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 
@@ -77,7 +78,7 @@ public class TTLManagerTest {
    * @see JUnit
    */
   @Before
-  public void setUp() {
+  public void setUp() throws IOException {
     // Create a RNG.
     RNG random = new RNG();
 
@@ -175,12 +176,12 @@ public class TTLManagerTest {
   @Test
   public void testRunning() {
     // Check if the running TTLManager tells its state correctly.
-    if (!runningManager.running()) {
+    if (!runningManager.isRunning()) {
       fail("Started TTLManager running check returns false.");
     }
 
     // Check if the not started TTLManager tells its state correctly.
-    if (manager.running()) {
+    if (manager.isRunning()) {
       fail("Not started TTLManager running check returns true.");
     }
 
@@ -188,7 +189,7 @@ public class TTLManagerTest {
     runningManager.stop();
 
     // Check if the stopped running TTLManager tells its state correctly.
-    assertFalse("Stopped TTLManager running check returns true.", runningManager.running());
+    assertFalse("Stopped TTLManager running check returns true.", runningManager.isRunning());
   }
 
 }
