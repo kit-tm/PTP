@@ -75,7 +75,7 @@ public class HiddenServiceManager {
     if (!lockFile.exists() && !lockFile.createNewFile()) {
       throw new IOException("Could not create raw API lock file!");
     }
-    apiLock = new LockFile(lockFile);
+    apiLock = LockFileFactory.getLockFile(lockFile);
   }
 
   public void createHiddenService() throws IOException {

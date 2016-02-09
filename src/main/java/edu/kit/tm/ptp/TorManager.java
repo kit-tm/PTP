@@ -1,5 +1,7 @@
 package edu.kit.tm.ptp;
 
+import edu.kit.tm.ptp.hiddenservice.LockFile;
+import edu.kit.tm.ptp.hiddenservice.LockFileFactory;
 import edu.kit.tm.ptp.thread.Suspendable;
 import edu.kit.tm.ptp.utility.Constants;
 
@@ -89,19 +91,10 @@ public class TorManager extends Suspendable {
       // Check if another TorManager is currently running a Tor process.
       try {
         // Block until a lock on the Tor manager lock file is available.
-        logger.log(Level.INFO, "Tor manager acquiring lock on Tor manager lock file.");
-        RandomAccessFile raf = new RandomAccessFile(lockFile, Constants.readwriterights);
-        FileChannel channel = raf.getChannel();
-        FileLock lock = null;
-
-        // Lock the Tor manager lock file.
-        while (lock == null) {
-          try {
-            lock = channel.lock();
-          } catch (OverlappingFileLockException e) {
-            // Concurrent access. Try again.
-          }
-        }
+        logger.log(Level.INFO, "Tor manager acquiring lock on Tor manager lock file.");        
+        LockFile lock = LockFileFactory.getLockFile(lockFile);
+        lock.lock();
+        RandomAccessFile raf = lock.getRandomAccessFile();
 
         logger.log(Level.INFO, "Tor manager has the lock on the Tor manager lock file.");
         boolean noTor = raf.length() == 0 || raf.readInt() <= 0;
@@ -151,10 +144,6 @@ public class TorManager extends Suspendable {
         // Release the lock.
         logger.log(Level.INFO, "Tor manager releasing the lock on the Tor manager lock file.");
         lock.release();
-
-        // Close the lock file.
-        channel.close();
-        raf.close();
 
         // Wait for the Tor manager ports file to appear and read it.
         waittor();
@@ -287,18 +276,9 @@ public class TorManager extends Suspendable {
       try {
         // Block until a lock on the Tor manager lock file is available.
         logger.log(Level.INFO, "Tor manager acquiring lock on Tor manager lock file.");
-        RandomAccessFile raf = new RandomAccessFile(lockFile, Constants.readwriterights);
-        FileChannel channel = raf.getChannel();
-        FileLock lock = null;
-
-        // Lock the Tor manager lock file.
-        while (lock == null) {
-          try {
-            lock = channel.lock();
-          } catch (OverlappingFileLockException e) {
-            // Concurrent access. Try again.
-          }
-        }
+        LockFile lock = LockFileFactory.getLockFile(lockFile);
+        lock.lock();
+        RandomAccessFile raf = lock.getRandomAccessFile();
 
         logger.log(Level.INFO, "Tor manager has the lock on the Tor manager lock file.");
 
@@ -308,10 +288,6 @@ public class TorManager extends Suspendable {
         // Release the lock.
         logger.log(Level.INFO, "Tor manager releasing the lock on the Tor manager lock file.");
         lock.release();
-
-        // Close the lock file.
-        channel.close();
-        raf.close();
       } catch (IOException e) {
         logger.log(Level.WARNING,
             "Tor manager caught an IOException during Tor process initialization: "
@@ -343,19 +319,10 @@ public class TorManager extends Suspendable {
 
     logger.log(Level.INFO, "Tor manager checking if Tor process should be closed.");
     try {
-      logger.log(Level.INFO, "Tor manager acquiring lock on Tor manager lock file.");
-      RandomAccessFile raf = new RandomAccessFile(lockFile, Constants.readwriterights);
-      FileChannel channel = raf.getChannel();
-      FileLock lock = null;
-
-      // Lock the Tor manager lock file.
-      while (lock == null) {
-        try {
-          lock = channel.lock();
-        } catch (OverlappingFileLockException e) {
-          // Concurrent access. Try again.
-        }
-      }
+      logger.log(Level.INFO, "Tor manager acquiring lock on Tor manager lock file.");      
+      LockFile lock = LockFileFactory.getLockFile(lockFile);
+      lock.lock();
+      RandomAccessFile raf = lock.getRandomAccessFile();
 
       logger.log(Level.INFO, "Tor manager has the lock on the Tor manager lock file.");
 
@@ -392,10 +359,6 @@ public class TorManager extends Suspendable {
       // Release the lock.
       logger.log(Level.INFO, "Tor manager releasing the lock on the Tor manager lock file.");
       lock.release();
-
-      // Close the lock file.
-      channel.close();
-      raf.close();
     } catch (IOException e) {
       logger.log(Level.WARNING,
           "Tor manager caught an IOException while closing Tor process: " + e.getMessage());
