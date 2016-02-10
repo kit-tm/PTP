@@ -92,8 +92,8 @@ public class TorManager {
               writer.write(controlPort + Constants.newline);
               writer.write(socksPort + Constants.newline);
 
-              logger.log(Level.INFO, "Output thread wrote: " + torControlPort);
-              logger.log(Level.INFO, "Output thread wrote: " + torSocksProxyPort);
+              logger.log(Level.INFO, "Output thread wrote: " + controlPort);
+              logger.log(Level.INFO, "Output thread wrote: " + socksPort);
 
               writer.close();
               logger.log(Level.INFO, "Output thread wrote TorManager ports file.");
