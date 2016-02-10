@@ -125,33 +125,21 @@ public class PTP implements ReceiveListener {
     if (usePTPTor) {
       tor = new TorManager();
       // Start the Tor process.
-      tor.start();
+      tor.startTor();
 
-      // Wait until the Tor bootstrapping is complete.
-      final long start = System.currentTimeMillis();
       final long timeout = config.getTorBootstrapTimeout();
 
-      logger.log(Level.INFO, "Waiting for Tors bootstrapping to finish.");
-      while (!tor.ready() && tor.running() && System.currentTimeMillis() - start < timeout) {
-        try {
-          Thread.sleep(250);
-        } catch (InterruptedException e) {
-          // Waiting was interrupted. Do nothing.
-        }
-      }
+      logger.log(Level.INFO, "Waiting for Tor bootstrapping to finish.");
+      tor.waitForBootstrapping(timeout);
 
-      // Check if Tor is not running.
-      if (!tor.running()) {
-        throw new IOException("Starting Tor failed!");
-      }
-
-      // Check if we reached the timeout without a finished boostrapping.
-      if (!tor.ready()) {
-        tor.killtor();
+      // Check if Tor bootstrapped.
+      if (!tor.torBootstrapped()) {
+        tor.stopTor();
         throw new IOException("Tor bootstrapping timeout expired!");
       }
 
-      config.setTorConfiguration(tor.directory(), tor.controlport(), tor.socksport());
+      config.setTorConfiguration(tor.getTorWorkingDirectory(), tor.getTorControlPort(),
+          tor.getTorSOCKSPort());
     } else {
       config.setTorConfiguration(workingDirectory, controlPort, socksPort);
     }
@@ -331,7 +319,7 @@ public class PTP implements ReceiveListener {
 
     // Close the Tor process manager.
     if (tor != null) {
-      tor.stop();
+      tor.stopTor();
     }
 
     if (hiddenServiceManager != null) {

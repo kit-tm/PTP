@@ -8,6 +8,8 @@ import java.io.RandomAccessFile;
 import java.nio.channels.FileLock;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Use files to synchronize between several java processes and
@@ -21,7 +23,8 @@ public class LockFile {
   private RandomAccessFile raf = null;
   private FileLock lock;
   private File file;
-  Lock threadLock = new ReentrantLock();
+  private Lock threadLock = new ReentrantLock();
+  private static final Logger logger = Logger.getLogger(LockFile.class.getName());
 
   public LockFile(File file) {
     this.file = file;
@@ -70,10 +73,20 @@ public class LockFile {
   /**
    * Releases a previously acquired lock.
    */
-  public void release() throws IOException {
+  public void release() {
     if (lock != null) {
-      lock.release();
-      raf.close();
+      try {
+        lock.release();
+      } catch (IOException e) {
+        logger.log(Level.WARNING, "Failed to release lock: " + e.getMessage());
+      }
+      
+      try {
+        raf.close();
+      } catch (IOException e) {
+        logger.log(Level.WARNING, "Failed to close file: " + e.getMessage());
+      }
+      
       lock = null;
     }
     
