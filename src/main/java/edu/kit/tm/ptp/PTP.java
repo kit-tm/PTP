@@ -25,7 +25,7 @@ public class PTP implements ReceiveListener {
   private Logger logger;
   /** The configuration of the client. */
   private Configuration config;
-  private final ConfigurationFileReader configReader;
+  private ConfigurationFileReader configReader;
   /** The Tor process manager. */
   private TorManager tor;
   /** The manager that closes sockets when their TTL expires. */
@@ -43,7 +43,7 @@ public class PTP implements ReceiveListener {
   private String workingDirectory;
   private int controlPort;
   private int socksPort;
-  private final boolean usePTPTor;
+  private boolean usePTPTor;
 
   /**
    * Constructs a new PTP object. Manages a own Tor process.
@@ -62,8 +62,7 @@ public class PTP implements ReceiveListener {
    * @throws IOException If an error occurs.
    */
   public PTP(String directory) {
-    this(directory, true);
-    hiddenServicePort = Constants.anyport;
+    initPTP(directory, true, Constants.anyport);
   }
 
   /**
@@ -91,20 +90,19 @@ public class PTP implements ReceiveListener {
    */
   public PTP(String workingDirectory, int controlPort, int socksPort, int localPort,
       String directory) {
-    this(directory, false);
-
-    hiddenServicePort = localPort;
+    initPTP(directory, false, localPort);
 
     this.workingDirectory = workingDirectory;
     this.controlPort = controlPort;
     this.socksPort = socksPort;
   }
 
-  private PTP(String directory, boolean usePTPTor) {
+  private void initPTP(String directory, boolean usePTPTor, int hiddenServicePort) {
     configReader = new ConfigurationFileReader(Constants.configfile);
 
     this.hiddenServiceDirectory = directory;
     this.usePTPTor = usePTPTor;
+    this.hiddenServicePort = hiddenServicePort;
   }
 
   /**
