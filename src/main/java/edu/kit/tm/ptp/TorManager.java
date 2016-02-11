@@ -55,6 +55,7 @@ public class TorManager {
   private static final Logger logger = Logger.getLogger(TorManager.class.getName());
   private volatile boolean torRunning = false;
   private volatile boolean torBootstrapped = false;
+  private volatile boolean portsFileWritten = false;
 
   private class OutputThread implements Runnable {
     @Override
@@ -97,7 +98,7 @@ public class TorManager {
 
               writer.close();
               logger.log(Level.INFO, "Output thread wrote TorManager ports file.");
-
+              portsFileWritten = true;
               // If not, check whether the control port is open.
             } else if (line.contains(Constants.controlportopen)) {
               controlPort = readPort(Constants.controlportopen, line);
@@ -173,7 +174,7 @@ public class TorManager {
       logger.log(Level.INFO, "TorManager ports thread entering execution loop.");
       logger.log(Level.INFO, "TorManager ports thread sleeping.");
 
-      while (!portsFile.exists()) {
+      while (!portsFileWritten) {
         try {
           Thread.sleep(2 * 1000);
         } catch (InterruptedException e) {
@@ -255,8 +256,6 @@ public class TorManager {
 
       logger.log(Level.INFO, "TorManager has the lock on the TorManager lock file.");
 
-
-      // Check if the counter in the Tor lock file is > 0 while no Tor process is running.
       if (portsFile.exists()) {
         logger.log(Level.INFO, "TorManager checking if Tor is running.");
 
