@@ -117,32 +117,6 @@ public class TTLManagerTest {
   }
 
   /**
-   * Test method for {@link edu.kit.tm.ptp.connection.TTLManager#Remove(java.lang.String)}.
-   * Removes the identifier from the running TTLManager
-   * and checks whether an expire notification is still sent.
-   * Fails if the notification is received.
-   * 
-   */
-  @Test
-  public void testRemove() {
-    /*
-     * The result of the test is dependent on the scheduling. 
-     * If the TTLManager notifies the client before we call remove
-     * than the test fails.
-     */
-    
-    // Set the TTL of the identifier.
-    runningManager.set(identifier, expiration);
-    runningManager.remove(identifier);
-
-    // Wait for the TTL to expire.    
-    TestHelper.sleep(2 * step + expiration);
-
-    // Check if the listener was notified of the expiration.   
-    assertFalse("Listener was notified of the expired TTL.", client.disconnected.get());
-  }
-
-  /**
    * Test method for {@link edu.kit.tm.ptp.connection.TTLManager#set(java.lang.String, int)}.
    * Checks whether an expire notification is sent for the random identifier by the TTLManager.
    * Fails iff the notififaction is not received shorty after the expiration time.
