@@ -79,38 +79,6 @@ public class ChannelManagerTest {
   }
 
   @Test
-  public void testConnect() throws IOException {
-    channelManager.start();
-
-    SocketChannel client = null;
-    client = SocketChannel.open();
-    MessageChannel clientChannel = channelManager.connect(client);
-    client.connect(
-        new InetSocketAddress(InetAddress.getLoopbackAddress(), server.socket().getLocalPort()));
-
-    TestHelper.wait(listener.conOpen, 1, TestConstants.socketConnectTimeout);
-
-    channelManager.addChannel(clientChannel);
-
-    assertEquals(true, client.isConnected());
-    assertEquals(1, listener.conOpen.get());
-    assertEquals(0, listener.conClosed.get());
-    assertEquals(0, listener.read.get());
-    assertEquals(0, listener.write.get());
-
-    channelManager.removeChannel(clientChannel);
-
-    TestHelper.wait(listener.conClosed, 1, TestConstants.listenerTimeout);
-
-    assertEquals(1, listener.conOpen.get());
-    assertEquals(0, listener.conClosed.get());
-    assertEquals(0, listener.read.get());
-    assertEquals(0, listener.write.get());
-  }
-
-
-
-  @Test
   public void testConnectThroughSOCKS() throws IOException {
     channelManager.start();
 
@@ -134,9 +102,9 @@ public class ChannelManagerTest {
     assertEquals(0, listener.write.get());
 
     SOCKSChannel socksChannel = new SOCKSChannel(listener.passedChannel, channelManager);
+    channelManager.addChannel(socksChannel);
     socksChannel.connetThroughSOCKS(ptp.getIdentifier().toString(),
         ptp.getConfiguration().getHiddenServicePort());
-    channelManager.addChannel(socksChannel);
 
     // hidden service should be immediately available
     TestHelper.wait(listener.conOpen, 2, TestConstants.socketConnectTimeout);
@@ -145,6 +113,9 @@ public class ChannelManagerTest {
     assertEquals(0, listener.write.get());
     assertEquals(socksChannel, listener.passedChannel);
     assertEquals(0, listener.conClosed.get());
+    
+    // SOCKSChannel disabled reading, enable it
+    channelManager.registerRead(socksChannel, true);
 
     ptp.exit();
     ptp = null;
@@ -157,7 +128,7 @@ public class ChannelManagerTest {
   }
 
   @Test
-  public void testRemoveChannel() throws IOException {
+  public void testConnectRemoveChannel() throws IOException {
     channelManager.start();
 
     SocketChannel client = SocketChannel.open();

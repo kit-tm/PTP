@@ -1,13 +1,10 @@
 package edu.kit.tm.ptp.connection;
 
 import edu.kit.tm.ptp.Identifier;
-import edu.kit.tm.ptp.auth.Authenticator;
-import edu.kit.tm.ptp.auth.DummyAuthenticator;
 import edu.kit.tm.ptp.channels.MessageChannel;
 import edu.kit.tm.ptp.utility.Constants;
 
 import java.io.IOException;
-import java.nio.channels.ClosedChannelException;
 import java.util.logging.Level;
 
 /**
@@ -26,12 +23,14 @@ public class StateInit extends AbstractState {
   }
 
   @Override
-  public void open(MessageChannel channel) {
+  public void opened(MessageChannel channel) {
     ConnectionManager manager = context.getConnectionManager();
     // Incoming connection
     try {
       manager.logger.log(Level.INFO,
           "Received new connection from " + channel.getChannel().getRemoteAddress().toString());
+      
+      manager.channelManager.addChannel(channel);
     } catch (IOException ioe) {
       manager.logger.log(Level.WARNING, "Failed to get remote address of new channel", ioe);
       close(channel);
@@ -40,17 +39,7 @@ public class StateInit extends AbstractState {
     
     context.setState(context.getConcreteConnected());
 
-    Authenticator auth = new DummyAuthenticator(manager, channel, manager.serializer);
-    auth.authenticate(manager.localIdentifier);
-    
-    try {
-      manager.channelManager.addChannel(channel);
-    } catch (ClosedChannelException e) {
-      manager.logger.log(Level.WARNING, "Channel was closed while adding channel to ChannelManager",
-          e);
-      close(channel);
-      return;
-    }
+    context.authenticate(channel);
   }
 
   @Override

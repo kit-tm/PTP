@@ -268,7 +268,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
         channelContexts.put(channel, context);
       }
 
-      context.open(channel);
+      context.opened(channel);
     }
   }
 
@@ -411,7 +411,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
       identifier = channelIdentifier.identifier;
       context = channelContexts.get(channel);
 
-      context.authenticate(channel, identifier);
+      context.authenticated(channel, identifier);
     }
   }
 

@@ -25,7 +25,16 @@ public abstract class AbstractState {
    * 
    * @param channel The connection.
    */
-  public void open(MessageChannel channel) {
+  public void opened(MessageChannel channel) {
+    throw new IllegalStateException();
+  }
+  
+  /**
+   * Tries to authenticate the remote end of the connection.
+   * 
+   * @param channel The connection.
+   */
+  public void authenticate(MessageChannel channel) {
     throw new IllegalStateException();
   }
 
@@ -35,7 +44,7 @@ public abstract class AbstractState {
    * @param channel The connection.
    * @param identifier The Identifier supplied by the remote end.
    */
-  public void authenticate(MessageChannel channel, Identifier identifier) {
+  public void authenticated(MessageChannel channel, Identifier identifier) {
     throw new IllegalStateException();
   }
 

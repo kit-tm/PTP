@@ -43,12 +43,16 @@ public class Context {
     this.state = state;
   }
   
-  public void open(MessageChannel channel) {
-    state.open(channel);
+  public void opened(MessageChannel channel) {
+    state.opened(channel);
   }
   
-  public void authenticate(MessageChannel channel, Identifier identifier) {
-    state.authenticate(channel, identifier);
+  public void authenticate(MessageChannel channel) {
+    state.authenticate(channel);
+  }
+  
+  public void authenticated(MessageChannel channel, Identifier identifier) {
+    state.authenticated(channel, identifier);
   }
   
   public void close(MessageChannel channel) {
@@ -58,7 +62,7 @@ public class Context {
   public boolean sendMessage(MessageAttempt attempt) {
     return state.sendMessage(attempt);
   }
-  
+
   public ConnectionManager getConnectionManager() {
     return manager;
   }

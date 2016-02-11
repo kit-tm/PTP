@@ -57,12 +57,18 @@ public class TorManagerTest {
     assertEquals(false, manager.torRunning());
   }
   
+  /*
+   * There shouldn't be another Tor process running in the directory.
+   */
   @Test (expected = IllegalStateException.class)
   public void testGetTorControlPortNoBootstrap() throws IOException {
     manager.startTor();
     manager.getTorControlPort();
   }
   
+  /*
+   * There shouldn't be another Tor process running in the directory.
+   */
   @Test (expected = IllegalStateException.class)
   public void testGetTorSOCKSPortNoBootstrap() throws IOException {
     manager.startTor();

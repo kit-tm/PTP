@@ -22,7 +22,7 @@ public class StateConnect extends AbstractState {
   }
 
   @Override
-  public void open(MessageChannel channel) {
+  public void opened(MessageChannel channel) {
     ConnectionManager manager = context.getConnectionManager();
 
     Identifier identifier = manager.channelMap.get(channel);
@@ -34,19 +34,20 @@ public class StateConnect extends AbstractState {
     manager.identifierMap.remove(identifier);
     manager.channelMap.remove(channel);
     manager.channelContexts.remove(channel);
-
+    
     // create new socks channel
     SOCKSChannel socks = new SOCKSChannel(channel, manager.channelManager);
-    
-    socks.connetThroughSOCKS(identifier.getTorAddress(), manager.hsPort);
-    
+
     try {
+      manager.channelManager.addChannel(socks);
+      
       manager.identifierMap.put(identifier, socks);
       manager.channelMap.put(socks, identifier);
       manager.channelContexts.put(socks, context);
       
       context.setState(context.getConcreteConnectSOCKS());
-      manager.channelManager.addChannel(socks);
+
+      socks.connetThroughSOCKS(identifier.getTorAddress(), manager.hsPort);
     } catch (ClosedChannelException e) {
       manager.logger.log(Level.WARNING, "Channel was closed while adding channel to ChannelManager",
           e);

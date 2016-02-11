@@ -162,7 +162,7 @@ public class ChannelManager implements Runnable {
    * Adds a SocketChannel which should be connected.
    * The connect() method of the SocketChannel has to be called already.
    * Calls channelOpened() on the ChannelListener if the connection
-   * attempt was succesfull.
+   * attempt was successful.
    * 
    * @param socket The SocketChannel to connect.
    * @return A MessageChannel to be able to read and write later on.
@@ -176,18 +176,18 @@ public class ChannelManager implements Runnable {
   }
 
   /**
-   * Adds MessageChannel to read from and write messages to.
+   * Adds MessageChannel to the manager.
+   * Reading and writing needs to be enabled separately.
    * 
    * @param channel The MessageChannel. 
    * @throws ClosedChannelException If the channel is closed.
    */
   public void addChannel(MessageChannel channel) throws ClosedChannelException {
-    channel.getChannel().register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE, channel);
+    channel.getChannel().register(selector, 0, channel);
   }
 
   /**
    * Stops to read from and write messages to the supplied MessageChannel.
-   *
    */
   public void removeChannel(MessageChannel channel) {
     SelectionKey key = channel.getChannel().keyFor(selector);
@@ -205,21 +205,37 @@ public class ChannelManager implements Runnable {
   }
 
   /**
-   * Tells if the supplied channel has data to write.
+   * Tells the ChannelManager if the supplied channel has data to write.
    */
   public void registerWrite(MessageChannel channel, boolean enable) {
+    setInterestOps(channel, enable, SelectionKey.OP_WRITE);
+  }
+  
+  /**
+   * Tells the ChannelManager if the supplied channel is ready to read data.
+   */
+  public void registerRead(MessageChannel channel, boolean enable) {
+    setInterestOps(channel, enable, SelectionKey.OP_READ);
+  }
+  
+  private void setInterestOps(MessageChannel channel, boolean enable, int operation) {
     SelectionKey key = channel.getChannel().keyFor(selector);
 
     if (key == null) {
       // Can happen for incoming connections
-      logger.log(Level.INFO, "Unregistered channel tries to register writing.");
+      logger.log(Level.INFO, "Unregistered channel tries to register operation.");
+      return;
+    }
+    
+    if (!key.isValid()) {
+      logger.log(Level.INFO, "Closed or unregistered channel tries to register operation.");
       return;
     }
 
-    if (enable && key.isValid()) {
-      key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
+    if (enable) {
+      key.interestOps(key.interestOps() | operation);
     } else {
-      key.interestOps(key.interestOps() & (~SelectionKey.OP_WRITE));
+      key.interestOps(key.interestOps() & (~operation));
     }
   }
 }

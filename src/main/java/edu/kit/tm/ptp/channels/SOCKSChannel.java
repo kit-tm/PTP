@@ -56,6 +56,9 @@ public class SOCKSChannel extends MessageChannel {
     socksWriteBuffer.flip();
 
     socksReceiveBuffer = ByteBuffer.allocate(8);
+    
+    manager.registerRead(this, true);
+    manager.registerWrite(this, true);
   }
 
   @Override
@@ -73,13 +76,16 @@ public class SOCKSChannel extends MessageChannel {
           byte status = socksReceiveBuffer.get();
 
           if (nullbyte != 0x0 || status != 0x5a) {
-            logger.log(Level.WARNING, "SOCKS proxy rejected request: " + nullbyte + " " + status);
+            logger.log(Level.INFO, "SOCKS proxy rejected request: " + nullbyte + " " + status);
             closeChannel();
             return;
           }
 
           connected = true;
           listener.channelOpened(this);
+          
+          // Avoid to lose authentication message 
+          manager.registerRead(this, false);
         } else if (read == -1) {
           logger.log(Level.WARNING, "Reached end of stream while waiting for answer from proxy.");
           closeChannel();

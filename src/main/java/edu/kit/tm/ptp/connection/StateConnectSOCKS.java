@@ -1,8 +1,6 @@
 package edu.kit.tm.ptp.connection;
 
 import edu.kit.tm.ptp.Identifier;
-import edu.kit.tm.ptp.auth.Authenticator;
-import edu.kit.tm.ptp.auth.DummyAuthenticator;
 import edu.kit.tm.ptp.channels.MessageChannel;
 
 import java.util.logging.Level;
@@ -24,7 +22,7 @@ public class StateConnectSOCKS extends AbstractState {
   }
 
   @Override
-  public void open(MessageChannel channel) {
+  public void opened(MessageChannel channel) {
     ConnectionManager manager = context.getConnectionManager();
     
     Identifier identifier = manager.channelMap.get(channel);
@@ -41,9 +39,7 @@ public class StateConnectSOCKS extends AbstractState {
     context.setState(context.getConcreteConnected());
 
     manager.logger.log(Level.INFO, "Trying to authenticate connection to " + identifier);
-    
-    Authenticator auth = new DummyAuthenticator(manager, channel, manager.serializer);
-    auth.authenticate(manager.localIdentifier);
+    context.authenticate(channel);
   }
 
 }
