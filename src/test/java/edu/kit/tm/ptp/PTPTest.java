@@ -149,7 +149,7 @@ public class PTPTest {
         final long msgId = client1.sendMessage(testString.getBytes(), id, timeout);
         // Wait for the sending result.
         final long waitStart = System.currentTimeMillis();
-        while ((System.currentTimeMillis() - waitStart <= timeout + (5 * 1000))
+        while ((System.currentTimeMillis() - waitStart <= timeout + (10 * 1000))
             && !sendSuccess.get() && !sendFail.get()) {
           try {
             Thread.sleep(1 * 1000);
