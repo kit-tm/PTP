@@ -19,29 +19,50 @@ import java.util.Set;
 
 
 /**
- * An example application of the PTP API that is a little more interesting.
+ * Floods entered messages in a network of befriended peers.
  *
  * @author Martin Florian
  *
  */
-public class FloodingDarknetExample {
+public class PTPFloodingExample {
 
   static PTP ptp;
   
   /**
-   * Message format
+   * Message format.
    */
   static class FloodingMessage {
-    String content;
-    long timestamp;
+    public String content;
+    public long timestamp;
     
     // no-arg constructor required for PTP 
     public FloodingMessage() {
-      this(null);
+      content = null;
+      timestamp = -1;
     }
+    
     public FloodingMessage(String message) {
       content = message;
       timestamp = System.currentTimeMillis();
+    }
+    
+    @Override
+    public boolean equals(Object obj) {
+      if (obj == this) {
+        return true;
+      }
+      if (obj == null || obj.getClass() != this.getClass()) {
+        return false;
+      }
+      FloodingMessage fm = (FloodingMessage) obj;
+      return (this.content.equals(fm.content) && (this.timestamp == fm.timestamp));
+    }
+    
+    @Override
+    public int hashCode() {
+      // could probably be done better
+      String tmp = content + String.valueOf(timestamp);
+      return tmp.hashCode();
     }
   }
     
@@ -51,13 +72,17 @@ public class FloodingDarknetExample {
    * @param args Not used.
    */
   public static void main(String[] args) {
+    
+    // Create a PTP object.
+    PTP ptp = new PTP();
 
     try {
-      // Create an API wrapper object.
-      System.out.println("Initializing API.");
-      ptp = new PTP();
+      // Initialize
+      System.out.print("Initializing PTP...");
+      ptp.init();
+      System.out.println(" done.");
 
-      // Setup own identifier
+      // Setup own identifier, reusing existing one if possible
       ptp.reuseHiddenService();
 
       // Print own identifier to a file
@@ -68,18 +93,18 @@ public class FloodingDarknetExample {
 
       // Read friends
       List<Identifier> friends = new ArrayList<Identifier>();
-      try{
-        for(String line : Files.readAllLines(Paths.get("friends.txt"), Charset.forName("UTF-8"))) {
+      try {
+        for (String line : Files.readAllLines(Paths.get("friends.txt"), Charset.forName("UTF-8"))) {
 
           Identifier friend = new Identifier(line);
           
-          if(!friend.isValid() || friend.equals(ptp.getIdentifier())) {
+          if (!friend.isValid() || friend.equals(ptp.getIdentifier())) {
             System.out.println("Skipping invalid friend entry: " + friend);
             continue;
           }
           friends.add(new Identifier(line));
         }
-      } catch(IOException e){
+      } catch (IOException e) {
         System.out.println("Error reading \"friends.txt\", continuing without friends :(");
       }
       
@@ -92,29 +117,35 @@ public class FloodingDarknetExample {
         public void messageReceived(FloodingMessage message, Identifier source) {
           
           // to avoid loops...
-          if(seenMessages.contains(message)) {
-            System.out.println("Received duplicate message from " + source);
-            return;
+          synchronized (seenMessages) {
+            if (seenMessages.contains(message)) {
+              //System.out.println("Received duplicate message from " + source);
+              return;
+            }
+            seenMessages.add(message);
           }
-          seenMessages.add(message);
           
           System.out.println(
-              "Received message: " + message.content + " from " + source + "; " +
-              "The message is " + (System.currentTimeMillis() - message.timestamp) + "ms old");
+              "Received message: " + message.content + " from " + source + "; "
+              + "The message is " + (System.currentTimeMillis() - message.timestamp) + "ms old");
           
           // forward to all friends
-          for(Identifier friend : friends) {
+          synchronized (friends) {
+            for (Identifier friend : friends) {
+              
+              if (friend.equals(source)) {
+                continue;
+              }
+              
+              System.out.println("Forwarding to " + friend);
+              ptp.sendMessage(message, friend);
+            }
             
-            if(friend.equals(source)) continue;
-            
-            System.out.println("Forwarding to " + friend);
-            ptp.sendMessage(message, friend);
-          }
-          
-          // add new friends
-          if(!friends.contains(source)) {
-            System.out.println("Added new friend: " + source);
-            friends.add(source);
+            // add new friends
+            if (!friends.contains(source)) {
+              System.out.println("Added new friend: " + source);
+              friends.add(source);
+            }
           }
         }
       });
@@ -148,14 +179,18 @@ public class FloodingDarknetExample {
         if (content.equals("exit")) {
           break;
         }
-        for(Identifier friend : friends) {
-          
-          FloodingMessage message = new FloodingMessage(content);
-          
-          seenMessages.add(message);
-          
-          System.out.println("Sending to " + friend);
-          ptp.sendMessage(message, friend);
+        synchronized (friends) {
+          for (Identifier friend : friends) {
+            
+            FloodingMessage message = new FloodingMessage(content);
+            
+            synchronized (seenMessages) {
+              seenMessages.add(message);
+            }
+            
+            System.out.println("Sending to " + friend);
+            ptp.sendMessage(message, friend);
+          }
         }
       }
     } catch (IOException e) {
