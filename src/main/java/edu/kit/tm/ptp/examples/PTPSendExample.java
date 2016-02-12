@@ -8,7 +8,6 @@ import edu.kit.tm.ptp.SendListener;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * An example application of the PTP API, sends messages to a chosen destination.
@@ -24,44 +23,44 @@ public class PTPSendExample {
    * @param args Not used.
    */
   public static void main(String[] args) {
-    PTP client = new PTP();
+    
+    // Create a PTP object.
+    PTP ptp = new PTP();
 
     try {
-      // Create an API wrapper object.
-      System.out.println("Initializing API.");
-      client.init();
+      // Initialize
+      System.out.print("Initializing PTP...");
+      ptp.init();
+      System.out.println(" done.");
 
       // Setup Identifier
-      client.createHiddenService();
-      System.out.println("Own identifier: " + client.getIdentifier().toString());
+      ptp.createHiddenService();
+      System.out.println("Own identifier: " + ptp.getIdentifier().toString());
 
       // Setup ReceiveListener
-      client.setReceiveListener(new ReceiveListener() {
+      ptp.setReceiveListener(new ReceiveListener() {
         @Override
         public void messageReceived(byte[] data, Identifier source) {
           System.out.println("Received message: " + new String(data) + " from " + source);
         }
       });
 
-      // Create a reader for the console input.
+      // Create a reader for the console input
       BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-      // Ask for the destination hidden service identifier.
+      
+      // Ask for the destination hidden service identifier
       System.out.print("Enter destination identifier: ");
       final String destinationAddress = br.readLine();
       final Identifier destination = new Identifier(destinationAddress);
-      final long timeout = 60 * 1000;
 
-      final AtomicInteger counter = new AtomicInteger(0);
-      client.setSendListener(new SendListener() {
+      ptp.setSendListener(new SendListener() {
         
         @Override
         public void messageSent(long id, Identifier destination, State state) {
           switch (state) {
             case INVALID_DESTINATION:
               System.out.println("Destination " + destination + " is invalid");
-              break;
-            case SUCCESS:
-              counter.incrementAndGet();
+              System.exit(-1);
               break;
             case TIMEOUT:
               System.out.println("Sending of message timed out");
@@ -72,28 +71,13 @@ public class PTPSendExample {
         }
       });
 
-      int sent = 0;
-
       while (true) {
         System.out.println("Enter message to send (or exit to stop):");
         String content = br.readLine();
         if (content.equals("exit")) {
           break;
         }
-        client.sendMessage(content.getBytes(), destination, timeout);
-        ++sent;
-      }
-
-      long start = System.currentTimeMillis();
-      // Wait until all messages are sent.
-      System.out.println("Sleeping.");
-      while (counter.get() < sent && System.currentTimeMillis() - start < 3000) {
-        try {
-          // Sleep.
-          Thread.sleep(5 * 1000);
-        } catch (InterruptedException e) {
-          System.out.println("Main thread interrupted.");
-        }
+        ptp.sendMessage(content.getBytes(), destination);
       }
     } catch (IOException e) {
       e.printStackTrace();
@@ -103,7 +87,6 @@ public class PTPSendExample {
 
     // Done, exit.
     System.out.println("Exiting client.");
-    client.exit();
+    ptp.exit();
   }
-
 }
