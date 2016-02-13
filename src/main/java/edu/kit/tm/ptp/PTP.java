@@ -39,6 +39,7 @@ public class PTP implements ReceiveListener {
   private final Serializer serializer = new Serializer();
   private final ListenerContainer listeners = new ListenerContainer();
   private boolean initialized = false;
+  private volatile boolean closed = false;
   private String hiddenServiceDirectory;
   private String workingDirectory;
   private int controlPort;
@@ -112,6 +113,14 @@ public class PTP implements ReceiveListener {
    * @throws IOException If starting Tor or starting another service fails.
    */
   public void init() throws IOException {
+    if (initialized) {
+      throw new IllegalStateException("PTP is already initialized.");
+    }
+    
+    if (closed) {
+      throw new IllegalStateException("PTP is already closed.");
+    }
+    
     addShutdownHook();
 
     // read the configuration file
@@ -178,7 +187,7 @@ public class PTP implements ReceiveListener {
    * Reuses a hidden service or creates a new one if no hidden service to reuse exists.
    */
   public void reuseHiddenService() throws IOException {
-    if (!initialized) {
+    if (!initialized || closed) {
       throw new IllegalStateException();
     }
 
@@ -190,7 +199,7 @@ public class PTP implements ReceiveListener {
    * Creates a fresh hidden service.
    */
   public void createHiddenService() throws IOException {
-    if (!initialized) {
+    if (!initialized || closed) {
       throw new IllegalStateException();
     }
 
@@ -246,7 +255,7 @@ public class PTP implements ReceiveListener {
    * @see registerMessage
    */
   public long sendMessage(Object message, Identifier destination, long timeout) {
-    if (!initialized) {
+    if (!initialized || closed) {
       throw new IllegalStateException();
     }
 
@@ -286,7 +295,7 @@ public class PTP implements ReceiveListener {
    * init} and {@link #exit() exit} have been called in that order.
    */
   public void deleteHiddenService() {
-    if (!initialized) {
+    if (!initialized || closed) {
       throw new IllegalStateException();
     }
 
@@ -302,11 +311,13 @@ public class PTP implements ReceiveListener {
    * Closes the local hidden service and any open connections. Stops the socket TTL manager and the
    * Tor process manager. Does nothing if exit has already been called before.
    */
-  public void exit() {
-    if (!initialized) {
+  public synchronized void exit() {
+    // synchronized ensures that this method isn't called twice at the same time
+    // which can happen because of the shutdown hook
+    if (closed) {
       return;
     }
-
+    
     if (connectionManager != null) {
       connectionManager.stop();
     }
@@ -323,6 +334,8 @@ public class PTP implements ReceiveListener {
     if (hiddenServiceManager != null) {
       hiddenServiceManager.close();
     }
+    
+    closed = true;
   }
 
   @Override
@@ -367,10 +380,10 @@ public class PTP implements ReceiveListener {
   private void addShutdownHook() {
     Runtime.getRuntime().addShutdownHook(new Thread() {
       public void run() {
-        if (initialized) {
+        if (logger != null) {
           logger.log(Level.INFO, "Shutdown hook called");
-          exit();
         }
+        exit();
       }
     });
   }

@@ -268,6 +268,7 @@ public class TorManager {
           Socket socket = new Socket(Constants.localhost, torControlPort);
           TorControlConnection conn = new TorControlConnection(socket);
           conn.authenticate(new byte[0]);
+          socket.close();
 
           torRunning = true;
           torBootstrapped = true;
@@ -278,7 +279,7 @@ public class TorManager {
       }
       int numApis = raf.length() == 0 ? 0 : raf.readInt();
       logger.log(Level.INFO,
-          "TorManager checked if Tor is running: " + (torRunning ? "not running" : "running"));
+          "TorManager checked if Tor is running: " + (torRunning ? "running" : "not running") );
 
       if (!torRunning) {
         // Run the Tor process.
@@ -326,6 +327,7 @@ public class TorManager {
         Thread.sleep(1 * 1000);
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
+        break;
       }
     }
   }
@@ -449,16 +451,22 @@ public class TorManager {
         // Check if this is the only API using the Tor process, if so stop the Tor process.
         if (numberOfApis == 1) {
           logger.log(Level.INFO, "TorManager stopping Tor process.");
-          logger.log(Level.INFO, "Using control port: " + torControlPort);
-
-          Socket socket = new Socket(Constants.localhost, torControlPort);
-          logger.log(Level.INFO, "TorManager attempting to shutdown Tor process.");
-
-          TorControlConnection conn = new TorControlConnection(socket);
-          conn.authenticate(new byte[0]);
-          conn.shutdownTor(Constants.shutdownsignal);
-
-          logger.log(Level.INFO, "TorManager sent shutdown signal.");
+          if (process != null) {
+            logger.log(Level.INFO, "Killing own Tor process");
+            process.destroy();
+          } else {
+            logger.log(Level.INFO, "Using control port: " + torControlPort);
+  
+            Socket socket = new Socket(Constants.localhost, torControlPort);
+            logger.log(Level.INFO, "TorManager attempting to shutdown Tor process.");
+  
+            TorControlConnection conn = new TorControlConnection(socket);
+            conn.authenticate(new byte[0]);
+            conn.shutdownTor(Constants.shutdownsignal);
+            socket.close();
+  
+            logger.log(Level.INFO, "TorManager sent shutdown signal.");
+          }
 
           // Delete the TorManager ports file.
           portsFile.delete();

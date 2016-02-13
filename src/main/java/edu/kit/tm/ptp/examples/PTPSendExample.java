@@ -52,6 +52,7 @@ public class PTPSendExample {
       System.out.print("Enter destination identifier: ");
       final String destinationAddress = br.readLine();
       final Identifier destination = new Identifier(destinationAddress);
+      Thread exampleThread = Thread.currentThread();
 
       ptp.setSendListener(new SendListener() {
         
@@ -60,7 +61,7 @@ public class PTPSendExample {
           switch (state) {
             case INVALID_DESTINATION:
               System.out.println("Destination " + destination + " is invalid");
-              System.exit(-1);
+              exampleThread.interrupt();
               break;
             case TIMEOUT:
               System.out.println("Sending of message timed out");
@@ -71,7 +72,7 @@ public class PTPSendExample {
         }
       });
 
-      while (true) {
+      while (!Thread.interrupted()) {
         System.out.println("Enter message to send (or exit to stop):");
         String content = br.readLine();
         if (content.equals("exit")) {
