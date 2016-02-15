@@ -52,7 +52,7 @@ public class PTPSendExample {
       System.out.print("Enter destination identifier: ");
       final String destinationAddress = br.readLine();
       final Identifier destination = new Identifier(destinationAddress);
-      Thread exampleThread = Thread.currentThread();
+      final Thread exampleThread = Thread.currentThread();
 
       ptp.setSendListener(new SendListener() {
         

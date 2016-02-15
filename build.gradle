@@ -5,6 +5,8 @@ apply plugin: 'eclipse'
 apply plugin: 'checkstyle'
 apply plugin: 'jacoco'
 
+sourceCompatibility = 1.7
+
 sourceSets {
 	main {
 		java {

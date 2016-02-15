@@ -414,8 +414,8 @@ public class PTPTest {
     client1.reuseHiddenService();
     client2.reuseHiddenService();
 
-    Identifier from = client1.getIdentifier();
-    Message toSend = new Message((int) (Math.random() * Integer.MAX_VALUE));
+    final Identifier from = client1.getIdentifier();
+    final Message toSend = new Message((int) (Math.random() * Integer.MAX_VALUE));
 
     class MessageListener implements MessageReceivedListener<Message> {
       @Override

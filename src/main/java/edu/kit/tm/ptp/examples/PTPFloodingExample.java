@@ -74,7 +74,7 @@ public class PTPFloodingExample {
   public static void main(String[] args) {
     
     // Create a PTP object.
-    PTP ptp = new PTP();
+    final PTP ptp = new PTP();
 
     try {
       // Initialize
@@ -92,7 +92,7 @@ public class PTPFloodingExample {
           StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
 
       // Read friends
-      List<Identifier> friends = new ArrayList<Identifier>();
+      final List<Identifier> friends = new ArrayList<Identifier>();
       try {
         for (String line : Files.readAllLines(Paths.get("friends.txt"), Charset.forName("UTF-8"))) {
 
@@ -108,7 +108,7 @@ public class PTPFloodingExample {
         System.out.println("Error reading \"friends.txt\", continuing without friends :(");
       }
       
-      Set<FloodingMessage> seenMessages = new HashSet<FloodingMessage>();
+      final Set<FloodingMessage> seenMessages = new HashSet<FloodingMessage>();
 
       // Register message and setup ReceiveListener
       ptp.registerMessage(FloodingMessage.class, new MessageReceivedListener<FloodingMessage>() {
