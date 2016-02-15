@@ -173,7 +173,7 @@ public class PTPFloodingExample {
       System.out.println("Own identifier: " + ptp.getIdentifier());
       
       // main loop
-      while (true) {
+      while (!Thread.interrupted()) {
         System.out.println("Enter message to send (or exit to stop):");
         String content = br.readLine();
         if (content.equals("exit")) {
