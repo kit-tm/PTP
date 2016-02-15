@@ -26,7 +26,7 @@ public class TorManagerTest {
   }
 
   @Test
-  public void testStartAndWait() throws IOException {
+  public void testStartAndWait() throws IOException, InterruptedException {
     manager.startTor();
     assertEquals(true, manager.torRunning());
     manager.waitForBootstrapping(bootstrapTimeout);
@@ -34,7 +34,7 @@ public class TorManagerTest {
   }
   
   @Test
-  public void testSharedTorProcess() throws IOException {
+  public void testSharedTorProcess() throws IOException, InterruptedException {
     manager.startTor();
     assertEquals(true, manager.torRunning());
     manager.waitForBootstrapping(bootstrapTimeout);

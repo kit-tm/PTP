@@ -279,7 +279,7 @@ public class TorManager {
       }
       int numApis = raf.length() == 0 ? 0 : raf.readInt();
       logger.log(Level.INFO,
-          "TorManager checked if Tor is running: " + (torRunning ? "running" : "not running") );
+          "TorManager checked if Tor is running: " + (torRunning ? "running" : "not running"));
 
       if (!torRunning) {
         // Run the Tor process.
@@ -319,16 +319,11 @@ public class TorManager {
    * 
    * @param timeout Time in millisecods to wait for the bootstrapping to finish.
    */
-  public void waitForBootstrapping(long timeout) {
+  public void waitForBootstrapping(long timeout) throws InterruptedException {
     long start = System.currentTimeMillis();
 
     while (torRunning && !torBootstrapped && System.currentTimeMillis() - start < timeout) {
-      try {
-        Thread.sleep(1 * 1000);
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-        break;
-      }
+      Thread.sleep(1 * 1000);
     }
   }
 
@@ -456,15 +451,15 @@ public class TorManager {
             process.destroy();
           } else {
             logger.log(Level.INFO, "Using control port: " + torControlPort);
-  
+
             Socket socket = new Socket(Constants.localhost, torControlPort);
             logger.log(Level.INFO, "TorManager attempting to shutdown Tor process.");
-  
+
             TorControlConnection conn = new TorControlConnection(socket);
             conn.authenticate(new byte[0]);
             conn.shutdownTor(Constants.shutdownsignal);
             socket.close();
-  
+
             logger.log(Level.INFO, "TorManager sent shutdown signal.");
           }
 

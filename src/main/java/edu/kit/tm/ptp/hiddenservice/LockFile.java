@@ -6,7 +6,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileLock;
-import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -23,7 +22,7 @@ public class LockFile {
   private RandomAccessFile raf = null;
   private FileLock lock;
   private File file;
-  private Lock threadLock = new ReentrantLock();
+  private ReentrantLock threadLock = new ReentrantLock();
   private static final Logger logger = Logger.getLogger(LockFile.class.getName());
 
   public LockFile(File file) {
@@ -74,6 +73,10 @@ public class LockFile {
    * Releases a previously acquired lock.
    */
   public void release() {
+    if (lock != null && !threadLock.isHeldByCurrentThread()) {
+      throw new IllegalStateException();
+    }
+    
     if (lock != null) {
       try {
         lock.release();
@@ -90,7 +93,9 @@ public class LockFile {
       lock = null;
     }
     
-    threadLock.unlock();
+    if (threadLock.isHeldByCurrentThread()) {
+      threadLock.unlock();
+    }
   }
   
   /**

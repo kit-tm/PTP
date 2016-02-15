@@ -45,6 +45,7 @@ public class PTP implements ReceiveListener {
   private int controlPort;
   private int socksPort;
   private boolean usePTPTor;
+  private Thread clientThread = null;
 
   /**
    * Constructs a new PTP object. Manages a own Tor process.
@@ -104,6 +105,7 @@ public class PTP implements ReceiveListener {
     this.hiddenServiceDirectory = directory;
     this.usePTPTor = usePTPTor;
     this.hiddenServicePort = hiddenServicePort;
+    clientThread = Thread.currentThread();
   }
 
   /**
@@ -137,7 +139,12 @@ public class PTP implements ReceiveListener {
       final long timeout = config.getTorBootstrapTimeout();
 
       logger.log(Level.INFO, "Waiting for Tor bootstrapping to finish.");
-      tor.waitForBootstrapping(timeout);
+      
+      try {
+        tor.waitForBootstrapping(timeout);
+      } catch (InterruptedException e) {
+        throw new IOException("Bootstrapping was interrupted");
+      }
 
       // Check if Tor bootstrapped.
       if (!tor.torBootstrapped()) {
@@ -311,9 +318,7 @@ public class PTP implements ReceiveListener {
    * Closes the local hidden service and any open connections. Stops the socket TTL manager and the
    * Tor process manager. Does nothing if exit has already been called before.
    */
-  public synchronized void exit() {
-    // synchronized ensures that this method isn't called twice at the same time
-    // which can happen because of the shutdown hook
+  public void exit() {
     if (closed) {
       return;
     }
@@ -379,10 +384,16 @@ public class PTP implements ReceiveListener {
 
   private void addShutdownHook() {
     Runtime.getRuntime().addShutdownHook(new Thread() {
-      public void run() {
-        if (logger != null) {
-          logger.log(Level.INFO, "Shutdown hook called");
+      public void run() {        
+        if (clientThread != null) {
+          clientThread.interrupt();
+          try {
+            clientThread.join();
+          } catch (InterruptedException e) {
+            e.printStackTrace();
+          }
         }
+        
         exit();
       }
     });
