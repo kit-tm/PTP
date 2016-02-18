@@ -10,6 +10,7 @@ import edu.kit.tm.ptp.channels.ChannelManager;
 import edu.kit.tm.ptp.channels.MessageChannel;
 import edu.kit.tm.ptp.serialization.Serializer;
 import edu.kit.tm.ptp.thread.Waker;
+import edu.kit.tm.ptp.utility.Constants;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -164,7 +165,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
     logger.log(Level.INFO, "Starting bind server");
     ServerSocketChannel server = ServerSocketChannel.open();
     server.socket()
-        .bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), localPort));
+        .bind(new InetSocketAddress(Constants.localhost, localPort));
     server.configureBlocking(false);
 
     channelManager.addServerSocket(server);

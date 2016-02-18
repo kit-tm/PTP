@@ -8,6 +8,7 @@ import edu.kit.tm.ptp.serialization.ByteArrayMessage;
 import edu.kit.tm.ptp.serialization.Serializer;
 import edu.kit.tm.ptp.utility.Constants;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -93,6 +94,7 @@ public class PTP implements ReceiveListener {
   public PTP(String workingDirectory, int controlPort, int socksPort, int localPort,
       String directory) {
     initPTP(directory, false, localPort);
+    configReader = new ConfigurationFileReader(workingDirectory + File.separator + Constants.configfile);
 
     this.workingDirectory = workingDirectory;
     this.controlPort = controlPort;

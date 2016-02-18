@@ -28,7 +28,7 @@ public class StateInit extends AbstractState {
     // Incoming connection
     try {
       manager.logger.log(Level.INFO,
-          "Received new connection from " + channel.getChannel().getRemoteAddress().toString());
+          "Received new connection from " + channel.getChannel().socket().getRemoteSocketAddress().toString());
       
       manager.channelManager.addChannel(channel);
     } catch (IOException ioe) {
