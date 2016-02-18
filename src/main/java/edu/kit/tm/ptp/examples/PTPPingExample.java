@@ -102,7 +102,9 @@ public class PTPPingExample {
           // quick and dirty approximation
           long sendTime = pingStartTime + (message.seq - 1) * pingInterval;
           long rtt = System.currentTimeMillis() - sendTime;
-          System.out.println("Received pong from " + source + ": time=" + rtt + " ms");
+          System.out.println("Received pong from " + source + ":"
+              + " seq=" + message.seq
+              + " time=" + rtt + " ms");
         }
       });
       
