@@ -39,7 +39,7 @@ public class PTP implements ReceiveListener {
   private int hiddenServicePort;
   private final Serializer serializer = new Serializer();
   private final ListenerContainer listeners = new ListenerContainer();
-  private boolean initialized = false;
+  private volatile boolean initialized = false;
   private volatile boolean closed = false;
   private String hiddenServiceDirectory;
   private String workingDirectory;
@@ -65,7 +65,7 @@ public class PTP implements ReceiveListener {
    * @throws IOException If an error occurs.
    */
   public PTP(String directory) {
-    initPTP(directory, true, Constants.anyport);
+    initPTP(directory, null, true, Constants.anyport);
   }
 
   /**
@@ -93,18 +93,23 @@ public class PTP implements ReceiveListener {
    */
   public PTP(String workingDirectory, int controlPort, int socksPort, int localPort,
       String directory) {
-    initPTP(directory, false, localPort);
+    initPTP(directory, workingDirectory, false, localPort);
     configReader = new ConfigurationFileReader(workingDirectory + File.separator + Constants.configfile);
 
-    this.workingDirectory = workingDirectory;
     this.controlPort = controlPort;
     this.socksPort = socksPort;
   }
 
-  private void initPTP(String directory, boolean usePTPTor, int hiddenServicePort) {
-    configReader = new ConfigurationFileReader(Constants.configfile);
+  public PTP(String workingDirectory, boolean android) {
+    initPTP(null, workingDirectory, true, Constants.anyport);
+  }
 
-    this.hiddenServiceDirectory = directory;
+  private void initPTP(String hsDirectory, String workingDirectory, boolean usePTPTor, int hiddenServicePort) {
+    configReader = new ConfigurationFileReader((workingDirectory != null ? workingDirectory
+            + File.separator : "") + Constants.configfile);
+
+    this.workingDirectory = workingDirectory;
+    this.hiddenServiceDirectory = hsDirectory;
     this.usePTPTor = usePTPTor;
     this.hiddenServicePort = hiddenServicePort;
     clientThread = Thread.currentThread();
@@ -134,7 +139,11 @@ public class PTP implements ReceiveListener {
     logger = Logger.getLogger(PTP.class.getName());
 
     if (usePTPTor) {
-      tor = new TorManager();
+      if (workingDirectory != null) {
+        tor = new TorManager(workingDirectory);
+      } else {
+        tor = new TorManager();
+      }
       // Start the Tor process.
       tor.startTor();
 
@@ -176,6 +185,10 @@ public class PTP implements ReceiveListener {
     // Start the manager with the given TTL.
     ttlManager.start();
     initialized = true;
+  }
+
+  public boolean isInitialized() {
+    return initialized;
   }
 
   /**

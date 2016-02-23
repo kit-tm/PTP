@@ -56,6 +56,7 @@ public class TorManager {
   private volatile boolean torRunning = false;
   private volatile boolean torBootstrapped = false;
   private volatile boolean portsFileWritten = false;
+  private boolean useAbsolutePath;
 
   private class OutputThread implements Runnable {
     @Override
@@ -215,6 +216,12 @@ public class TorManager {
       ptphome = Constants.ptphomedefault;
     }
     workingDirectory = ptphome;
+    useAbsolutePath = false;
+  }
+
+  public TorManager(String workingDirectory) {
+    this.workingDirectory = workingDirectory;
+    useAbsolutePath = true;
   }
 
   /**
@@ -494,19 +501,25 @@ public class TorManager {
   private boolean runTor() {
     logger.log(Level.INFO, "TorManager starting Tor process.");
 
+    String torFile = useAbsolutePath ? workingDirectory + File.separator : "";
+    torFile += Constants.torfile;
+    String torrcFile = useAbsolutePath ? workingDirectory + File.separator : "";
+    torrcFile += Constants.torrcfile;
+
     try {
       /** The parameters for the Tor execution command. */
       final String[] parameters = {
           /** The Tor executable file. */
-          Constants.torfile,
+          torFile,
           /** The Tor configuration file option. */
           Constants.torrcoption,
           /** The Tor configuration file. */
-          Constants.torrcfile,
+          torrcFile,
           /** The Tor working directory option. */
           Constants.datadiroption,
           /** The Tor working directory path. */
-          workingDirectory.toString()};
+          workingDirectory
+      };
 
       logger.log(Level.INFO, "Executing Tor.");
       logger.log(Level.INFO,
