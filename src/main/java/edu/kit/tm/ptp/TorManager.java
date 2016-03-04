@@ -202,26 +202,16 @@ public class TorManager {
     }
   }
 
-
   /**
-   * Constructor method.
-   *
-   * @throws IOException Propagates any IOException thrown by the temporary directory creation.
+   * Constructs a new TorManager object.
+   * 
+   * @param workingDirectory The directory to run Tor in.
+   * @param useAbsolutePath If the Tor binary lies in the workingDirectory and the full path should
+   *        be used to call it.
    */
-  public TorManager() {
-    // Read the PTP home directory from the system environment variable/passed property at runtime.
-    // Or use default if neither is set.
-    String ptphome = System.getenv(Constants.ptphome);
-    if (ptphome == null) {
-      ptphome = Constants.ptphomedefault;
-    }
-    workingDirectory = ptphome;
-    useAbsolutePath = false;
-  }
-
-  public TorManager(String workingDirectory) {
+  public TorManager(String workingDirectory, boolean useAbsolutePath) {
     this.workingDirectory = workingDirectory;
-    useAbsolutePath = true;
+    this.useAbsolutePath = useAbsolutePath;
   }
 
   /**
@@ -518,8 +508,7 @@ public class TorManager {
           /** The Tor working directory option. */
           Constants.datadiroption,
           /** The Tor working directory path. */
-          workingDirectory
-      };
+          workingDirectory};
 
       logger.log(Level.INFO, "Executing Tor.");
       logger.log(Level.INFO,

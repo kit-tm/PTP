@@ -3,7 +3,6 @@ package edu.kit.tm.ptp;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 
-import edu.kit.tm.ptp.Configuration;
 import edu.kit.tm.ptp.utility.Constants;
 
 import org.junit.After;
@@ -39,7 +38,7 @@ public class ConfigurationTest {
   private Configuration configuration = null;
   /** The properties used for the test. */
   private String defaultIdentifier = null;
-  private String hiddenServiceDirectory = null;
+  private String hiddenServicesDirectory = null;
   private int hiddenServicePort = -1;
   private byte[] authenticationBytes = null;
   private int torBootstrapTimeout = -1;
@@ -61,7 +60,7 @@ public class ConfigurationTest {
     // Set the default identifier.
     defaultIdentifier = "defid";
     // Set the hidden service directory.
-    hiddenServiceDirectory = Paths.get("").toString() + File.separator + Constants.hiddenservicedir;
+    hiddenServicesDirectory = Paths.get("").toString() + File.separator + Constants.hiddenservicedir;
     // Set the authentication bytes.
     authenticationBytes = new byte[] {};
 
@@ -96,7 +95,9 @@ public class ConfigurationTest {
     ConfigurationFileReader reader = new ConfigurationFileReader(file.getCanonicalPath());
     // Create the configuration.
     configuration = reader.readFromFile();
-    configuration.setTorConfiguration(Paths.get("").toString(), torControlPort, torSocksProxyPort);
+    configuration.setWorkingDirectory(Paths.get("").toString());
+    configuration.setHiddenServicesDirectory(hiddenServicesDirectory);
+    configuration.setTorConfiguration(torControlPort, torSocksProxyPort);
   }
 
   /**
@@ -127,18 +128,18 @@ public class ConfigurationTest {
   }
 
   /**
-   * Test method for {@link edu.kit.tm.ptp.Configuration#getHiddenServiceDirectory()}.
+   * Test method for {@link edu.kit.tm.ptp.Configuration#getHiddenServicesDirectory()}.
    *
    * <p>
    * Checks whether the configuration read the hidden service directory property correctly. Fails if
    * the read property is not equal to the written property.
    */
   @Test
-  public void testGetHiddenServiceDirectory() {
-    System.out.println(configuration.getHiddenServiceDirectory());
-    if (!hiddenServiceDirectory.equals(configuration.getHiddenServiceDirectory())) {
-      fail("Hidden service directory property does not match: " + hiddenServiceDirectory + " != "
-          + configuration.getHiddenServiceDirectory());
+  public void testGetHiddenServicesDirectory() {
+    System.out.println(configuration.getHiddenServicesDirectory());
+    if (!hiddenServicesDirectory.equals(configuration.getHiddenServicesDirectory())) {
+      fail("Hidden service directory property does not match: " + hiddenServicesDirectory + " != "
+          + configuration.getHiddenServicesDirectory());
     }
   }
 

@@ -47,6 +47,7 @@ public class PTP implements ReceiveListener {
   private int socksPort;
   private boolean usePTPTor;
   private Thread clientThread = null;
+  private boolean android = false;
 
   /**
    * Constructs a new PTP object. Manages a own Tor process.
@@ -94,7 +95,8 @@ public class PTP implements ReceiveListener {
   public PTP(String workingDirectory, int controlPort, int socksPort, int localPort,
       String directory) {
     initPTP(directory, workingDirectory, false, localPort);
-    configReader = new ConfigurationFileReader(workingDirectory + File.separator + Constants.configfile);
+    configReader =
+        new ConfigurationFileReader(workingDirectory + File.separator + Constants.configfile);
 
     this.controlPort = controlPort;
     this.socksPort = socksPort;
@@ -102,11 +104,13 @@ public class PTP implements ReceiveListener {
 
   public PTP(String workingDirectory, boolean android) {
     initPTP(null, workingDirectory, true, Constants.anyport);
+    this.android = true;
   }
 
-  private void initPTP(String hsDirectory, String workingDirectory, boolean usePTPTor, int hiddenServicePort) {
-    configReader = new ConfigurationFileReader((workingDirectory != null ? workingDirectory
-            + File.separator : "") + Constants.configfile);
+  private void initPTP(String hsDirectory, String workingDirectory, boolean usePTPTor,
+      int hiddenServicePort) {
+    configReader = new ConfigurationFileReader(
+        (workingDirectory != null ? workingDirectory + File.separator : "") + Constants.configfile);
 
     this.workingDirectory = workingDirectory;
     this.hiddenServiceDirectory = hsDirectory;
@@ -125,11 +129,11 @@ public class PTP implements ReceiveListener {
     if (initialized) {
       throw new IllegalStateException("PTP is already initialized.");
     }
-    
+
     if (closed) {
       throw new IllegalStateException("PTP is already closed.");
     }
-    
+
     addShutdownHook();
 
     // read the configuration file
@@ -138,19 +142,29 @@ public class PTP implements ReceiveListener {
     // Create the logger after the configuration sets the logger properties file.
     logger = Logger.getLogger(PTP.class.getName());
 
-    if (usePTPTor) {
-      if (workingDirectory != null) {
-        tor = new TorManager(workingDirectory);
+    if (workingDirectory == null) {
+      String ptphome = System.getenv(Constants.ptphome);
+
+      if (ptphome == null) {
+        workingDirectory = Constants.ptphomedefault;
       } else {
-        tor = new TorManager();
+        workingDirectory = ptphome;
       }
+    }
+
+    config.setWorkingDirectory(workingDirectory);
+    config.setHiddenServicesDirectory(workingDirectory 
+        + File.separator + Constants.hiddenservicedir);
+
+    if (usePTPTor) {
+      tor = new TorManager(workingDirectory, android);
       // Start the Tor process.
       tor.startTor();
 
       final long timeout = config.getTorBootstrapTimeout();
 
       logger.log(Level.INFO, "Waiting for Tor bootstrapping to finish.");
-      
+
       try {
         tor.waitForBootstrapping(timeout);
       } catch (InterruptedException e) {
@@ -163,10 +177,9 @@ public class PTP implements ReceiveListener {
         throw new IOException("Tor bootstrapping timeout expired!");
       }
 
-      config.setTorConfiguration(tor.getTorWorkingDirectory(), tor.getTorControlPort(),
-          tor.getTorSOCKSPort());
+      config.setTorConfiguration(tor.getTorControlPort(), tor.getTorSOCKSPort());
     } else {
-      config.setTorConfiguration(workingDirectory, controlPort, socksPort);
+      config.setTorConfiguration(controlPort, socksPort);
     }
 
     connectionManager = new ConnectionManager(Constants.localhost, config.getTorSOCKSProxyPort(),
@@ -337,7 +350,7 @@ public class PTP implements ReceiveListener {
     if (closed) {
       return;
     }
-    
+
     if (connectionManager != null) {
       connectionManager.stop();
     }
@@ -354,7 +367,7 @@ public class PTP implements ReceiveListener {
     if (hiddenServiceManager != null) {
       hiddenServiceManager.close();
     }
-    
+
     closed = true;
   }
 
@@ -399,7 +412,7 @@ public class PTP implements ReceiveListener {
 
   private void addShutdownHook() {
     Runtime.getRuntime().addShutdownHook(new Thread() {
-      public void run() {        
+      public void run() {
         if (clientThread != null) {
           clientThread.interrupt();
           try {
@@ -408,7 +421,7 @@ public class PTP implements ReceiveListener {
             e.printStackTrace();
           }
         }
-        
+
         exit();
       }
     });

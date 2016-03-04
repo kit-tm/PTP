@@ -15,8 +15,8 @@ public class TorManagerTest {
   
   @Before
   public void setUp() throws Exception {
-    manager = new TorManager();
-    manager2 = new TorManager();
+    manager = new TorManager("./ptp-data/", false);
+    manager2 = new TorManager("./ptp-data/", false);
   }
 
   @After

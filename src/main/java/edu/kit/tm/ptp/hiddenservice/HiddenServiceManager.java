@@ -57,15 +57,18 @@ public class HiddenServiceManager {
 
     this.configuration = configuration;
 
-    // Set the hidden service directory.
-    this.directory = directory == null ? Constants.hiddenserviceprefix + port
-        : Constants.hiddenserviceprefix + directory;
+    if (directory == null) {
+      this.directory = configuration.getHiddenServicesDirectory() + File.separator
+              + Constants.hiddenserviceprefix + port;
+    } else {
+      this.directory = directory;
+    }
 
     this.port = port;
 
     // Check if the hidden service directory exists, if not create it.
-    File hiddenServiceDirectory = new File(configuration.getHiddenServiceDirectory());
-    if (!hiddenServiceDirectory.exists() && !hiddenServiceDirectory.mkdirs()) {
+    File hiddenServicesDirectory = new File(configuration.getHiddenServicesDirectory());
+    if (!hiddenServicesDirectory.exists() && !hiddenServicesDirectory.mkdirs()) {
       throw new IOException("Could not create hidden service directory!");
     }
 
@@ -160,11 +163,11 @@ public class HiddenServiceManager {
 
 
   private String checkHiddenServices(boolean reuse) throws IOException {
-    File hiddenServiceDirectory = new File(configuration.getHiddenServiceDirectory());
+    File hiddenServicesDirectory = new File(configuration.getHiddenServicesDirectory());
     String freeHsDir = null;
 
     // Search for a valid hidden service directory
-    for (File hiddenService : hiddenServiceDirectory.listFiles()) {
+    for (File hiddenService : hiddenServicesDirectory.listFiles()) {
       // Skip over any files in the directory.
       if (!hiddenService.isDirectory()) {
         continue;
@@ -184,7 +187,7 @@ public class HiddenServiceManager {
 
       if (!reuse) {
         logger.log(Level.INFO, "Deleting hidden service directory " + name);
-        deleteHiddenServiceDirectory(name);
+        deleteHiddenServiceDirectory(hiddenService.getAbsolutePath());
       }
 
       if (reuse && freeHsDir == null) {
@@ -193,7 +196,7 @@ public class HiddenServiceManager {
         }
 
         // We reuse the dir. Save the lock and release it later
-        freeHsDir = name;
+        freeHsDir = hiddenService.getAbsolutePath();
         hiddenServiceLock = hsLockFile;
 
         logger.log(Level.INFO, "Found hidden service directory to reuse " + freeHsDir);
@@ -204,7 +207,7 @@ public class HiddenServiceManager {
   }
 
   private void newHiddenService() throws IOException {
-    File hsDir = new File(configuration.getHiddenServiceDirectory() + File.separator + directory);
+    File hsDir = new File(directory);
     File hsLockFile = new File(hsDir + File.separator + Constants.hiddenservicelockfile);
 
     if (!hsDir.exists() && !hsDir.mkdir()) {
@@ -219,8 +222,7 @@ public class HiddenServiceManager {
   }
 
   private void writePortFile() throws IOException {
-    File portFile = new File(configuration.getHiddenServiceDirectory() + File.separator + directory
-        + File.separator + Constants.portfile);
+    File portFile = new File(directory + File.separator + Constants.portfile);
     ObjectOutputStream stream = new ObjectOutputStream(new FileOutputStream(portFile, false));
     stream.writeInt(port);
     stream.close();
@@ -248,11 +250,11 @@ public class HiddenServiceManager {
 
     // Set the properties for the hidden service configuration.
     LinkedList<String> properties = new LinkedList<String>();
-    File hiddenServiceDirectory = new File(configuration.getHiddenServiceDirectory());
+    File hiddenServicesDirectory = new File(configuration.getHiddenServicesDirectory());
 
     // Read the hidden service directories in the hidden service root directory, and add them to the
     // new hidden service configuration.
-    for (File hiddenService : hiddenServiceDirectory.listFiles()) {
+    for (File hiddenService : hiddenServicesDirectory.listFiles()) {
       // Skip over any files in the directory.
       if (!hiddenService.isDirectory()) {
         continue;
@@ -316,16 +318,11 @@ public class HiddenServiceManager {
     }
 
     logger.log(Level.INFO, "Deleting hidden service directory.");
-    File hostname = new File(configuration.getHiddenServiceDirectory() + File.separator + directory
-        + File.separator + Constants.hostname);
-    File hiddenservice =
-        new File(configuration.getHiddenServiceDirectory() + File.separator + directory);
-    File privatekey = new File(configuration.getHiddenServiceDirectory() + File.separator
-        + directory + File.separator + Constants.prkey);
-    File port = new File(configuration.getHiddenServiceDirectory() + File.separator + directory
-        + File.separator + Constants.portfile);
-    File lockFile = new File(configuration.getHiddenServiceDirectory() + File.separator + directory
-        + File.separator + Constants.hiddenservicelockfile);
+    File hostname = new File(directory + File.separator + Constants.hostname);
+    File hiddenservice = new File(directory);
+    File privatekey = new File(directory + File.separator + Constants.prkey);
+    File port = new File(directory + File.separator + Constants.portfile);
+    File lockFile = new File(directory + File.separator + Constants.hiddenservicelockfile);
 
     boolean hostnameDeleted = hostname.delete();
     logger.log(Level.INFO, "Deleted hostname file: " + (hostnameDeleted ? "yes" : "no"));
@@ -346,8 +343,7 @@ public class HiddenServiceManager {
   }
 
   private String readIdentifier(String hsDir) throws IOException {
-    File hostname = new File(configuration.getHiddenServiceDirectory() + File.separator + hsDir
-        + File.separator + Constants.hostname);
+    File hostname = new File(hsDir + File.separator + Constants.hostname);
 
     logger.log(Level.INFO, "Reading identifier from file: " + hostname);
 

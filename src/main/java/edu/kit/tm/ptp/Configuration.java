@@ -1,8 +1,5 @@
 package edu.kit.tm.ptp;
 
-import edu.kit.tm.ptp.utility.Constants;
-
-import java.io.File;
 import java.util.logging.Logger;
 
 
@@ -40,8 +37,8 @@ public class Configuration {
 
   /** The path of the working directory. */
   private String workingDirectory;
-  /** The path of the Tor hidden service directory. */
-  private String hiddenServiceDirectory;
+  private String hiddenServicesDirectory;
+
   /** The port number of the Tor control socket. */
   private int torControlPort;
   /** The port number of the Tor SOCKS proxy. */
@@ -71,8 +68,8 @@ public class Configuration {
     sb.append(defaultIdentifier);
     sb.append("\n");
 
-    sb.append("\thidden service directory = ");
-    sb.append(hiddenServiceDirectory);
+    sb.append("\thidden services directory = ");
+    sb.append(hiddenServicesDirectory);
     sb.append("\n");
 
     sb.append("\thidden service port number = ");
@@ -150,9 +147,8 @@ public class Configuration {
     this.workingDirectory = workingDirectory;
   }
 
-
-  public void setHiddenServiceDirectory(String hiddenServiceDirectory) {
-    this.hiddenServiceDirectory = hiddenServiceDirectory;
+  public void setHiddenServicesDirectory(String hiddenServicesDirectory) {
+    this.hiddenServicesDirectory = hiddenServicesDirectory;
   }
 
 
@@ -164,22 +160,21 @@ public class Configuration {
   /**
    * Sets the Tor control and SOCKS port numbers of the configuration.
    *
-   * @param directory The working directory of the Tor process.
    * @param controlPort The Tor control port number.
    * @param socksPort The Tor SOCKS port number.
    */
-  public void setTorConfiguration(String directory, int controlPort, int socksPort) {
+  public void setTorConfiguration(int controlPort, int socksPort) {
     torControlPort = controlPort;
     logger.info("Set the Tor control port to: " + torControlPort);
 
     torSocksProxyPort = socksPort;
     logger.info("Set the Tor SOCKS port to: " + torSocksProxyPort);
 
-    workingDirectory = directory;
+    /*workingDirectory = directory;
     logger.info("Set the working directory to: " + this.workingDirectory);
 
     hiddenServiceDirectory = workingDirectory + File.separator + Constants.hiddenservicedir;
-    logger.info("Set the hidden servide directory to: " + hiddenServiceDirectory);
+    logger.info("Set the hidden servide directory to: " + hiddenServiceDirectory);*/
   }
 
 
@@ -206,8 +201,8 @@ public class Configuration {
    *
    * @return The Tor hidden service directory.
    */
-  public String getHiddenServiceDirectory() {
-    return hiddenServiceDirectory;
+  public String getHiddenServicesDirectory() {
+    return hiddenServicesDirectory;
   }
 
   /**
