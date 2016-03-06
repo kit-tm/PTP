@@ -10,6 +10,8 @@ import edu.kit.tm.ptp.utility.Constants;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -32,13 +34,13 @@ public class PTP implements ReceiveListener {
   /** The manager that closes sockets when their TTL expires. */
   private TTLManager ttlManager;
   /** A dummy sending listener to use when no listener is specified upon message sending. */
-  private ReceiveListener receiveListener = new ReceiveListenerAdapter();
+  private ReceiveListener receiveListener = null;
 
   private HiddenServiceManager hiddenServiceManager;
   private ConnectionManager connectionManager;
   private int hiddenServicePort;
   private final Serializer serializer = new Serializer();
-  private final ListenerContainer listeners = new ListenerContainer();
+  private final MessageQueueContainer messageTypes = new MessageQueueContainer();
   private volatile boolean initialized = false;
   private volatile boolean closed = false;
   private String hiddenServiceDirectory;
@@ -48,6 +50,9 @@ public class PTP implements ReceiveListener {
   private boolean usePTPTor;
   private Thread clientThread = null;
   private boolean android = false;
+  private final Queue<QueuedMessage<byte[]>> byteArrayMessages =
+      new ConcurrentLinkedQueue<QueuedMessage<byte[]>>();
+  private volatile boolean queueMessages = false;
 
   /**
    * Constructs a new PTP object. Manages a own Tor process.
@@ -117,6 +122,7 @@ public class PTP implements ReceiveListener {
     this.usePTPTor = usePTPTor;
     this.hiddenServicePort = hiddenServicePort;
     clientThread = Thread.currentThread();
+    messageTypes.addMessageQueue(ByteArrayMessage.class);
   }
 
   /**
@@ -153,8 +159,8 @@ public class PTP implements ReceiveListener {
     }
 
     config.setWorkingDirectory(workingDirectory);
-    config.setHiddenServicesDirectory(workingDirectory 
-        + File.separator + Constants.hiddenservicedir);
+    config
+        .setHiddenServicesDirectory(workingDirectory + File.separator + Constants.hiddenservicedir);
 
     if (usePTPTor) {
       tor = new TorManager(workingDirectory, android);
@@ -300,14 +306,50 @@ public class PTP implements ReceiveListener {
 
   /**
    * Register class to be able to send and receive objects of the class as message and registers an
-   * appropriate listener.
+   * appropriate listener. A class type may only be registered once and it's not allowed to register
+   * a listener and a message queue for the same type.
    * 
-   * @param type The class to register.
+   * @param type The class type to register.
    * @param listener Listener to be informed about received objects of the class.
+   * @see #registerMessageQueue(Class)
    */
-  public <T> void registerMessage(Class<T> type, MessageReceivedListener<T> listener) {
+  public <T> void registerListener(Class<T> type, MessageReceivedListener<T> listener) {
     serializer.registerClass(type);
-    listeners.putListener(type, listener);
+    messageTypes.putListener(type, listener);
+  }
+
+  /**
+   * Register class to be able to send and receive object of the class as message. Objects can be
+   * received by using the IMessageQueue provided by {@link #getMessageQueue() getMessageQueue}. A
+   * class type may only be registered once and it's not allowed to register a listener and a
+   * message queue for the same type.
+   * 
+   * @param type The class type to register.
+   * @see #registerListener(Class, MessageReceivedListener)
+   */
+  public <T> void registerMessageQueue(Class<T> type) {
+    serializer.registerClass(type);
+    messageTypes.addMessageQueue(type);
+  }
+
+  /**
+   * Returns an IMessageQueue object to be able to receive objects of previously registered types.
+   * 
+   * @see #registerMessageQueue(Class)
+   */
+  public IMessageQueue getMessageQueue() {
+    return messageTypes;
+  }
+
+  /**
+   * Returns the next received message or null if the queue is empty.
+   */
+  public QueuedMessage<byte[]> getMessage() {
+    return byteArrayMessages.poll();
+  }
+  
+  public void setQueueMessages(boolean queueMessages) {
+    this.queueMessages = queueMessages;
   }
 
   public void setReceiveListener(ReceiveListener listener) {
@@ -379,9 +421,26 @@ public class PTP implements ReceiveListener {
 
       if (obj instanceof ByteArrayMessage) {
         ByteArrayMessage message = (ByteArrayMessage) obj;
-        receiveListener.messageReceived(message.getData(), source);
+
+        if (receiveListener != null) {
+          receiveListener.messageReceived(message.getData(), source);
+        }
+        
+        if (queueMessages || receiveListener == null) {
+          byteArrayMessages.add(new QueuedMessage<byte[]>(source, message.getData()));
+        }
       } else {
-        listeners.callListener(obj, source);
+        if (messageTypes.hasListener(obj)) {
+          messageTypes.callReceiveListener(obj, source);
+        }
+        if (messageTypes.hasQueue(obj)) {
+          messageTypes.addMessageToQueue(obj, source);
+        }
+        
+        if (!messageTypes.hasListener(obj) && !messageTypes.hasQueue(obj)) {
+          logger.log(Level.WARNING,
+              "Received message of unregistered type with length " + data.length);
+        }
       }
     } catch (IOException e) {
       logger.log(Level.WARNING, "Error occurred while deserializing data: " + e.getMessage());

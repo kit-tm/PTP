@@ -431,8 +431,8 @@ public class PTPTest {
     client1.setSendListener(listener);
 
     // Message has to be registered on both ends
-    client1.registerMessage(Message.class, new MessageListener());
-    client2.registerMessage(Message.class, new MessageListener());
+    client1.registerListener(Message.class, new MessageListener());
+    client2.registerListener(Message.class, new MessageListener());
 
     client1.sendMessage(toSend, client2.getIdentifier());
 

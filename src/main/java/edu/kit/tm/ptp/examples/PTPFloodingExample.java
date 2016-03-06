@@ -111,7 +111,7 @@ public class PTPFloodingExample {
       final Set<FloodingMessage> seenMessages = new HashSet<FloodingMessage>();
 
       // Register message and setup ReceiveListener
-      ptp.registerMessage(FloodingMessage.class, new MessageReceivedListener<FloodingMessage>() {
+      ptp.registerListener(FloodingMessage.class, new MessageReceivedListener<FloodingMessage>() {
         
         @Override
         public void messageReceived(FloodingMessage message, Identifier source) {

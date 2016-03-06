@@ -1,9 +1,9 @@
 package edu.kit.tm.ptp;
 
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Container to store a listener for a class type.
@@ -15,7 +15,7 @@ import java.util.Map;
  */
 public class ListenerContainer {
   private Map<Class<?>, Object> listeners = new HashMap<Class<?>, Object>();
-  private List<Class<?>> registerClasses = new LinkedList<Class<?>>();
+  protected Set<Class<?>> registerClasses = new HashSet<Class<?>>();
 
   /**
    * Maps the listener to the supplied class type.
@@ -24,11 +24,16 @@ public class ListenerContainer {
     if (type == null || listener == null) {
       throw new NullPointerException("Parameter is null");
     }
+    
+    if (listeners.get(type) != null) {
+      throw new IllegalArgumentException();
+    }
+    
     listeners.put(type, listener);
     registerClasses.add(type);
   }
   
-  private Class<?> getType(Object obj) {
+  protected Class<?> getType(Object obj) {
     for (Class<?> cl : registerClasses) {
       if (cl.isInstance(obj)) {
         return cl;
@@ -38,7 +43,33 @@ public class ListenerContainer {
     throw new IllegalStateException("Type of object hasn't been registered before");
   }
   
-  private <T> void callListener2(T object, Identifier source) {
+  protected Class<?> getTypeOrNull(Object obj) {
+    for (Class<?> cl : registerClasses) {
+      if (cl.isInstance(obj)) {
+        return cl;
+      }
+    }
+    
+    return null;
+  }
+  
+  
+  /**
+   * Calls a previously registered listener.
+   */
+  public void callReceiveListener(Object obj, Identifier source) {
+    if (!hasListener(obj)) {
+      throw new IllegalArgumentException();
+    }
+    
+    callListener(getType(obj).cast(obj), source);
+  }
+  
+  public boolean hasListener(Object obj) {
+    return listeners.get(getType(obj)) != null;
+  }
+  
+  private <T> void callListener(T object, Identifier source) {
     @SuppressWarnings("unchecked")
     MessageReceivedListener<T> listener = 
         (MessageReceivedListener<T>) listeners.get(object.getClass());
@@ -48,12 +79,5 @@ public class ListenerContainer {
     }
     
     listener.messageReceived(object, source);
-  }
-  
-  /**
-   * Calls a previously registered listener.
-   */
-  public void callListener(Object obj, Identifier source) {   
-    callListener2(getType(obj).cast(obj), source);
   }
 }

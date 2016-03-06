@@ -87,7 +87,7 @@ public class PTPPingExample {
       System.out.println("Created hidden service.");
 
       // Register message and setup ReceiveListener
-      ptp.registerMessage(PingMessage.class, new MessageReceivedListener<PingMessage>() {
+      ptp.registerListener(PingMessage.class, new MessageReceivedListener<PingMessage>() {
         @Override
         public void messageReceived(PingMessage message, Identifier source) {
           sendPong(message.seq, source);
@@ -95,7 +95,7 @@ public class PTPPingExample {
       });
       
       // Register message and setup ReceiveListener
-      ptp.registerMessage(PongMessage.class, new MessageReceivedListener<PongMessage>() {
+      ptp.registerListener(PongMessage.class, new MessageReceivedListener<PongMessage>() {
         @Override
         public void messageReceived(PongMessage message, Identifier source) {
           
