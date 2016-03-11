@@ -64,20 +64,9 @@ public class PTP implements ReceiveListener {
   }
 
   /**
-   * Constructs a new PTP object using the supplied hidden service directory name. Manages an own
-   * Tor process.
-   *
-   * @param directory The name of the hidden service directory.
-   * @throws IOException If an error occurs.
-   */
-  public PTP(String directory) {
-    initPTP(directory, null, true, Constants.anyport);
-  }
-
-  /**
    * Constructs a new PTP object. Uses an already running Tor process.
    *
-   * @param workingDirectory The working directory of the Tor process.
+   * @param workingDirectory The directory to start PTP in.
    * @param controlPort The control port of the Tor process.
    * @param socksPort The SOCKS port of the Tor process.
    * @throws IOException If an error occurs.
@@ -89,7 +78,7 @@ public class PTP implements ReceiveListener {
   /**
    * Constructs a new PTP object. Uses an already running Tor process.
    *
-   * @param workingDirectory The working directory of the Tor process.
+   * @param workingDirectory The directory to start PTP in.
    * @param controlPort The control port of the Tor process.
    * @param socksPort The SOCKS port of the Tor process.
    * @param localPort The port on which the local hidden service should run.
@@ -107,9 +96,25 @@ public class PTP implements ReceiveListener {
     this.socksPort = socksPort;
   }
 
-  public PTP(String workingDirectory, boolean android) {
-    initPTP(null, workingDirectory, true, Constants.anyport);
-    this.android = true;
+  /**
+   * Constructs a new PTP object using the supplied working directory.
+   * 
+   * @param workingDirectory The directory to start PTP in.
+   */
+  public PTP(String workingDirectory) {
+    this(workingDirectory, null);
+    this.android = workingDirectory != null;
+  }
+
+  /**
+   * Constructs a new PTP object using the supplied hidden service directory name. Manages an own
+   * Tor process.
+   * 
+   * @param workingDirectory The directory to start PTP in.
+   * @param hiddenServiceDirectory The directory of a hidden service to use.
+   */
+  public PTP(String workingDirectory, String hiddenServiceDirectory) {
+    initPTP(hiddenServiceDirectory, workingDirectory, true, Constants.anyport);
   }
 
   private void initPTP(String hsDirectory, String workingDirectory, boolean usePTPTor,
