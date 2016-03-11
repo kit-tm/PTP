@@ -312,8 +312,7 @@ public class PTP implements ReceiveListener {
 
   /**
    * Register class to be able to send and receive objects of the class as message and registers an
-   * appropriate listener. A class type may only be registered once and it's not allowed to register
-   * a listener and a message queue for the same type.
+   * appropriate listener. A class type may only be registered once.
    * 
    * @param type The class type to register.
    * @param listener Listener to be informed about received objects of the class.
@@ -326,9 +325,8 @@ public class PTP implements ReceiveListener {
 
   /**
    * Register class to be able to send and receive object of the class as message. Objects can be
-   * received by using the IMessageQueue provided by {@link #getMessageQueue() getMessageQueue}. A
-   * class type may only be registered once and it's not allowed to register a listener and a
-   * message queue for the same type.
+   * received by using the Iterator provided by {@link #messageIterator() messageIterator}. A
+   * class type may only be registered once.
    * 
    * @param type The class type to register.
    * @see #registerListener(Class, MessageReceivedListener)
@@ -337,20 +335,20 @@ public class PTP implements ReceiveListener {
     serializer.registerClass(type);
     messageTypes.addMessageQueue(type);
   }
-
-  /**
-   * Returns an IMessageQueue object to be able to receive objects of previously registered types.
-   * 
-   * @see #registerMessageQueue(Class)
-   */
-  public IMessageQueue getMessageQueue() {
-    return messageTypes;
+  
+  protected <T> boolean hasMessage(Class<T> type) {
+    return messageTypes.hasMessage(type);
   }
+
+  public <T> Iterator<QueuedMessage<T>> messageIterator(Class<T> type) {
+    return messageTypes.iterator(type);
+  }
+
   /**
    * Returns an iterator for received byte array messages.
    */
   public Iterator<QueuedMessage<byte[]>> messageIterator() {
-    return messageTypes.iterator(byte[].class);
+    return messageIterator(byte[].class);
   }
   
   public void setQueueMessages(boolean queueMessages) {

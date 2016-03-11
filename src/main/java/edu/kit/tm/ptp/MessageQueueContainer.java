@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * @author Timon Hackenjos
  */
 
-public class MessageQueueContainer extends ListenerContainer implements IMessageQueue {
+public class MessageQueueContainer extends ListenerContainer {
   private Map<Class<?>, Queue<Object>> queues = new HashMap<Class<?>, Queue<Object>>();
   
   /**
@@ -50,8 +50,10 @@ public class MessageQueueContainer extends ListenerContainer implements IMessage
     return objT;
   }
 
-  @Override
-  public <T> boolean hasMessage(Class<T> type) {
+  /**
+   * Returns true if the queue of the specified type contains a message.
+   */
+  protected <T> boolean hasMessage(Class<T> type) {
     Queue<Object> queue = queues.get(type);
     
     if (queue == null) {
@@ -94,7 +96,9 @@ public class MessageQueueContainer extends ListenerContainer implements IMessage
     queue.add(new QueuedMessage<T>(source, message, receiveTime));
   }
 
-  @Override
+  /**
+   * Returns an iterator for messages of the supplied type.
+   */
   public <T> Iterator<QueuedMessage<T>> iterator(Class<T> type) {
     return new MessageQueueIterator<T>(type, this);
   }

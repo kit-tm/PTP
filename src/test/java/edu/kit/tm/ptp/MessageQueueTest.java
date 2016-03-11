@@ -62,16 +62,14 @@ public class MessageQueueTest {
     TestMessage message = new TestMessage("Hallo", 123, false);
     ptp.sendMessage(message, ptp2.getIdentifier());
 
-    IMessageQueue queue = ptp2.getMessageQueue();
-
     long start = System.currentTimeMillis();
 
-    while (!queue.hasMessage(TestMessage.class)
+    while (!ptp2.hasMessage(TestMessage.class)
         && System.currentTimeMillis() - start < TestConstants.hiddenServiceSetupTimeout) {
       Thread.sleep(1000);
     }
     
-    pollMessageIterator(message, queue);
+    pollMessageIterator(message, ptp2.messageIterator(TestMessage.class));
   }
   
   @Test
@@ -86,16 +84,14 @@ public class MessageQueueTest {
     TestMessage message = new TestMessage("Hallo", 123, false);
     ptp.sendMessage(message, ptp2.getIdentifier());
 
-    IMessageQueue queue = ptp2.getMessageQueue();
-
     long start = System.currentTimeMillis();
 
-    while (!queue.hasMessage(TestMessage.class)
+    while (!ptp2.hasMessage(TestMessage.class)
         && System.currentTimeMillis() - start < TestConstants.hiddenServiceSetupTimeout) {
       Thread.sleep(1000);
     }
     
-    pollMessageIterator(message, queue);
+    pollMessageIterator(message, ptp2.messageIterator(TestMessage.class));
   }
 
   @Test
@@ -114,22 +110,18 @@ public class MessageQueueTest {
     TestMessage message = new TestMessage("Hallo", 123, false);
     ptp.sendMessage(message, ptp2.getIdentifier());
 
-    IMessageQueue queue = ptp2.getMessageQueue();
-
     long start = System.currentTimeMillis();
 
-    while (!queue.hasMessage(TestMessage.class)
+    while (!ptp2.hasMessage(TestMessage.class)
         && System.currentTimeMillis() - start < TestConstants.hiddenServiceSetupTimeout) {
       Thread.sleep(1000);
     }
 
-    pollMessageIterator(message, queue);
+    pollMessageIterator(message, ptp2.messageIterator(TestMessage.class));
   }
 
 
-  private void pollMessageIterator(TestMessage sent, IMessageQueue queue) {
-    Iterator<QueuedMessage<TestMessage>> it = queue.iterator(TestMessage.class);
-    
+  private void pollMessageIterator(TestMessage sent, Iterator<QueuedMessage<TestMessage>> it) {
     assertEquals(true, it.hasNext());
     
     QueuedMessage<TestMessage> message = it.next();
