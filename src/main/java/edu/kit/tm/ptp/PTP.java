@@ -10,6 +10,7 @@ import edu.kit.tm.ptp.utility.Constants;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Level;
@@ -50,8 +51,6 @@ public class PTP implements ReceiveListener {
   private boolean usePTPTor;
   private Thread clientThread = null;
   private boolean android = false;
-  private final Queue<QueuedMessage<byte[]>> byteArrayMessages =
-      new ConcurrentLinkedQueue<QueuedMessage<byte[]>>();
   private volatile boolean queueMessages = false;
 
   /**
@@ -192,6 +191,8 @@ public class PTP implements ReceiveListener {
     } else {
       config.setTorConfiguration(controlPort, socksPort);
     }
+    
+    messageTypes.addMessageQueue(byte[].class);
 
     connectionManager = new ConnectionManager(Constants.localhost, config.getTorSOCKSProxyPort(),
         config.getHiddenServicePort());
@@ -345,12 +346,11 @@ public class PTP implements ReceiveListener {
   public IMessageQueue getMessageQueue() {
     return messageTypes;
   }
-
   /**
-   * Returns the next received message or null if the queue is empty.
+   * Returns an iterator for received byte array messages.
    */
-  public QueuedMessage<byte[]> getMessage() {
-    return byteArrayMessages.poll();
+  public Iterator<QueuedMessage<byte[]>> messageIterator() {
+    return messageTypes.iterator(byte[].class);
   }
   
   public void setQueueMessages(boolean queueMessages) {
@@ -432,7 +432,7 @@ public class PTP implements ReceiveListener {
         }
         
         if (queueMessages || receiveListener == null) {
-          byteArrayMessages.add(new QueuedMessage<byte[]>(source, message.getData()));
+          messageTypes.addMessageToQueue(message.getData(), source, System.currentTimeMillis());
         }
       } else {
         if (messageTypes.hasListener(obj)) {
