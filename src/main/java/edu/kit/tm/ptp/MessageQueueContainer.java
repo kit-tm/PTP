@@ -1,6 +1,7 @@
 package edu.kit.tm.ptp;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -14,10 +15,9 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class MessageQueueContainer extends ListenerContainer implements IMessageQueue {
   private Map<Class<?>, Queue<Object>> queues = new HashMap<Class<?>, Queue<Object>>();
-  private Map<Object, Identifier> sources = new HashMap<Object, Identifier>();
   
   /**
-   * Adds a queue for messages of type type.
+   * Adds a queue for messages of Type type.
    */
   public <T> void addMessageQueue(Class<T> type) {
     if (queues.get(type) != null) {
@@ -28,8 +28,10 @@ public class MessageQueueContainer extends ListenerContainer implements IMessage
     registerClasses.add(type);
   }
   
-  @Override
-  public <T> T pollMessage(Class<T> type) {
+  /**
+   * Returns a message of the supplied type or null if the queue is empty.
+   */
+  protected <T> QueuedMessage<T> pollMessage(Class<T> type) {
     Queue<Object> queue = queues.get(type);
     
     if (queue == null) {
@@ -43,37 +45,9 @@ public class MessageQueueContainer extends ListenerContainer implements IMessage
     }
     
     @SuppressWarnings("unchecked")
-    T objT = (T) obj;
+    QueuedMessage<T> objT = (QueuedMessage<T>) obj;
     
     return objT;
-  }
-  
-  @Override
-  public <T> QueuedMessage<T> pollMessage(Class<T> type, QueuedMessage<T> message) {
-    T messageT = pollMessage(type);
-    
-    if (messageT == null) {
-      return null;
-    }
-    
-    message.data = messageT;
-    message.source = getMessageSource(message.data);
-    return message;
-  }
-  
-  @Override
-  public Identifier getMessageSource(Object message) {
-    if (message == null) {
-      throw new IllegalArgumentException();
-    }
-    
-    Identifier source = sources.get(message);
-    
-    if (source != null) {
-      sources.remove(message);
-    }
-    
-    return source;
   }
 
   @Override
@@ -94,9 +68,8 @@ public class MessageQueueContainer extends ListenerContainer implements IMessage
    * @param message The message to add.
    * @param source The source of the message.
    */
-  public void addMessageToQueue(Object message, Identifier source) {
-    addMessage(getType(message).cast(message));
-    sources.put(message, source);
+  public void addMessageToQueue(Object message, Identifier source, long receiveTime) {
+    addMessage(getType(message).cast(message), source, receiveTime);
   }
   
   /**
@@ -111,15 +84,18 @@ public class MessageQueueContainer extends ListenerContainer implements IMessage
     return queues.get(type) != null;
   }
   
-  private <T> void addMessage(T message) {
+  private <T> void addMessage(T message, Identifier source, long receiveTime) {
     Queue<Object> queue = queues.get(message.getClass());
     
     if (queue == null) {
       throw new IllegalArgumentException("Type of object hasn't been registered before");
     }
     
-    queue.add(message);
+    queue.add(new QueuedMessage<T>(source, message, receiveTime));
   }
-  
 
+  @Override
+  public <T> Iterator<QueuedMessage<T>> iterator(Class<T> type) {
+    return new MessageQueueIterator<T>(type, this);
+  }
 }

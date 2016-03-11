@@ -10,6 +10,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.Iterator;
 
 /**
  * Class to test receiving messages of an own class type through queues offered by PTP.
@@ -22,17 +23,17 @@ public class MessageQueueTest {
   private PTP ptp2;
 
   private static final class TestMessage {
+    public String data;
+    public int data2;
+    public boolean data3;
+    
     public TestMessage() {}
 
-    public TestMessage(String data, int value, boolean b) {
+    public TestMessage(String data, int data2, boolean data3) {
       this.data = data;
-      this.value = value;
-      this.b = b;
+      this.data2 = data2;
+      this.data3 = data3;
     }
-
-    public String data;
-    public int value;
-    public boolean b;
   }
 
   @Before
@@ -47,30 +48,6 @@ public class MessageQueueTest {
   public void tearDown() throws Exception {
     ptp.exit();
     ptp2.exit();
-  }
-
-  @Test
-  public void testPollMessageAPI1() throws IOException, InterruptedException {
-    ptp.reuseHiddenService();
-    ptp2.reuseHiddenService();
-    ptp.registerMessageQueue(TestMessage.class);
-    ptp2.registerMessageQueue(TestMessage.class);
-
-    assertNotEquals(null, ptp2.getIdentifier());
-
-    TestMessage message = new TestMessage("Hallo", 123, false);
-    ptp.sendMessage(message, ptp2.getIdentifier());
-
-    IMessageQueue queue = ptp2.getMessageQueue();
-
-    long start = System.currentTimeMillis();
-
-    while (!queue.hasMessage(TestMessage.class)
-        && System.currentTimeMillis() - start < TestConstants.hiddenServiceSetupTimeout) {
-      Thread.sleep(1000);
-    }
-
-    pollMessageAPI1(message, queue);
   }
 
   @Test
@@ -94,7 +71,31 @@ public class MessageQueueTest {
       Thread.sleep(1000);
     }
     
-    pollMessageAPI2(message, queue);
+    pollMessageIterator(message, queue);
+  }
+  
+  @Test
+  public void testPollIterator() throws IOException, InterruptedException {
+    ptp.reuseHiddenService();
+    ptp2.reuseHiddenService();
+    ptp.registerMessageQueue(TestMessage.class);
+    ptp2.registerMessageQueue(TestMessage.class);
+
+    assertNotEquals(null, ptp2.getIdentifier());
+
+    TestMessage message = new TestMessage("Hallo", 123, false);
+    ptp.sendMessage(message, ptp2.getIdentifier());
+
+    IMessageQueue queue = ptp2.getMessageQueue();
+
+    long start = System.currentTimeMillis();
+
+    while (!queue.hasMessage(TestMessage.class)
+        && System.currentTimeMillis() - start < TestConstants.hiddenServiceSetupTimeout) {
+      Thread.sleep(1000);
+    }
+    
+    pollMessageIterator(message, queue);
   }
 
   @Test
@@ -122,35 +123,25 @@ public class MessageQueueTest {
       Thread.sleep(1000);
     }
 
-    pollMessageAPI2(message, queue);
+    pollMessageIterator(message, queue);
   }
-  
-  private void pollMessageAPI1(TestMessage sent, IMessageQueue queue) {
-    assertEquals(true, queue.hasMessage(TestMessage.class));
 
-    QueuedMessage<TestMessage> received =
-        queue.pollMessage(TestMessage.class, new QueuedMessage<TestMessage>());
 
-    TestMessage receivedMessage = received.data;
-
-    assertEquals(ptp.getIdentifier(), received.source);
-
-    assertEquals(sent.data, receivedMessage.data);
-    assertEquals(sent.value, receivedMessage.value);
-    assertEquals(sent.b, receivedMessage.b);
-  }
-  
-  private void pollMessageAPI2(TestMessage sent, IMessageQueue queue) {
-    assertEquals(true, queue.hasMessage(TestMessage.class));
-
-    TestMessage receivedMessage = queue.pollMessage(TestMessage.class);
-    Identifier source = queue.getMessageSource(receivedMessage);
-
+  private void pollMessageIterator(TestMessage sent, IMessageQueue queue) {
+    Iterator<QueuedMessage<TestMessage>> it = queue.iterator(TestMessage.class);
+    
+    assertEquals(true, it.hasNext());
+    
+    QueuedMessage<TestMessage> message = it.next();
+    TestMessage receivedMessage = message.data;
+    Identifier source = message.source;
+    
     assertEquals(ptp.getIdentifier(), source);
-
+    
     assertEquals(sent.data, receivedMessage.data);
-    assertEquals(sent.value, receivedMessage.value);
-    assertEquals(sent.b, receivedMessage.b);
+    assertEquals(sent.data2, receivedMessage.data2);
+    assertEquals(sent.data3, receivedMessage.data3);
+    
+    assertEquals(false, it.hasNext());
   }
-
 }

@@ -439,7 +439,7 @@ public class PTP implements ReceiveListener {
           messageTypes.callReceiveListener(obj, source);
         }
         if (messageTypes.hasQueue(obj)) {
-          messageTypes.addMessageToQueue(obj, source);
+          messageTypes.addMessageToQueue(obj, source, System.currentTimeMillis());
         }
         
         if (!messageTypes.hasListener(obj) && !messageTypes.hasQueue(obj)) {
