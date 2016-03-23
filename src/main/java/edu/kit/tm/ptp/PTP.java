@@ -275,7 +275,6 @@ public class PTP implements ReceiveListener {
    * @param destination The hidden service identifier of the destination.
    */
   public long sendMessage(byte[] data, Identifier destination) {
-    // TODO set appropriate default timeout
     return sendMessage(data, destination, -1);
   }
 
@@ -288,7 +287,6 @@ public class PTP implements ReceiveListener {
    * @see registerMessage
    */
   public long sendMessage(Object message, Identifier destination) {
-    // TODO set appropriate default timeout
     return sendMessage(message, destination, -1);
   }
 
@@ -336,19 +334,12 @@ public class PTP implements ReceiveListener {
     messageTypes.addMessageQueue(type);
   }
   
-  protected <T> boolean hasMessage(Class<T> type) {
-    return messageTypes.hasMessage(type);
+  public <T> IMessageQueue<T> getMessageQueue(Class<T> type) {
+    return new MessageQueue<T>(type, messageTypes);
   }
-
-  public <T> Iterator<QueuedMessage<T>> messageIterator(Class<T> type) {
-    return messageTypes.iterator(type);
-  }
-
-  /**
-   * Returns an iterator for received byte array messages.
-   */
-  public Iterator<QueuedMessage<byte[]>> messageIterator() {
-    return messageIterator(byte[].class);
+  
+  public IMessageQueue<byte[]> getMessageQueue() {
+    return new MessageQueue<>(byte[].class, messageTypes);
   }
   
   public void setQueueMessages(boolean queueMessages) {

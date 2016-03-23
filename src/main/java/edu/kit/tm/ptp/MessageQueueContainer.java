@@ -1,7 +1,6 @@
 package edu.kit.tm.ptp;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -19,7 +18,7 @@ public class MessageQueueContainer extends ListenerContainer {
   /**
    * Adds a queue for messages of Type type.
    */
-  public <T> void addMessageQueue(Class<T> type) {
+  protected <T> void addMessageQueue(Class<T> type) {
     if (queues.get(type) != null) {
       throw new IllegalArgumentException();
     }
@@ -70,14 +69,14 @@ public class MessageQueueContainer extends ListenerContainer {
    * @param message The message to add.
    * @param source The source of the message.
    */
-  public void addMessageToQueue(Object message, Identifier source, long receiveTime) {
+  protected void addMessageToQueue(Object message, Identifier source, long receiveTime) {
     addMessage(getType(message).cast(message), source, receiveTime);
   }
   
   /**
    * Returns true if it exists a queue for the supplied message.
    */
-  public boolean hasQueue(Object message) {
+  protected boolean hasQueue(Object message) {
     Class<?> type = getTypeOrNull(message);
     if (type == null) {
       return false;
@@ -94,12 +93,5 @@ public class MessageQueueContainer extends ListenerContainer {
     }
     
     queue.add(new QueuedMessage<T>(source, message, receiveTime));
-  }
-
-  /**
-   * Returns an iterator for messages of the supplied type.
-   */
-  public <T> Iterator<QueuedMessage<T>> iterator(Class<T> type) {
-    return new MessageQueueIterator<T>(type, this);
   }
 }

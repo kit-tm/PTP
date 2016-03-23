@@ -10,7 +10,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.Iterator;
 
 /**
  * Class to test receiving messages of an own class type through queues offered by PTP.
@@ -61,15 +60,17 @@ public class MessageQueueTest {
 
     TestMessage message = new TestMessage("Hallo", 123, false);
     ptp.sendMessage(message, ptp2.getIdentifier());
+    
+    IMessageQueue<TestMessage> receiveQueue = ptp2.getMessageQueue(TestMessage.class);
 
     long start = System.currentTimeMillis();
 
-    while (!ptp2.hasMessage(TestMessage.class)
+    while (!receiveQueue.hasMessage()
         && System.currentTimeMillis() - start < TestConstants.hiddenServiceSetupTimeout) {
       Thread.sleep(1000);
     }
     
-    pollMessageIterator(message, ptp2.messageIterator(TestMessage.class));
+    pollMessageIterator(message, receiveQueue);
   }
   
   @Test
@@ -83,15 +84,17 @@ public class MessageQueueTest {
 
     TestMessage message = new TestMessage("Hallo", 123, false);
     ptp.sendMessage(message, ptp2.getIdentifier());
+    
+    IMessageQueue<TestMessage> receiveQueue = ptp2.getMessageQueue(TestMessage.class);
 
     long start = System.currentTimeMillis();
 
-    while (!ptp2.hasMessage(TestMessage.class)
+    while (!receiveQueue.hasMessage()
         && System.currentTimeMillis() - start < TestConstants.hiddenServiceSetupTimeout) {
       Thread.sleep(1000);
     }
     
-    pollMessageIterator(message, ptp2.messageIterator(TestMessage.class));
+    pollMessageIterator(message, receiveQueue);
   }
 
   @Test
@@ -109,22 +112,24 @@ public class MessageQueueTest {
 
     TestMessage message = new TestMessage("Hallo", 123, false);
     ptp.sendMessage(message, ptp2.getIdentifier());
+    
+    IMessageQueue<TestMessage> receiveQueue = ptp2.getMessageQueue(TestMessage.class);
 
     long start = System.currentTimeMillis();
 
-    while (!ptp2.hasMessage(TestMessage.class)
+    while (!receiveQueue.hasMessage()
         && System.currentTimeMillis() - start < TestConstants.hiddenServiceSetupTimeout) {
       Thread.sleep(1000);
     }
 
-    pollMessageIterator(message, ptp2.messageIterator(TestMessage.class));
+    pollMessageIterator(message, receiveQueue);
   }
 
 
-  private void pollMessageIterator(TestMessage sent, Iterator<QueuedMessage<TestMessage>> it) {
-    assertEquals(true, it.hasNext());
+  private void pollMessageIterator(TestMessage sent, IMessageQueue<TestMessage> queue) {
+    assertEquals(true, queue.hasMessage());
     
-    QueuedMessage<TestMessage> message = it.next();
+    QueuedMessage<TestMessage> message = queue.pollMessage();
     TestMessage receivedMessage = message.data;
     Identifier source = message.source;
     
@@ -134,6 +139,6 @@ public class MessageQueueTest {
     assertEquals(sent.data2, receivedMessage.data2);
     assertEquals(sent.data3, receivedMessage.data3);
     
-    assertEquals(false, it.hasNext());
+    assertEquals(false, queue.hasMessage());
   }
 }
