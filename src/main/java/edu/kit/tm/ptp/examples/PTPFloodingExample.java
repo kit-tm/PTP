@@ -109,13 +109,13 @@ public class PTPFloodingExample {
       }
       
       final Set<FloodingMessage> seenMessages = new HashSet<FloodingMessage>();
-
+      ptp.registerClass(FloodingMessage.class);
       // Register message and setup ReceiveListener
-      ptp.registerListener(FloodingMessage.class, new MessageReceivedListener<FloodingMessage>() {
-        
+      ptp.setReceiveListener(FloodingMessage.class, new MessageReceivedListener<FloodingMessage>() {
+
         @Override
         public void messageReceived(FloodingMessage message, Identifier source) {
-          
+
           // to avoid loops...
           synchronized (seenMessages) {
             if (seenMessages.contains(message)) {
@@ -124,23 +124,23 @@ public class PTPFloodingExample {
             }
             seenMessages.add(message);
           }
-          
+
           System.out.println(
-              "Received message: " + message.content + " from " + source + "; "
-              + "The message is " + (System.currentTimeMillis() - message.timestamp) + "ms old");
-          
+                  "Received message: " + message.content + " from " + source + "; "
+                          + "The message is " + (System.currentTimeMillis() - message.timestamp) + "ms old");
+
           // forward to all friends
           synchronized (friends) {
             for (Identifier friend : friends) {
-              
+
               if (friend.equals(source)) {
                 continue;
               }
-              
+
               System.out.println("Forwarding to " + friend);
               ptp.sendMessage(message, friend);
             }
-            
+
             // add new friends
             if (!friends.contains(source)) {
               System.out.println("Added new friend: " + source);

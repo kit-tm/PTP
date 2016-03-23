@@ -86,8 +86,11 @@ public class PTPPingExample {
       ptp.createHiddenService();
       System.out.println("Created hidden service.");
 
+      ptp.registerClass(PingMessage.class);
+      ptp.registerClass(PongMessage.class);
+
       // Register message and setup ReceiveListener
-      ptp.registerListener(PingMessage.class, new MessageReceivedListener<PingMessage>() {
+      ptp.setReceiveListener(PingMessage.class, new MessageReceivedListener<PingMessage>() {
         @Override
         public void messageReceived(PingMessage message, Identifier source) {
           sendPong(message.seq, source);
@@ -95,16 +98,16 @@ public class PTPPingExample {
       });
       
       // Register message and setup ReceiveListener
-      ptp.registerListener(PongMessage.class, new MessageReceivedListener<PongMessage>() {
+      ptp.setReceiveListener(PongMessage.class, new MessageReceivedListener<PongMessage>() {
         @Override
         public void messageReceived(PongMessage message, Identifier source) {
-          
+
           // quick and dirty approximation
           long sendTime = pingStartTime + (message.seq - 1) * pingInterval;
           long rtt = System.currentTimeMillis() - sendTime;
           System.out.println("Received pong from " + source + ":"
-              + " seq=" + message.seq
-              + " time=" + rtt + " ms");
+                  + " seq=" + message.seq
+                  + " time=" + rtt + " ms");
         }
       });
       

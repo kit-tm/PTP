@@ -5,10 +5,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import edu.kit.tm.ptp.Identifier;
-import edu.kit.tm.ptp.PTP;
-import edu.kit.tm.ptp.ReceiveListener;
-import edu.kit.tm.ptp.SendListener;
 import edu.kit.tm.ptp.utility.RNG;
 import edu.kit.tm.ptp.utility.TestConstants;
 import edu.kit.tm.ptp.utility.TestHelper;
@@ -431,8 +427,9 @@ public class PTPTest {
     client1.setSendListener(listener);
 
     // Message has to be registered on both ends
-    client1.registerListener(Message.class, new MessageListener());
-    client2.registerListener(Message.class, new MessageListener());
+    client1.registerClass(Message.class);
+    client2.registerClass(Message.class);
+    client2.setReceiveListener(Message.class, new MessageListener());
 
     client1.sendMessage(toSend, client2.getIdentifier());
 

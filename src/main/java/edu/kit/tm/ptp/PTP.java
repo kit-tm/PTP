@@ -10,9 +10,6 @@ import edu.kit.tm.ptp.utility.Constants;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Iterator;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -284,7 +281,7 @@ public class PTP implements ReceiveListener {
    * @param message The object to send.
    * @param destination The hidden service identifier of the destination.
    * @return Identifier of the message.
-   * @see registerMessage
+   * @see #enableMessageQueue(Class)
    */
   public long sendMessage(Object message, Identifier destination) {
     return sendMessage(message, destination, -1);
@@ -297,7 +294,7 @@ public class PTP implements ReceiveListener {
    * @param destination The hidden service identifier of the destination.
    * @param timeout How long to wait for a successful transmission.
    * @return Identifier of the message.
-   * @see registerMessage
+   * @see #enableMessageQueue(Class)
    */
   public long sendMessage(Object message, Identifier destination, long timeout) {
     if (!initialized || closed) {
@@ -309,39 +306,54 @@ public class PTP implements ReceiveListener {
   }
 
   /**
-   * Register class to be able to send and receive objects of the class as message and registers an
-   * appropriate listener. A class type may only be registered once.
-   * 
-   * @param type The class type to register.
-   * @param listener Listener to be informed about received objects of the class.
-   * @see #registerMessageQueue(Class)
+   *  Register class to be able to send and receive instances of the class.
+   *  A class type may only be registered once.
    */
-  public <T> void registerListener(Class<T> type, MessageReceivedListener<T> listener) {
+  public <T> void registerClass(Class<T> type) {
     serializer.registerClass(type);
+  }
+
+  /**
+   * Sets a listener for a previously registered class.
+   * 
+   * @param type The class type of the objects to be informed about.
+   * @param listener Listener to be informed about received objects.
+   * @see #registerClass(Class)
+   */
+  public <T> void setReceiveListener(Class<T> type, MessageReceivedListener<T> listener) {
     messageTypes.putListener(type, listener);
   }
 
   /**
-   * Register class to be able to send and receive object of the class as message. Objects can be
-   * received by using the Iterator provided by {@link #messageIterator() messageIterator}. A
-   * class type may only be registered once.
+   * Enables queueing of objects of a previously registered type. Objects can be
+   * received using the IMessageQueue provided by {@link #getMessageQueue(Class) getMessageQueue()}.
    * 
-   * @param type The class type to register.
-   * @see #registerListener(Class, MessageReceivedListener)
+   * @param type The type of objects to queue.
+   * @see #setReceiveListener(Class, MessageReceivedListener)
    */
-  public <T> void registerMessageQueue(Class<T> type) {
-    serializer.registerClass(type);
+  public <T> void enableMessageQueue(Class<T> type) {
     messageTypes.addMessageQueue(type);
   }
-  
+
+  /**
+   * Returns a IMessageQueue to poll received messages of the supplied type from.
+   *
+   * @see #enableMessageQueue(Class)
+   */
   public <T> IMessageQueue<T> getMessageQueue(Class<T> type) {
     return new MessageQueue<T>(type, messageTypes);
   }
-  
+
+  /**
+   * Returns a IMessageQueue to poll received byte[] messages from.
+   */
   public IMessageQueue<byte[]> getMessageQueue() {
     return new MessageQueue<>(byte[].class, messageTypes);
   }
-  
+
+  /**
+   * Sets a boolean stating if received byte[] messages should be queued.
+   */
   public void setQueueMessages(boolean queueMessages) {
     this.queueMessages = queueMessages;
   }

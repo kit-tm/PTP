@@ -51,10 +51,14 @@ public class MessageQueueTest {
 
   @Test
   public void testPollMessageAPI2() throws IOException, InterruptedException {
+    ptp.registerClass(TestMessage.class);
+    ptp2.registerClass(TestMessage.class);
+
     ptp.reuseHiddenService();
     ptp2.reuseHiddenService();
-    ptp.registerMessageQueue(TestMessage.class);
-    ptp2.registerMessageQueue(TestMessage.class);
+
+    ptp.enableMessageQueue(TestMessage.class);
+    ptp2.enableMessageQueue(TestMessage.class);
 
     assertNotEquals(null, ptp2.getIdentifier());
 
@@ -75,10 +79,14 @@ public class MessageQueueTest {
   
   @Test
   public void testPollIterator() throws IOException, InterruptedException {
+    ptp.registerClass(TestMessage.class);
+    ptp2.registerClass(TestMessage.class);
+
     ptp.reuseHiddenService();
     ptp2.reuseHiddenService();
-    ptp.registerMessageQueue(TestMessage.class);
-    ptp2.registerMessageQueue(TestMessage.class);
+
+    ptp.enableMessageQueue(TestMessage.class);
+    ptp2.enableMessageQueue(TestMessage.class);
 
     assertNotEquals(null, ptp2.getIdentifier());
 
@@ -99,14 +107,18 @@ public class MessageQueueTest {
 
   @Test
   public void testPollMessageListener() throws IOException, InterruptedException {
+    ptp.registerClass(TestMessage.class);
+    ptp2.registerClass(TestMessage.class);
+
     ptp.reuseHiddenService();
     ptp2.reuseHiddenService();
-    ptp.registerListener(TestMessage.class, new MessageReceivedListener<TestMessage>() {
+
+    ptp.setReceiveListener(TestMessage.class, new MessageReceivedListener<TestMessage>() {
       @Override
       public void messageReceived(TestMessage message, Identifier source) {
       }
     });
-    ptp2.registerMessageQueue(TestMessage.class);
+    ptp2.enableMessageQueue(TestMessage.class);
 
     assertNotEquals(null, ptp2.getIdentifier());
 
