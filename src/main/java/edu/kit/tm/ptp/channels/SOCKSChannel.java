@@ -82,7 +82,7 @@ public class SOCKSChannel extends MessageChannel {
           }
 
           connected = true;
-          listener.channelOpened(this);
+          changeListener.channelOpened(this);
           
           // Avoid to lose authentication message 
           manager.registerRead(this, false);

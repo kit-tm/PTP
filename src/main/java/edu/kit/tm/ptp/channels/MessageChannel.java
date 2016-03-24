@@ -28,7 +28,8 @@ public class MessageChannel {
   protected SocketChannel channel;
   private int bufferLength = 1024;
   private int maxBufferLength = 1024 * 1024 * 100; // 100MB
-  protected ChannelListener listener;
+  protected ChannelChangeListener changeListener;
+  protected ChannelMessageListener messageListener;
   private State readState = State.LENGTH;
   private State writeState = State.IDLE;
 
@@ -53,7 +54,8 @@ public class MessageChannel {
 
     this.channel = channel;
     this.manager = manager;
-    this.listener = manager.getChannelListener();
+    this.changeListener = manager.getChannelListener();
+    this.messageListener = manager.getChannelListener();
     
     // Initialize buffers
     receiveBuffer = ByteBuffer.allocate(bufferLength);
@@ -101,7 +103,7 @@ public class MessageChannel {
           if (!receiveBuffer.hasRemaining()) {
             byte[] data = receiveBuffer.array();
 
-            listener.messageReceived(data, this);
+            messageListener.messageReceived(data, this);
             readState = State.LENGTH;
 
             receiveBuffer.clear();
@@ -133,7 +135,7 @@ public class MessageChannel {
       logger.log(Level.INFO, "Failed to close channel " + e.getMessage());
     }
 
-    listener.channelClosed(this);
+    changeListener.channelClosed(this);
   }
 
   /**
@@ -159,7 +161,7 @@ public class MessageChannel {
           channel.write(sendBuffer);
 
           if (!sendBuffer.hasRemaining()) {
-            listener.messageSent(currentId, this);
+            messageListener.messageSent(currentId, this);
             writeState = State.IDLE;
           }
           break;
@@ -208,12 +210,12 @@ public class MessageChannel {
     return channel;
   }
 
-  public void setChannelListener(ChannelListener listener) {
-    this.listener = listener;
+  public void setChannelMessageListener(ChannelMessageListener listener) {
+    this.messageListener = listener;
   }
 
-  public ChannelListener getChannenListener() {
-    return listener;
+  public ChannelMessageListener getChannelMessageListener() {
+    return messageListener;
   }
 
   public boolean isIdle() {

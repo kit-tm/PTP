@@ -1,7 +1,7 @@
 package edu.kit.tm.ptp.auth;
 
 import edu.kit.tm.ptp.Identifier;
-import edu.kit.tm.ptp.channels.ChannelListener;
+import edu.kit.tm.ptp.channels.ChannelMessageListener;
 import edu.kit.tm.ptp.channels.MessageChannel;
 import edu.kit.tm.ptp.serialization.Serializer;
 
@@ -18,9 +18,8 @@ import java.util.logging.Logger;
  *
  */
 
-public class DummyAuthenticator extends Authenticator implements ChannelListener {
-  private Serializer serializer;
-  private ChannelListener oldListener;
+public class DummyAuthenticator extends Authenticator implements ChannelMessageListener {
+  private ChannelMessageListener oldListener;
   private boolean sent;
   private boolean received;
   private byte[] response;
@@ -35,24 +34,12 @@ public class DummyAuthenticator extends Authenticator implements ChannelListener
    */
   public DummyAuthenticator(AuthenticationListener listener, MessageChannel channel,
       Serializer serializer) {
-    super(listener, channel);
-    this.serializer = serializer;
+    super(listener, channel, serializer);
 
     sent = false;
     received = false;
     response = null;
   }
-
-
-  @Override
-  public void authenticate(Identifier identifier) {
-    AuthenticationMessage message = new AuthenticationMessage(identifier);
-    byte[] data = serializer.serialize(message);
-    oldListener = channel.getChannenListener();
-    channel.setChannelListener(this);
-    channel.addMessage(data, 0);
-  }
-
 
   public static class AuthenticationMessage {
     private Identifier source;
@@ -97,7 +84,7 @@ public class DummyAuthenticator extends Authenticator implements ChannelListener
   }
   
   private void finishAuth() {
-    channel.setChannelListener(oldListener);
+    channel.setChannelMessageListener(oldListener);
     
     try {
       Object message = serializer.deserialize(response);
@@ -113,11 +100,19 @@ public class DummyAuthenticator extends Authenticator implements ChannelListener
       authListener.authenticationFailed(channel);
     }
   }
+  
 
   @Override
-  public void channelOpened(MessageChannel channel) {}
+  public void authenticate(Identifier own) {
+    AuthenticationMessage message = new AuthenticationMessage(own);
+    byte[] data = serializer.serialize(message);
+    oldListener = channel.getChannelMessageListener();
+    channel.setChannelMessageListener(this);
+    channel.addMessage(data, 0);
+  }
 
   @Override
-  public void channelClosed(MessageChannel channel) {}
-
+  public void authenticate(Identifier own, Identifier other) {
+    authenticate(own);
+  }
 }
