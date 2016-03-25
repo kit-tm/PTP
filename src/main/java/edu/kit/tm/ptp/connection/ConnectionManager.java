@@ -13,7 +13,6 @@ import edu.kit.tm.ptp.thread.Waker;
 import edu.kit.tm.ptp.utility.Constants;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
@@ -411,7 +410,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
       channel = channelIdentifier.channel;
       identifier = channelIdentifier.identifier;
       context = channelContexts.get(channel);
-
+      
       context.authenticated(channel, identifier);
     }
   }
