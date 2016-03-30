@@ -109,6 +109,21 @@ public class HiddenServiceManager {
   public Identifier getHiddenServiceIdentifier() {
     return currentIdentifier;
   }
+  
+  public String getHiddenServiceDirectory() {
+    return directory;
+  }
+  
+  /**
+   * Returns the private key file of the currently used hidden service.
+   */
+  public File getPrivateKeyFile() {
+    if (directory == null) {
+      return null;
+    }
+    
+    return new File(directory + File.separator + Constants.prkey);
+  }
 
   /**
    * Removes the lock from the hidden service directory.

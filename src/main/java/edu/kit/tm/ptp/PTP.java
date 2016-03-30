@@ -3,6 +3,7 @@ package edu.kit.tm.ptp;
 import edu.kit.tm.ptp.connection.ConnectionManager;
 import edu.kit.tm.ptp.connection.ExpireListener;
 import edu.kit.tm.ptp.connection.TTLManager;
+import edu.kit.tm.ptp.crypt.CryptHelper;
 import edu.kit.tm.ptp.hiddenservice.HiddenServiceManager;
 import edu.kit.tm.ptp.serialization.ByteArrayMessage;
 import edu.kit.tm.ptp.serialization.Serializer;
@@ -10,6 +11,10 @@ import edu.kit.tm.ptp.utility.Constants;
 
 import java.io.File;
 import java.io.IOException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -49,6 +54,7 @@ public class PTP implements ReceiveListener {
   private Thread clientThread = null;
   private boolean android = false;
   private volatile boolean queueMessages = false;
+  private CryptHelper cryptHelper = CryptHelper.getInstance();
 
   /**
    * Constructs a new PTP object. Manages a own Tor process.
@@ -206,6 +212,13 @@ public class PTP implements ReceiveListener {
     ttlManager = new TTLManager(getTTLManagerListener(), config.getTTLPoll());
     // Start the manager with the given TTL.
     ttlManager.start();
+    
+    try {
+      cryptHelper.init();
+    } catch (NoSuchAlgorithmException | NoSuchProviderException e) {
+      throw new IOException("Cryptographic algorithm or provider unavailable: " + e.getMessage());
+    }
+    
     initialized = true;
   }
 
@@ -226,6 +239,10 @@ public class PTP implements ReceiveListener {
   public Identifier getIdentifier() {
     return hiddenServiceManager.getHiddenServiceIdentifier();
   }
+  
+  public String getHiddenServiceDirectory() {
+    return hiddenServiceManager.getHiddenServiceDirectory();
+  }
 
   /**
    * Reuses a hidden service or creates a new one if no hidden service to reuse exists.
@@ -237,6 +254,8 @@ public class PTP implements ReceiveListener {
 
     hiddenServiceManager.reuseHiddenService();
     connectionManager.setLocalIdentifier(getIdentifier());
+    
+    readPrivateKey(hiddenServiceManager.getPrivateKeyFile());
   }
 
   /**
@@ -250,6 +269,20 @@ public class PTP implements ReceiveListener {
     // Create a fresh hidden service identifier.
     hiddenServiceManager.createHiddenService();
     connectionManager.setLocalIdentifier(getIdentifier());
+    
+    readPrivateKey(hiddenServiceManager.getPrivateKeyFile());
+  }
+  
+  private void readPrivateKey(File privateKey) throws IOException {
+    if (privateKey == null) {
+      throw new IOException("Failed to get private key");
+    }
+    
+    try {
+      cryptHelper.setKeyPair(cryptHelper.readKeyPairFromFile(privateKey));
+    } catch (InvalidKeyException | InvalidKeySpecException e) {
+      throw new IOException("Invalid private key");
+    }
   }
 
   /**
