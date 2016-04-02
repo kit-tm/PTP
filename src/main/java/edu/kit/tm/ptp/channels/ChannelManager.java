@@ -2,6 +2,7 @@ package edu.kit.tm.ptp.channels;
 
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
+import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
@@ -58,9 +59,27 @@ public class ChannelManager implements Runnable {
     } catch (InterruptedException e) {
       logger.log(Level.WARNING, "Failed to wait for thread to stop: " + e.getMessage());
     }
-    
+
     try {
       if (selector != null) {
+        // Close all connections
+        for (SelectionKey key : selector.keys()) {
+          SelectableChannel channel = key.channel();
+          try {
+            if (channel instanceof SocketChannel) {
+              logger.log(Level.INFO, "Closing SocketChannel");
+              ((SocketChannel) channel).close();
+            }
+
+            if (channel instanceof ServerSocketChannel) {
+              logger.log(Level.INFO, "Closing ServerSocketChannel");
+              ((ServerSocketChannel) channel).close();
+            }
+          } catch (IOException ioe) {
+            logger.log(Level.INFO, "Failed to close channel");
+          }
+        }
+
         selector.close();
       }
     } catch (IOException e) {
@@ -112,7 +131,7 @@ public class ChannelManager implements Runnable {
             try {
               // unregister channel
               key.interestOps(0);
-              
+
               if (channel.getChannel().finishConnect()) {
                 listener.channelOpened(channel);
               } else {
@@ -144,10 +163,8 @@ public class ChannelManager implements Runnable {
   }
 
   /**
-   * Adds a ServerSocketChannel to accept connections from.
-   * The server has to be listening already.
-   * Calls channelOpened() on the ChannelListener when a
-   * connection is received.
+   * Adds a ServerSocketChannel to accept connections from. The server has to be listening already.
+   * Calls channelOpened() on the ChannelListener when a connection is received.
    * 
    * @param server The ServerSocketChannel to accept connections from.
    * @throws IOException If it fails to register the server.
@@ -159,10 +176,9 @@ public class ChannelManager implements Runnable {
   }
 
   /**
-   * Adds a SocketChannel which should be connected.
-   * The connect() method of the SocketChannel has to be called already.
-   * Calls channelOpened() on the ChannelListener if the connection
-   * attempt was successful.
+   * Adds a SocketChannel which should be connected. The connect() method of the SocketChannel has
+   * to be called already. Calls channelOpened() on the ChannelListener if the connection attempt
+   * was successful.
    * 
    * @param socket The SocketChannel to connect.
    * @return A MessageChannel to be able to read and write later on.
@@ -176,10 +192,9 @@ public class ChannelManager implements Runnable {
   }
 
   /**
-   * Adds MessageChannel to the manager.
-   * Reading and writing needs to be enabled separately.
+   * Adds MessageChannel to the manager. Reading and writing needs to be enabled separately.
    * 
-   * @param channel The MessageChannel. 
+   * @param channel The MessageChannel.
    * @throws ClosedChannelException If the channel is closed.
    */
   public void addChannel(MessageChannel channel) throws ClosedChannelException {
@@ -210,14 +225,14 @@ public class ChannelManager implements Runnable {
   public void registerWrite(MessageChannel channel, boolean enable) {
     setInterestOps(channel, enable, SelectionKey.OP_WRITE);
   }
-  
+
   /**
    * Tells the ChannelManager if the supplied channel is ready to read data.
    */
   public void registerRead(MessageChannel channel, boolean enable) {
     setInterestOps(channel, enable, SelectionKey.OP_READ);
   }
-  
+
   private void setInterestOps(MessageChannel channel, boolean enable, int operation) {
     SelectionKey key = channel.getChannel().keyFor(selector);
 
@@ -226,7 +241,7 @@ public class ChannelManager implements Runnable {
       logger.log(Level.INFO, "Unregistered channel tries to register operation.");
       return;
     }
-    
+
     if (!key.isValid()) {
       logger.log(Level.INFO, "Closed or unregistered channel tries to register operation.");
       return;
