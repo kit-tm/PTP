@@ -18,11 +18,11 @@ import java.io.IOException;
  */
 public class Serializer {
   private Kryo kryo = new Kryo();
-  private int defaultBufferSize = 1024;
-
+  
   public Serializer() {
     kryo.register(ByteArrayMessage.class);
     kryo.register(AuthenticationMessage.class);
+    kryo.register(edu.kit.tm.ptp.auth.DummyAuthenticator.AuthenticationMessage.class);
   }
 
   /**
@@ -37,7 +37,7 @@ public class Serializer {
     }
 
     // No maximum buffer size
-    Output out = new Output(defaultBufferSize, -1);
+    Output out = new Output(0, -1);
 
     kryo.writeClassAndObject(out, obj);
 
