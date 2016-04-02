@@ -6,6 +6,8 @@ import java.io.File;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.spec.InvalidKeySpecException;
 
 import org.junit.After;
@@ -23,13 +25,16 @@ import edu.kit.tm.ptp.utility.Constants;
 public class PublicKeyAuthenticatorTest {
   private PublicKeyAuthenticator auth;
   private PublicKeyAuthenticator auth2;
+  private static CryptHelper cryptHelper;
+  private static CryptHelper cryptHelper2;
   private static PTP ptp1;
   private static PTP ptp2;
   private static File pk1;
   private static File pk2;
 
   @BeforeClass
-  public static void setUpClass() throws IOException {
+  public static void setUpClass() throws IOException, InvalidKeyException, InvalidKeySpecException,
+      NoSuchAlgorithmException, NoSuchProviderException {
     ptp1 = new PTP();
     ptp2 = new PTP();
 
@@ -44,6 +49,14 @@ public class PublicKeyAuthenticatorTest {
 
     pk1 = new File(hsDir1 + File.separator + Constants.prkey);
     pk2 = new File(hsDir2 + File.separator + Constants.prkey);
+
+    cryptHelper = new CryptHelper();
+    cryptHelper.init();
+    cryptHelper.setKeyPair(cryptHelper.readKeyPairFromFile(pk1));
+
+    cryptHelper2 = new CryptHelper();
+    cryptHelper2.init();
+    cryptHelper2.setKeyPair(cryptHelper2.readKeyPairFromFile(pk2));
   }
 
   @AfterClass
@@ -54,8 +67,8 @@ public class PublicKeyAuthenticatorTest {
 
   @Before
   public void setUp() throws Exception {
-    auth = new PublicKeyAuthenticator(null, null, null);
-    auth2 = new PublicKeyAuthenticator(null, null, null);
+    auth = new PublicKeyAuthenticator(null, null, null, cryptHelper);
+    auth2 = new PublicKeyAuthenticator(null, null, null, cryptHelper2);
   }
 
   @After
@@ -72,14 +85,9 @@ public class PublicKeyAuthenticatorTest {
   }
 
   private void testAuthenticator(boolean unknown) throws IOException, GeneralSecurityException {
-    CryptHelper helper = CryptHelper.getInstance();
-    helper.setKeyPair(helper.readKeyPairFromFile(pk1));
-
     auth.own = ptp1.getIdentifier();
     auth.other = ptp2.getIdentifier();
     AuthenticationMessage authMessage = auth.createAuthenticator();
-
-    helper.setKeyPair(helper.readKeyPairFromFile(pk2));
 
     auth2.own = ptp2.getIdentifier();
     auth2.other = unknown ? null : ptp1.getIdentifier();
@@ -89,9 +97,6 @@ public class PublicKeyAuthenticatorTest {
 
   @Test
   public void testWrongAuthenticator() throws IOException, GeneralSecurityException {
-    CryptHelper helper = CryptHelper.getInstance();
-    helper.setKeyPair(helper.readKeyPairFromFile(pk1));
-
     auth.own = ptp1.getIdentifier();
     auth.other = ptp2.getIdentifier();
     AuthenticationMessage authMessage = auth.createAuthenticator();
@@ -102,8 +107,6 @@ public class PublicKeyAuthenticatorTest {
 
     authMessage.signature = signature;
 
-    helper.setKeyPair(helper.readKeyPairFromFile(pk2));
-
     auth2.own = ptp2.getIdentifier();
 
     assertEquals(false, auth2.authenticatorValid(authMessage));
@@ -111,14 +114,9 @@ public class PublicKeyAuthenticatorTest {
 
   @Test
   public void testWrongSource() throws IOException, GeneralSecurityException {
-    CryptHelper helper = CryptHelper.getInstance();
-    helper.setKeyPair(helper.readKeyPairFromFile(pk1));
-
     auth.own = new Identifier("aaaaaaaaaaaaaaaa.onion");
     auth.other = ptp2.getIdentifier();
     AuthenticationMessage authMessage = auth.createAuthenticator();
-
-    helper.setKeyPair(helper.readKeyPairFromFile(pk2));
 
     auth2.own = ptp2.getIdentifier();
     auth2.other = ptp1.getIdentifier();
@@ -128,14 +126,9 @@ public class PublicKeyAuthenticatorTest {
 
   @Test
   public void testInvalidSourceIdentifier() throws IOException, GeneralSecurityException {
-    CryptHelper helper = CryptHelper.getInstance();
-    helper.setKeyPair(helper.readKeyPairFromFile(pk1));
-
     auth.own = new Identifier("xyz");
     auth.other = ptp2.getIdentifier();
     AuthenticationMessage authMessage = auth.createAuthenticator();
-
-    helper.setKeyPair(helper.readKeyPairFromFile(pk2));
 
     auth2.own = ptp2.getIdentifier();
     auth2.other = ptp1.getIdentifier();
@@ -145,14 +138,9 @@ public class PublicKeyAuthenticatorTest {
 
   @Test
   public void testInvalidDestinationIdentifier() throws IOException, GeneralSecurityException {
-    CryptHelper helper = CryptHelper.getInstance();
-    helper.setKeyPair(helper.readKeyPairFromFile(pk1));
-
     auth.own = ptp1.getIdentifier();
     auth.other = new Identifier("xyz");
     AuthenticationMessage authMessage = auth.createAuthenticator();
-
-    helper.setKeyPair(helper.readKeyPairFromFile(pk2));
 
     auth2.own = ptp2.getIdentifier();
     auth2.other = ptp1.getIdentifier();
@@ -163,14 +151,9 @@ public class PublicKeyAuthenticatorTest {
 
   @Test
   public void testWrongDestination() throws IOException, GeneralSecurityException {
-    CryptHelper helper = CryptHelper.getInstance();
-    helper.setKeyPair(helper.readKeyPairFromFile(pk1));
-
     auth.own = ptp1.getIdentifier();
     auth.other = new Identifier("aaaaaaaaaaaaaaaa.onion");
     AuthenticationMessage authMessage = auth.createAuthenticator();
-
-    helper.setKeyPair(helper.readKeyPairFromFile(pk2));
 
     auth2.own = ptp2.getIdentifier();
 
@@ -179,14 +162,9 @@ public class PublicKeyAuthenticatorTest {
 
   @Test
   public void testUseAuthTwoTimes() throws IOException, GeneralSecurityException {
-    CryptHelper helper = CryptHelper.getInstance();
-    helper.setKeyPair(helper.readKeyPairFromFile(pk1));
-
     auth.own = ptp1.getIdentifier();
     auth.other = ptp2.getIdentifier();
     AuthenticationMessage authMessage = auth.createAuthenticator();
-
-    helper.setKeyPair(helper.readKeyPairFromFile(pk2));
 
     auth2.own = ptp2.getIdentifier();
 
@@ -196,17 +174,12 @@ public class PublicKeyAuthenticatorTest {
 
   @Test
   public void testOldTimestamp() throws IOException, GeneralSecurityException {
-    CryptHelper helper = CryptHelper.getInstance();
-    helper.setKeyPair(helper.readKeyPairFromFile(pk1));
-
     auth.own = ptp1.getIdentifier();
     auth.other = ptp2.getIdentifier();
 
     // 2 minutes old authenticator
     AuthenticationMessage authMessage =
         auth.createAuthenticator(System.currentTimeMillis() - 120 * 1000);
-
-    helper.setKeyPair(helper.readKeyPairFromFile(pk2));
 
     auth2.own = ptp2.getIdentifier();
 
@@ -215,17 +188,12 @@ public class PublicKeyAuthenticatorTest {
 
   @Test
   public void testFutureTimestamp() throws IOException, GeneralSecurityException {
-    CryptHelper helper = CryptHelper.getInstance();
-    helper.setKeyPair(helper.readKeyPairFromFile(pk1));
-
     auth.own = ptp1.getIdentifier();
     auth.other = ptp2.getIdentifier();
 
     // timestamp 2 minutes in the future
     AuthenticationMessage authMessage =
         auth.createAuthenticator(System.currentTimeMillis() + 120 * 1000);
-
-    helper.setKeyPair(helper.readKeyPairFromFile(pk2));
 
     auth2.own = ptp2.getIdentifier();
 

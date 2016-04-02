@@ -2,7 +2,6 @@ package edu.kit.tm.ptp.connection;
 
 import edu.kit.tm.ptp.Identifier;
 import edu.kit.tm.ptp.auth.Authenticator;
-import edu.kit.tm.ptp.auth.PublicKeyAuthenticator;
 import edu.kit.tm.ptp.channels.MessageChannel;
 
 import java.util.logging.Level;
@@ -36,7 +35,7 @@ public class StateConnected extends AbstractState {
       }
 
       close(channel);
-    } else {      
+    } else {
       // Auth was successfull
       manager.logger.log(Level.INFO,
           "Connection to " + identifier + " has been authenticated successfully");
@@ -59,16 +58,17 @@ public class StateConnected extends AbstractState {
   @Override
   public void authenticate(MessageChannel channel) {
     ConnectionManager manager = context.getConnectionManager();
-    
+
     Identifier other = manager.channelMap.get(channel);
 
-    Authenticator auth = new PublicKeyAuthenticator(manager, channel, manager.serializer);
+    Authenticator auth =
+        manager.authFactory.createInstance(manager, manager, channel, manager.serializer);
     if (other != null) {
       auth.authenticate(manager.localIdentifier, other);
     } else {
       auth.authenticate(manager.localIdentifier);
     }
-    
+
     // Enable reading from channel
     manager.channelManager.registerRead(channel, true);
   }

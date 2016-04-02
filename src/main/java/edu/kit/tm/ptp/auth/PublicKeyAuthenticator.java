@@ -37,11 +37,12 @@ public class PublicKeyAuthenticator extends Authenticator implements ChannelMess
   protected Identifier own = null;
   protected Identifier other = null;
   private static final long authenticatorLifetime = 30 * 1000; // in ms
-  private CryptHelper cryptHelper = CryptHelper.getInstance();
+  private CryptHelper cryptHelper;
 
   public PublicKeyAuthenticator(AuthenticationListener listener, MessageChannel channel,
-      Serializer serializer) {
+      Serializer serializer, CryptHelper cryptHelper) {
     super(listener, channel, serializer);
+    this.cryptHelper = cryptHelper;
   }
 
   /**

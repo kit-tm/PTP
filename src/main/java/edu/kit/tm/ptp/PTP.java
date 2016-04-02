@@ -40,7 +40,7 @@ public class PTP implements ReceiveListener {
   private ReceiveListener receiveListener = null;
 
   private HiddenServiceManager hiddenServiceManager;
-  private ConnectionManager connectionManager;
+  protected ConnectionManager connectionManager;
   private int hiddenServicePort;
   private final Serializer serializer = new Serializer();
   private final MessageQueueContainer messageTypes = new MessageQueueContainer();
@@ -54,7 +54,7 @@ public class PTP implements ReceiveListener {
   private Thread clientThread = null;
   private boolean android = false;
   private volatile boolean queueMessages = false;
-  private CryptHelper cryptHelper = CryptHelper.getInstance();
+  private CryptHelper cryptHelper = new CryptHelper();
 
   /**
    * Constructs a new PTP object. Manages a own Tor process.
@@ -195,10 +195,16 @@ public class PTP implements ReceiveListener {
       config.setTorConfiguration(controlPort, socksPort);
     }
     
+    try {
+      cryptHelper.init();
+    } catch (NoSuchAlgorithmException | NoSuchProviderException e) {
+      throw new IOException("Cryptographic algorithm or provider unavailable: " + e.getMessage());
+    }
+
     messageTypes.addMessageQueue(byte[].class);
 
-    connectionManager = new ConnectionManager(Constants.localhost, config.getTorSOCKSProxyPort(),
-        config.getHiddenServicePort());
+    connectionManager = new ConnectionManager(cryptHelper, Constants.localhost,
+        config.getTorSOCKSProxyPort(), config.getHiddenServicePort());
     connectionManager.setSerializer(serializer);
     connectionManager.setSendListener(new SendListenerAdapter());
     connectionManager.setReceiveListener(this);
@@ -212,13 +218,7 @@ public class PTP implements ReceiveListener {
     ttlManager = new TTLManager(getTTLManagerListener(), config.getTTLPoll());
     // Start the manager with the given TTL.
     ttlManager.start();
-    
-    try {
-      cryptHelper.init();
-    } catch (NoSuchAlgorithmException | NoSuchProviderException e) {
-      throw new IOException("Cryptographic algorithm or provider unavailable: " + e.getMessage());
-    }
-    
+
     initialized = true;
   }
 
@@ -239,7 +239,7 @@ public class PTP implements ReceiveListener {
   public Identifier getIdentifier() {
     return hiddenServiceManager.getHiddenServiceIdentifier();
   }
-  
+
   public String getHiddenServiceDirectory() {
     return hiddenServiceManager.getHiddenServiceDirectory();
   }
@@ -254,7 +254,7 @@ public class PTP implements ReceiveListener {
 
     hiddenServiceManager.reuseHiddenService();
     connectionManager.setLocalIdentifier(getIdentifier());
-    
+
     readPrivateKey(hiddenServiceManager.getPrivateKeyFile());
   }
 
@@ -269,15 +269,15 @@ public class PTP implements ReceiveListener {
     // Create a fresh hidden service identifier.
     hiddenServiceManager.createHiddenService();
     connectionManager.setLocalIdentifier(getIdentifier());
-    
+
     readPrivateKey(hiddenServiceManager.getPrivateKeyFile());
   }
-  
+
   private void readPrivateKey(File privateKey) throws IOException {
     if (privateKey == null) {
       throw new IOException("Failed to get private key");
     }
-    
+
     try {
       cryptHelper.setKeyPair(cryptHelper.readKeyPairFromFile(privateKey));
     } catch (InvalidKeyException | InvalidKeySpecException e) {
@@ -339,8 +339,8 @@ public class PTP implements ReceiveListener {
   }
 
   /**
-   *  Register class to be able to send and receive instances of the class.
-   *  A class type may only be registered once.
+   * Register class to be able to send and receive instances of the class. A class type may only be
+   * registered once.
    */
   public <T> void registerClass(Class<T> type) {
     serializer.registerClass(type);
@@ -357,9 +357,13 @@ public class PTP implements ReceiveListener {
     messageTypes.putListener(type, listener);
   }
 
+  public void setReceiveListener(ReceiveListener listener) {
+    this.receiveListener = listener;
+  }
+
   /**
-   * Enables queueing of objects of a previously registered type. Objects can be
-   * received using the IMessageQueue provided by {@link #getMessageQueue(Class) getMessageQueue()}.
+   * Enables queueing of objects of a previously registered type. Objects can be received using the
+   * IMessageQueue provided by {@link #getMessageQueue(Class) getMessageQueue()}.
    * 
    * @param type The type of objects to queue.
    * @see #setReceiveListener(Class, MessageReceivedListener)
@@ -389,10 +393,6 @@ public class PTP implements ReceiveListener {
    */
   public void setQueueMessages(boolean queueMessages) {
     this.queueMessages = queueMessages;
-  }
-
-  public void setReceiveListener(ReceiveListener listener) {
-    this.receiveListener = listener;
   }
 
   public void setSendListener(SendListener listener) {
@@ -464,7 +464,7 @@ public class PTP implements ReceiveListener {
         if (receiveListener != null) {
           receiveListener.messageReceived(message.getData(), source);
         }
-        
+
         if (queueMessages || receiveListener == null) {
           messageTypes.addMessageToQueue(message.getData(), source, System.currentTimeMillis());
         }
@@ -475,7 +475,7 @@ public class PTP implements ReceiveListener {
         if (messageTypes.hasQueue(obj)) {
           messageTypes.addMessageToQueue(obj, source, System.currentTimeMillis());
         }
-        
+
         if (!messageTypes.hasListener(obj) && !messageTypes.hasQueue(obj)) {
           logger.log(Level.WARNING,
               "Received message of unregistered type with length " + data.length);

@@ -5,9 +5,12 @@ import edu.kit.tm.ptp.ReceiveListener;
 import edu.kit.tm.ptp.SendListener;
 import edu.kit.tm.ptp.SendListener.State;
 import edu.kit.tm.ptp.auth.AuthenticationListener;
+import edu.kit.tm.ptp.auth.AuthenticatorFactory;
+import edu.kit.tm.ptp.auth.PublicKeyAuthenticatorFactory;
 import edu.kit.tm.ptp.channels.ChannelListener;
 import edu.kit.tm.ptp.channels.ChannelManager;
 import edu.kit.tm.ptp.channels.MessageChannel;
+import edu.kit.tm.ptp.crypt.CryptHelper;
 import edu.kit.tm.ptp.serialization.Serializer;
 import edu.kit.tm.ptp.thread.Waker;
 import edu.kit.tm.ptp.utility.Constants;
@@ -67,7 +70,8 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
   private Queue<ChannelIdentifier> authQueue = new ConcurrentLinkedQueue<>();
   private Semaphore semaphore = new Semaphore(0);
   private Waker waker = new Waker(semaphore);
-
+  protected AuthenticatorFactory authFactory = new PublicKeyAuthenticatorFactory();
+  protected CryptHelper cryptHelper;
 
   private static class ReceivedMessage {
     public byte[] data;
@@ -96,10 +100,11 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
    * @param socksPort The port the socks proxy is listening on.
    * @param hsPort The port to reach PTP hidden services from remote.
    */
-  public ConnectionManager(String socksHost, int socksPort, int hsPort) {
+  public ConnectionManager(CryptHelper cryptHelper, String socksHost, int socksPort, int hsPort) {
     this.socksHost = socksHost;
     this.socksPort = socksPort;
     this.hsPort = hsPort;
+    this.cryptHelper = cryptHelper;
   }
 
   public void setSerializer(Serializer serializer) {
@@ -112,6 +117,13 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
 
   public void setReceiveListener(ReceiveListener listener) {
     this.receiveListener = listener;
+  }
+  
+  /** 
+   * Sets the used authentication method by supplying a factory to create authenticator objects. 
+   */
+  public void setAuthenticatorFactory(AuthenticatorFactory factory) {
+    this.authFactory = factory;
   }
 
   /**
@@ -249,6 +261,10 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
   }
 
   public void setLocalIdentifier(Identifier localIdentifier) {
+    if (localIdentifier == null || !localIdentifier.isValid()) {
+      throw new IllegalArgumentException("Identifier is invalid.");
+    }
+    
     this.localIdentifier = localIdentifier;
     logger.log(Level.INFO, "Set local identifier to " + localIdentifier);
   }
@@ -454,5 +470,9 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
     }
 
     logger.log(Level.INFO, "ConnectionManager thread finishes execution");
+  }
+  
+  public CryptHelper getCryptHelper() {
+    return cryptHelper;
   }
 }

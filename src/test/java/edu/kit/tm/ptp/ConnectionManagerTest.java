@@ -1,4 +1,4 @@
-package edu.kit.tm.ptp.connection;
+package edu.kit.tm.ptp;
 
 import static org.junit.Assert.assertEquals;
 
@@ -6,8 +6,9 @@ import edu.kit.tm.ptp.Configuration;
 import edu.kit.tm.ptp.Identifier;
 import edu.kit.tm.ptp.PTP;
 import edu.kit.tm.ptp.SendListener;
-import edu.kit.tm.ptp.SendReceiveListener;
+import edu.kit.tm.ptp.auth.DummyAuthenticatorFactory;
 import edu.kit.tm.ptp.connection.ConnectionManager;
+import edu.kit.tm.ptp.crypt.CryptHelper;
 import edu.kit.tm.ptp.serialization.ByteArrayMessage;
 import edu.kit.tm.ptp.serialization.Serializer;
 import edu.kit.tm.ptp.utility.Constants;
@@ -39,7 +40,7 @@ public class ConnectionManagerTest {
 
   @Test
   public void testStartBindServer() throws IOException {
-    ConnectionManager manager = new ConnectionManager(Constants.localhost, 1000, 1001);
+    manager = new ConnectionManager(new CryptHelper(), Constants.localhost, 1000, 1001);
     manager.start();
     int port = manager.startBindServer(Constants.anyport);
 
@@ -55,17 +56,20 @@ public class ConnectionManagerTest {
   public void testSend() throws IOException {
     ptp = new PTP();
     ptp.init();
-    ptp.createHiddenService();
+    ptp.reuseHiddenService();
+
+    ptp.connectionManager.setAuthenticatorFactory(new DummyAuthenticatorFactory());
 
     Configuration config = ptp.getConfiguration();
     Serializer serializer = new Serializer();
     SendReceiveListener listener = new SendReceiveListener();
 
-    ConnectionManager manager = new ConnectionManager(Constants.localhost,
+    ConnectionManager manager = new ConnectionManager(new CryptHelper(), Constants.localhost,
         config.getTorSOCKSProxyPort(), config.getHiddenServicePort());
     manager.setSendListener(listener);
-    manager.setLocalIdentifier(new Identifier("bla.onion"));
+    manager.setLocalIdentifier(new Identifier("aaaaaaaaaaaaaaaa.onion"));
     manager.setSerializer(serializer);
+    manager.setAuthenticatorFactory(new DummyAuthenticatorFactory());
     manager.start();
 
     byte[] data = new byte[] {0x0, 0x1, 0x2, 0x3};
@@ -80,6 +84,12 @@ public class ConnectionManagerTest {
     assertEquals(id, listener.id);
     assertEquals(SendListener.State.SUCCESS, listener.state);
     assertEquals(ptp.getIdentifier(), listener.destination);
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void invalidLocalIdentifier() {
+    manager = new ConnectionManager(new CryptHelper(), Constants.localhost, 1000, 1001);
+    manager.setLocalIdentifier(new Identifier("xyz.onion"));
   }
 
 }

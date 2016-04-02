@@ -94,7 +94,7 @@ public class PTPTest {
     Identifier id1 = null;
     Identifier id2 = null;
 
-    client1.createHiddenService();
+    client1.reuseHiddenService();
 
     id1 = client1.getIdentifier();
     id2 = client1.getIdentifier();
@@ -105,7 +105,7 @@ public class PTPTest {
    * Test for fail handlers in SendListenerAdapter.
    */
   @Test
-  public void testSendFail() throws IOException {
+  public void testSendFail() throws IOException, InterruptedException {
     client1.init();
 
     // An atomic boolean used to check whether the sent message was received.
@@ -233,7 +233,7 @@ public class PTPTest {
    * received message does not reach the maximum number of messages to receive.
    */
   @Test
-  public void testPingPong() throws IOException {
+  public void testPingPong() throws IOException, InterruptedException {
     client1.init();
     client2.init();
     // The maximum number of received messages during the ping-pong.
@@ -292,19 +292,16 @@ public class PTPTest {
     client1.sendMessage(testString.getBytes(), client2.getIdentifier(), 180 * 1000);
 
     // Wait for the sending result, to ensure first identifier is available.
-    TestHelper.wait(sendSuccess, 185 * 1000);
+    TestHelper.wait(sendSuccess, TestConstants.hiddenServiceSetupTimeout);
 
     assertEquals("Sending initial ping-pong message failed.", true, sendSuccess.get());
 
     // Wait for all ping-pong messages to arrive.
     final long start = System.currentTimeMillis();
-    while (counter1.get() + counter2.get() < max && System.currentTimeMillis() - start < 300 * 1000
-        && !matchFail.get() && !countingFail.get()) {
-      try {
-        Thread.sleep(5 * 1000);
-      } catch (InterruptedException e) {
-        // Waiting was interrupted. Do nothing.
-      }
+    while (counter1.get() + counter2.get() < max
+        && System.currentTimeMillis() - start < max * 10 * 1000 && !matchFail.get()
+        && !countingFail.get()) {
+      Thread.sleep(5 * 1000);
     }
 
     if (counter1.get() + counter2.get() < max) {

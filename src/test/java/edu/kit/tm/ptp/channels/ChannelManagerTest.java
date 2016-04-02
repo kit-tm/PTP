@@ -83,7 +83,7 @@ public class ChannelManagerTest {
     channelManager.start();
 
     ptp.init();
-    ptp.createHiddenService();
+    ptp.reuseHiddenService();
 
     // wait for hidden service to become available
     TestHelper.sleep(TestConstants.hiddenServiceSetupTimeout);

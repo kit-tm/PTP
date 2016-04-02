@@ -28,13 +28,12 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 
 /**
- * Singleton helper class for cryptographic operations.
+ * Helper class for cryptographic operations.
  * 
  * @author Timon Hackenjos
  */
 
 public class CryptHelper {
-  private static CryptHelper instance = null;
   protected KeyPair keyPair = null;
   private Signature sign = null;
   private Signature verify = null;
@@ -42,7 +41,7 @@ public class CryptHelper {
   private KeyFactory rsaFactory = null;
   private Base32 base32 = new Base32();
 
-  private CryptHelper() {
+  public CryptHelper() {
     Security.addProvider(new BouncyCastleProvider());
   }
 
@@ -123,17 +122,6 @@ public class CryptHelper {
     verify.update(data);
 
     return verify.verify(signature);
-  }
-
-  /**
-   * Returns the one instance.
-   */
-  public static CryptHelper getInstance() {
-    if (instance == null) {
-      instance = new CryptHelper();
-    }
-
-    return instance;
   }
 
   /**
