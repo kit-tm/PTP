@@ -48,34 +48,6 @@ public class MessageQueueTest {
     ptp.exit();
     ptp2.exit();
   }
-
-  @Test
-  public void testPollMessageAPI2() throws IOException, InterruptedException {
-    ptp.registerClass(TestMessage.class);
-    ptp2.registerClass(TestMessage.class);
-
-    ptp.reuseHiddenService();
-    ptp2.reuseHiddenService();
-
-    ptp.enableMessageQueue(TestMessage.class);
-    ptp2.enableMessageQueue(TestMessage.class);
-
-    assertNotEquals(null, ptp2.getIdentifier());
-
-    TestMessage message = new TestMessage("Hallo", 123, false);
-    ptp.sendMessage(message, ptp2.getIdentifier());
-    
-    IMessageQueue<TestMessage> receiveQueue = ptp2.getMessageQueue(TestMessage.class);
-
-    long start = System.currentTimeMillis();
-
-    while (!receiveQueue.hasMessage()
-        && System.currentTimeMillis() - start < TestConstants.hiddenServiceSetupTimeout) {
-      Thread.sleep(1000);
-    }
-    
-    pollMessageIterator(message, receiveQueue);
-  }
   
   @Test
   public void testPollIterator() throws IOException, InterruptedException {
