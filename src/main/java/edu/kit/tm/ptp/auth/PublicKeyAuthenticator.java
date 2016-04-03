@@ -15,6 +15,7 @@ import java.security.SignatureException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -36,7 +37,8 @@ public class PublicKeyAuthenticator extends Authenticator implements ChannelMess
       new HashMap<Identifier, HashSet<Long>>();
   protected Identifier own = null;
   protected Identifier other = null;
-  private static final long authenticatorLifetime = 30 * 1000; // in ms
+  private static final long authenticatorLifetime = 60 * 1000; // in ms
+  private static final long maxClockDifference = 20 * 1000; // in ms
   private CryptHelper cryptHelper;
 
   public PublicKeyAuthenticator(AuthenticationListener listener, MessageChannel channel,
@@ -54,11 +56,13 @@ public class PublicKeyAuthenticator extends Authenticator implements ChannelMess
   public static class AuthenticationMessage {
     /** The hidden service identifier of the sender. */
     public Identifier source;
-    /** The hidden service identifier of the receiver.*/
+    /** The hidden service identifier of the receiver. */
     public Identifier destination;
     /** The public key of the sender. */
     public byte[] pubKey;
-    /** The time the message was generated. 
+    /**
+     * The time the message was generated.
+     * 
      * @see System#currentTimeMillis()
      */
     public long nonce;
@@ -233,12 +237,12 @@ public class PublicKeyAuthenticator extends Authenticator implements ChannelMess
       return false;
     }
 
-    if (message.nonce + authenticatorLifetime < System.currentTimeMillis()) {
+    if (isNonceExpired(message.nonce)) {
       logger.log(Level.WARNING, "Received expired authentication message");
       return false;
     }
 
-    if (message.nonce - System.currentTimeMillis() > authenticatorLifetime) {
+    if (message.nonce - System.currentTimeMillis() > maxClockDifference) {
       logger.log(Level.WARNING,
           "Received authentication message which expires too far in the future.");
       return false;
@@ -313,25 +317,45 @@ public class PublicKeyAuthenticator extends Authenticator implements ChannelMess
     return getBytes(message.source, message.destination, message.pubKey, message.nonce);
   }
 
-  private synchronized boolean containsNonce(Identifier other, Long nonce) {
-    HashSet<Long> userNonces = nonces.get(other);
+  private boolean containsNonce(Identifier other, Long nonce) {
+    synchronized (nonces) {
+      HashSet<Long> userNonces = nonces.get(other);
 
-    if (userNonces == null) {
-      return false;
+      if (userNonces == null) {
+        return false;
+      }
+
+      return userNonces.contains(nonce);
     }
-
-    return userNonces.contains(nonce);
   }
 
-  private synchronized void addNonce(Identifier other, Long nonce) {
-    logger.log(Level.INFO, "Adding nonce " + nonce + " for " + other.toString());
-    HashSet<Long> userNonces = nonces.get(other);
+  private void addNonce(Identifier other, Long nonce) {
+    synchronized (nonces) {
+      logger.log(Level.INFO, "Adding nonce " + nonce + " for " + other.toString());
+      HashSet<Long> userNonces = nonces.get(other);
 
-    if (userNonces == null) {
-      userNonces = new HashSet<Long>();
-      nonces.put(other, userNonces);
+      if (userNonces == null) {
+        userNonces = new HashSet<Long>();
+        nonces.put(other, userNonces);
+      }
+
+      removeOldNonces(userNonces);
+
+      userNonces.add(nonce);
     }
+  }
 
-    userNonces.add(nonce);
+  private boolean isNonceExpired(long nonce) {
+    return nonce + authenticatorLifetime < System.currentTimeMillis();
+  }
+  
+  private void removeOldNonces(HashSet<Long> userNonces) {
+    Iterator<Long> nonceIterator = userNonces.iterator();
+
+    while (nonceIterator.hasNext()) {
+      if (isNonceExpired(nonceIterator.next())) {
+        nonceIterator.remove();
+      }
+    }
   }
 }
