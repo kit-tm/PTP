@@ -27,25 +27,26 @@ import java.util.Set;
 public class PTPFloodingExample {
 
   static PTP ptp;
-  
+  private static final String charset = "UTF-8";
+
   /**
    * Message format.
    */
   static class FloodingMessage {
     public String content;
     public long timestamp;
-    
-    // no-arg constructor required for PTP 
+
+    // no-arg constructor required for PTP
     public FloodingMessage() {
       content = null;
       timestamp = -1;
     }
-    
+
     public FloodingMessage(String message) {
       content = message;
       timestamp = System.currentTimeMillis();
     }
-    
+
     @Override
     public boolean equals(Object obj) {
       if (obj == this) {
@@ -57,7 +58,7 @@ public class PTPFloodingExample {
       FloodingMessage fm = (FloodingMessage) obj;
       return (this.content.equals(fm.content) && (this.timestamp == fm.timestamp));
     }
-    
+
     @Override
     public int hashCode() {
       // could probably be done better
@@ -65,14 +66,14 @@ public class PTPFloodingExample {
       return tmp.hashCode();
     }
   }
-    
+
   /**
    * Starts the example.
    * 
    * @param args Not used.
    */
   public static void main(String[] args) {
-    
+
     // Create a PTP object.
     final PTP ptp = new PTP();
 
@@ -86,18 +87,18 @@ public class PTPFloodingExample {
       ptp.reuseHiddenService();
 
       // Print own identifier to a file
-      Files.write(
-          Paths.get("identifier.txt"),
-          (ptp.getIdentifier().toString() + "\n").getBytes("utf-8"),
+      Files.write(Paths.get("identifier.txt"),
+          (ptp.getIdentifier().toString() + "\n").getBytes(charset),
           StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
 
       // Read friends
       final List<Identifier> friends = new ArrayList<Identifier>();
       try {
-        for (String line : Files.readAllLines(Paths.get("friends.txt"), Charset.forName("UTF-8"))) {
+        for (String line : Files.readAllLines(Paths.get("friends.txt"),
+            Charset.forName(charset))) {
 
           Identifier friend = new Identifier(line);
-          
+
           if (!friend.isValid() || friend.equals(ptp.getIdentifier())) {
             System.out.println("Skipping invalid friend entry: " + friend);
             continue;
@@ -107,7 +108,7 @@ public class PTPFloodingExample {
       } catch (IOException e) {
         System.out.println("Error reading \"friends.txt\", continuing without friends :(");
       }
-      
+
       final Set<FloodingMessage> seenMessages = new HashSet<FloodingMessage>();
       ptp.registerClass(FloodingMessage.class);
       // Register message and setup ReceiveListener
@@ -119,15 +120,14 @@ public class PTPFloodingExample {
           // to avoid loops...
           synchronized (seenMessages) {
             if (seenMessages.contains(message)) {
-              //System.out.println("Received duplicate message from " + source);
+              // System.out.println("Received duplicate message from " + source);
               return;
             }
             seenMessages.add(message);
           }
 
-          System.out.println(
-                  "Received message: " + message.content + " from " + source + "; "
-                          + "The message is " + (System.currentTimeMillis() - message.timestamp) + "ms old");
+          System.out.println("Received message: " + message.content + " from " + source + "; "
+              + "The message is " + (System.currentTimeMillis() - message.timestamp) + "ms old");
 
           // forward to all friends
           synchronized (friends) {
@@ -151,7 +151,7 @@ public class PTPFloodingExample {
       });
 
       // Create a reader for the console input.
-      BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+      BufferedReader br = new BufferedReader(new InputStreamReader(System.in, charset));
 
       ptp.setSendListener(new SendListener() {
         @Override
@@ -168,10 +168,10 @@ public class PTPFloodingExample {
           }
         }
       });
-      
+
       // print own identifier
       System.out.println("Own identifier: " + ptp.getIdentifier());
-      
+
       // main loop
       while (!Thread.interrupted()) {
         System.out.println("Enter message to send (or exit to stop):");
@@ -181,13 +181,13 @@ public class PTPFloodingExample {
         }
         synchronized (friends) {
           for (Identifier friend : friends) {
-            
+
             FloodingMessage message = new FloodingMessage(content);
-            
+
             synchronized (seenMessages) {
               seenMessages.add(message);
             }
-            
+
             System.out.println("Sending to " + friend);
             ptp.sendMessage(message, friend);
           }
@@ -199,7 +199,7 @@ public class PTPFloodingExample {
 
     // Done, exit.
     System.out.println("Exiting client.");
-    
+
     if (ptp != null) {
       ptp.exit();
     }

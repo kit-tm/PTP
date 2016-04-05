@@ -4,9 +4,10 @@ import edu.kit.tm.ptp.utility.Constants;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
@@ -15,14 +16,14 @@ public class ConfigurationFileReader {
   /** The logger for this class. */
   private Logger logger;
   private File configurationFile;
-  
+
   // Expose constants for testing.
 
   /** The delimiter used in the configuration file to separate property keys and values. */
   public static final String delimiter = " ";
   /** The Symbol used for commented lines in the configuration file. */
   public static final String comment = "#";
-  
+
   /** Configuration file property names. */
   public static final String DefaultIdentifier = "DefaultIdentifier";
   public static final String HiddenServicePort = "HiddenServicePort";
@@ -55,8 +56,8 @@ public class ConfigurationFileReader {
           "Configuration file does not exist: " + configurationFile.getName());
     }
 
-    FileReader reader = new FileReader(configurationFile);
-    BufferedReader buffer = new BufferedReader(reader);
+    BufferedReader buffer = new BufferedReader(
+        new InputStreamReader(new FileInputStream(configurationFile), Constants.charset));
     HashMap<String, String> properties = new HashMap<String, String>();
 
     // Read the entries of the configuration file in the map.
@@ -88,7 +89,7 @@ public class ConfigurationFileReader {
     }
 
     buffer.close();
-    
+
     String loggerConfiguration;
     // Check if the configuration file contains an entry for the logger configuration.
     if (properties.containsKey(LoggerConfigFile)) {
@@ -101,7 +102,7 @@ public class ConfigurationFileReader {
     // Create the logger AFTER its configuration file has been set.
     logger = Logger.getLogger(ConfigurationFileReader.class.getName());
     logger.info("Set the logger properties file to: " + loggerConfiguration);
-    
+
     Configuration config = new Configuration();
     config.setLoggerConfiguration(loggerConfiguration);
 

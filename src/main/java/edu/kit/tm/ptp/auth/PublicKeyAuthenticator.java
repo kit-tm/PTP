@@ -5,8 +5,10 @@ import edu.kit.tm.ptp.channels.ChannelMessageListener;
 import edu.kit.tm.ptp.channels.MessageChannel;
 import edu.kit.tm.ptp.crypt.CryptHelper;
 import edu.kit.tm.ptp.serialization.Serializer;
+import edu.kit.tm.ptp.utility.Constants;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
@@ -143,7 +145,7 @@ public class PublicKeyAuthenticator extends Authenticator implements ChannelMess
 
       try {
         response = createAuthenticator();
-      } catch (GeneralSecurityException e) {
+      } catch (GeneralSecurityException | UnsupportedEncodingException e) {
         logger.log(Level.WARNING, "Failed to create authentication message");
         authFailed();
         return;
@@ -183,7 +185,7 @@ public class PublicKeyAuthenticator extends Authenticator implements ChannelMess
 
       sendAuthMessage(auth);
       sent = true;
-    } catch (GeneralSecurityException e) {
+    } catch (GeneralSecurityException | UnsupportedEncodingException e) {
       logger.log(Level.WARNING, "Failed to sign authentication message");
       authFailed();
     }
@@ -281,11 +283,13 @@ public class PublicKeyAuthenticator extends Authenticator implements ChannelMess
     return false;
   }
 
-  protected AuthenticationMessage createAuthenticator() throws GeneralSecurityException {
+  protected AuthenticationMessage createAuthenticator()
+      throws GeneralSecurityException, UnsupportedEncodingException {
     return createAuthenticator(System.currentTimeMillis());
   }
 
-  protected AuthenticationMessage createAuthenticator(long nonce) throws GeneralSecurityException {
+  protected AuthenticationMessage createAuthenticator(long nonce)
+      throws GeneralSecurityException, UnsupportedEncodingException {
     byte[] pubKey = cryptHelper.getPublicKeyBytes();
     ByteBuffer toSign = getBytes(own, other, pubKey, nonce);
 
@@ -297,9 +301,9 @@ public class PublicKeyAuthenticator extends Authenticator implements ChannelMess
   }
 
   private ByteBuffer getBytes(Identifier source, Identifier destination, byte[] pubKey,
-      long nonce) {
-    byte[] sourceBytes = source.toString().getBytes();
-    byte[] destinationBytes = source.toString().getBytes();
+      long nonce) throws UnsupportedEncodingException {
+    byte[] sourceBytes = source.toString().getBytes(Constants.charset);
+    byte[] destinationBytes = source.toString().getBytes(Constants.charset);
 
     int length = sourceBytes.length + destinationBytes.length + pubKey.length + 8;
 
@@ -313,7 +317,7 @@ public class PublicKeyAuthenticator extends Authenticator implements ChannelMess
     return buffer;
   }
 
-  private ByteBuffer getBytes(AuthenticationMessage message) {
+  private ByteBuffer getBytes(AuthenticationMessage message) throws UnsupportedEncodingException {
     return getBytes(message.source, message.destination, message.pubKey, message.nonce);
   }
 

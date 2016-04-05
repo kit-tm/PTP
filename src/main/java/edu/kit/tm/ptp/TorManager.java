@@ -9,10 +9,11 @@ import net.freehaven.tor.control.TorControlConnection;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.RandomAccessFile;
 import java.net.Socket;
 import java.util.logging.Level;
@@ -65,7 +66,7 @@ public class TorManager {
         logger.log(Level.INFO, "Output reading thread started.");
         logger.log(Level.INFO, "Fetching the process stdout stream.");
         BufferedReader standardOut =
-            new BufferedReader(new InputStreamReader(process.getInputStream()));
+            new BufferedReader(new InputStreamReader(process.getInputStream(), Constants.charset));
 
         int controlPort = -1;
         int socksPort = -1;
@@ -89,7 +90,8 @@ public class TorManager {
             if (line.contains(Constants.bootstrapdone) && controlPortRead && socksPortRead) {
               logger.log(Level.INFO, "Output thread Tor ports to TorManager ports file.");
 
-              BufferedWriter writer = new BufferedWriter(new FileWriter(portsFile));
+              BufferedWriter writer = new BufferedWriter(
+                  new OutputStreamWriter(new FileOutputStream(portsFile), Constants.charset));
 
               writer.write(controlPort + Constants.newline);
               writer.write(socksPort + Constants.newline);
@@ -139,7 +141,7 @@ public class TorManager {
         logger.log(Level.INFO, "Fetching the process stderr stream.");
 
         BufferedReader errorOut =
-            new BufferedReader(new InputStreamReader(process.getErrorStream()));
+            new BufferedReader(new InputStreamReader(process.getErrorStream(), Constants.charset));
 
         logger.log(Level.INFO, "Error thread entering reading loop.");
 
@@ -545,7 +547,8 @@ public class TorManager {
    * @throws IOException Propagates any IOException thrown when reading the TorManager ports file.
    */
   private void readPorts() throws IOException {
-    BufferedReader reader = new BufferedReader(new FileReader(portsFile));
+    BufferedReader reader = new BufferedReader(
+        new InputStreamReader(new FileInputStream(portsFile), Constants.charset));
 
     String controlPortLine = reader.readLine();
     String socksPortLine = reader.readLine();

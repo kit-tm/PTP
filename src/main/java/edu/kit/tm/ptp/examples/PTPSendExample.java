@@ -8,6 +8,7 @@ import edu.kit.tm.ptp.SendListener;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 
 /**
  * An example application of the PTP API, sends messages to a chosen destination.
@@ -16,6 +17,8 @@ import java.io.InputStreamReader;
  *
  */
 public class PTPSendExample {
+  
+  private static final String charset = "UTF-8";
 
   /**
    * Starts the example.
@@ -23,7 +26,7 @@ public class PTPSendExample {
    * @param args Not used.
    */
   public static void main(String[] args) {
-    
+
     // Create a PTP object.
     PTP ptp = new PTP();
 
@@ -41,13 +44,18 @@ public class PTPSendExample {
       ptp.setReceiveListener(new ReceiveListener() {
         @Override
         public void messageReceived(byte[] data, Identifier source) {
-          System.out.println("Received message: " + new String(data) + " from " + source);
+          try {
+            System.out.println(
+                "Received message: " + new String(data, charset) + " from " + source);
+          } catch (UnsupportedEncodingException e) {
+            System.err.println("Failed to encode String using charset " + charset);
+          }
         }
       });
 
       // Create a reader for the console input
-      BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-      
+      BufferedReader br = new BufferedReader(new InputStreamReader(System.in, charset));
+
       // Ask for the destination hidden service identifier
       System.out.print("Enter destination identifier: ");
       final String destinationAddress = br.readLine();
@@ -55,7 +63,7 @@ public class PTPSendExample {
       final Thread exampleThread = Thread.currentThread();
 
       ptp.setSendListener(new SendListener() {
-        
+
         @Override
         public void messageSent(long id, Identifier destination, State state) {
           switch (state) {
@@ -78,7 +86,7 @@ public class PTPSendExample {
         if (content.equals("exit")) {
           break;
         }
-        ptp.sendMessage(content.getBytes(), destination);
+        ptp.sendMessage(content.getBytes(charset), destination);
       }
     } catch (IOException e) {
       e.printStackTrace();

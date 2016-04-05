@@ -12,7 +12,6 @@ package edu.kit.tm.ptp.utility;
  *
  */
 public class Constants {
-
   /* Tor general constants */
 
   /** The name of the Tor hostname file. */
@@ -99,5 +98,6 @@ public class Constants {
   public static final String readwriterights = "rw";
   /** Newline symbol. */
   public static final String newline = "\n";
+  public static final String charset = "UTF-8";
 
 }

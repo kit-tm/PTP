@@ -26,6 +26,8 @@ public class PTPPingExample {
 
   private static PTP ptp;
   
+  private static final String charset = "UTF-8";
+  
   /**
    * Message type for pings.
    */
@@ -145,7 +147,7 @@ public class PTPPingExample {
   private static Identifier getDestinationFromConsolePrompt() throws IOException {
     
     // Create a reader for the console input.
-    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in, charset));
     
     // Ask for the destination hidden service identifier.
     System.out.print("Enter destination identifier: ");

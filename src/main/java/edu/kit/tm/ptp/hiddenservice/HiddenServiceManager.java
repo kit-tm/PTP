@@ -363,7 +363,7 @@ public class HiddenServiceManager {
     logger.log(Level.INFO, "Reading identifier from file: " + hostname);
 
     BufferedReader buffer =
-        new BufferedReader(new InputStreamReader(new FileInputStream(hostname)));
+        new BufferedReader(new InputStreamReader(new FileInputStream(hostname), Constants.charset));
 
     logger.log(Level.INFO, "Reading line.");
     String identifier = buffer.readLine();

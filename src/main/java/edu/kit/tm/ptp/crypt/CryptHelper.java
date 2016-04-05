@@ -1,6 +1,7 @@
 package edu.kit.tm.ptp.crypt;
 
 import edu.kit.tm.ptp.Identifier;
+import edu.kit.tm.ptp.utility.Constants;
 
 import org.apache.commons.codec.binary.Base32;
 
@@ -11,8 +12,10 @@ import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
@@ -131,7 +134,8 @@ public class CryptHelper {
    * @throws InvalidKeySpecException If the key isn't encoded in x509.
    */
   public KeyPair readKeyPairFromFile(File file) throws IOException, InvalidKeySpecException {
-    PEMParser parser = new PEMParser(new FileReader(file));
+    PEMParser parser =
+        new PEMParser(new InputStreamReader(new FileInputStream(file), Constants.charset));
 
     Object obj = parser.readObject();
     parser.close();
@@ -192,7 +196,7 @@ public class CryptHelper {
     }
 
     // base32 encoding
-    String identifier = new String(base32.encode(firstBytes)) + ".onion";
+    String identifier = new String(base32.encode(firstBytes), Constants.charset) + ".onion";
 
     return new Identifier(identifier.toLowerCase());
   }

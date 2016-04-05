@@ -1,6 +1,9 @@
 package edu.kit.tm.ptp.channels;
 
+import edu.kit.tm.ptp.utility.Constants;
+
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.logging.Level;
@@ -41,8 +44,17 @@ public class SOCKSChannel extends MessageChannel {
       logger.log(Level.SEVERE, "A connection through the proxy has already been established.");
       throw new IllegalStateException();
     }
+    byte[] hostBytes;
+    
+    try {
+      hostBytes = host.getBytes(Constants.charset);
+    } catch (UnsupportedEncodingException e) {
+      logger.log(Level.WARNING, "Failed to encode host string using " + Constants.charset);
+      closeChannel();
+      return;
+    }
 
-    socksWriteBuffer = ByteBuffer.allocate(host.getBytes().length + 10);
+    socksWriteBuffer = ByteBuffer.allocate(hostBytes.length + 10);
 
     // ByteBuffers use Big Endian by Default
     // SOCKS4a
@@ -51,7 +63,7 @@ public class SOCKSChannel extends MessageChannel {
     socksWriteBuffer.putShort((short) port);
     socksWriteBuffer.putInt(0x01);
     socksWriteBuffer.put((byte) 0x00);
-    socksWriteBuffer.put(host.getBytes());
+    socksWriteBuffer.put(hostBytes);
     socksWriteBuffer.put((byte) 0x00);
     socksWriteBuffer.flip();
 
