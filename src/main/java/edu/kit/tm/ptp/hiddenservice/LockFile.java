@@ -44,32 +44,6 @@ public class LockFile {
   }
 
   /**
-   * Tries to acquire lock for the file. The method doesn't block.
-   * 
-   * @return Returns true if the lock could be acquired immediately.
-   */
-  public boolean tryLock() {
-    if (!threadLock.tryLock()) {
-      return false;
-    } else {
-      try {
-        raf = new RandomAccessFile(file, Constants.readwriterights);
-    
-        lock = raf.getChannel().tryLock();
-      } catch (IOException e) {
-        threadLock.unlock();
-        return false;
-      }
-      
-      if (lock == null) {
-        threadLock.unlock();
-      }
-  
-      return lock != null;
-    }
-  }
-
-  /**
    * Releases a previously acquired lock.
    */
   public void release() {

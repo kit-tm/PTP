@@ -196,23 +196,4 @@ public class CryptHelper {
 
     return new Identifier(identifier.toLowerCase());
   }
-
-  protected String bytesToHex(byte[] bytes) {
-    StringBuilder sb = new StringBuilder();
-
-    for (byte b : bytes) {
-      sb.append(String.format("%02X", b));
-    }
-
-    return sb.toString();
-  }
-
-  protected byte[] decodeIdentifier(Identifier ident) {
-    if (!ident.isValid()) {
-      return null;
-    }
-    String bytes = ident.toString().substring(0, ident.toString().indexOf("."));
-
-    return base32.decode(bytes.toUpperCase().getBytes());
-  }
 }
