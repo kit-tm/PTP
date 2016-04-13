@@ -36,8 +36,8 @@ public class PTP implements ReceiveListener {
   private TorManager tor;
   /** The manager that closes sockets when their TTL expires. */
   private TTLManager ttlManager;
-  /** A dummy sending listener to use when no listener is specified upon message sending. */
   private ReceiveListener receiveListener = null;
+  private SendListener sendListener = new SendListenerAdapter();
 
   private HiddenServiceManager hiddenServiceManager;
   protected ConnectionManager connectionManager;
@@ -206,7 +206,7 @@ public class PTP implements ReceiveListener {
     connectionManager = new ConnectionManager(cryptHelper, Constants.localhost,
         config.getTorSOCKSProxyPort(), config.getHiddenServicePort());
     connectionManager.setSerializer(serializer);
-    connectionManager.setSendListener(new SendListenerAdapter());
+    connectionManager.setSendListener(sendListener);
     connectionManager.setReceiveListener(this);
 
     connectionManager.start();
@@ -230,6 +230,10 @@ public class PTP implements ReceiveListener {
    * Returns the currently used API configuration.
    */
   public Configuration getConfiguration() {
+    if (!initialized || closed) {
+      throw new IllegalStateException();
+    }
+
     return config;
   }
 
@@ -237,10 +241,18 @@ public class PTP implements ReceiveListener {
    * Returns the currently used hidden service identifier.
    */
   public Identifier getIdentifier() {
+    if (!initialized || closed) {
+      throw new IllegalStateException();
+    }
+
     return hiddenServiceManager.getHiddenServiceIdentifier();
   }
 
   public String getHiddenServiceDirectory() {
+    if (!initialized || closed) {
+      throw new IllegalStateException();
+    }
+
     return hiddenServiceManager.getHiddenServiceDirectory();
   }
 
@@ -273,17 +285,7 @@ public class PTP implements ReceiveListener {
     readPrivateKey(hiddenServiceManager.getPrivateKeyFile());
   }
 
-  private void readPrivateKey(File privateKey) throws IOException {
-    if (privateKey == null) {
-      throw new IOException("Failed to get private key");
-    }
 
-    try {
-      cryptHelper.setKeyPair(cryptHelper.readKeyPairFromFile(privateKey));
-    } catch (InvalidKeyException | InvalidKeySpecException e) {
-      throw new IOException("Invalid private key");
-    }
-  }
 
   /**
    * Sends bytes to the supplied destination.
@@ -339,10 +341,13 @@ public class PTP implements ReceiveListener {
   }
 
   /**
-   * Register class to be able to send and receive instances of the class. A class type may only be
-   * registered once.
+   * Register class to be able to send and receive instances of the class.
+   * Registering a class several times has no effect.
    */
   public <T> void registerClass(Class<T> type) {
+    if (closed) {
+      throw new IllegalStateException();
+    }
     serializer.registerClass(type);
   }
 
@@ -354,10 +359,22 @@ public class PTP implements ReceiveListener {
    * @see #registerClass(Class)
    */
   public <T> void setReceiveListener(Class<T> type, MessageReceivedListener<T> listener) {
+    if (closed) {
+      throw new IllegalStateException();
+    }
+
+    if (!serializer.isRegistered(type)) {
+      throw new IllegalArgumentException("Class type hasn't been registered before");
+    }
+
     messageTypes.putListener(type, listener);
   }
 
   public void setReceiveListener(ReceiveListener listener) {
+    if (closed) {
+      throw new IllegalStateException();
+    }
+
     this.receiveListener = listener;
   }
 
@@ -369,6 +386,13 @@ public class PTP implements ReceiveListener {
    * @see #setReceiveListener(Class, MessageReceivedListener)
    */
   public <T> void enableMessageQueue(Class<T> type) {
+    if (closed) {
+      throw new IllegalStateException();
+    }
+
+    if (!serializer.isRegistered(type)) {
+      throw new IllegalArgumentException("Class type hasn't been registered before");
+    }
     messageTypes.addMessageQueue(type);
   }
 
@@ -378,6 +402,18 @@ public class PTP implements ReceiveListener {
    * @see #enableMessageQueue(Class)
    */
   public <T> IMessageQueue<T> getMessageQueue(Class<T> type) {
+    if (closed) {
+      throw new IllegalStateException();
+    }
+
+    if (!serializer.isRegistered(type)) {
+      throw new IllegalArgumentException("Class type hasn't been registered before");
+    }
+
+    if (!messageTypes.queueEnabled(type)) {
+      throw new IllegalArgumentException("Queuing hasn't been enabled for the type");
+    }
+
     return new MessageQueue<T>(type, messageTypes);
   }
 
@@ -385,24 +421,40 @@ public class PTP implements ReceiveListener {
    * Returns a IMessageQueue to poll received byte[] messages from.
    */
   public IMessageQueue<byte[]> getMessageQueue() {
-    return new MessageQueue<>(byte[].class, messageTypes);
+    return getMessageQueue(byte[].class);
   }
 
   /**
-   * Sets a boolean stating if received byte[] messages should be queued.
+   * Sets a boolean stating if received bytearray messages should be queued.
    */
   public void setQueueMessages(boolean queueMessages) {
+    if (closed) {
+      throw new IllegalStateException();
+    }
+
     this.queueMessages = queueMessages;
   }
 
   public void setSendListener(SendListener listener) {
-    connectionManager.setSendListener(listener);
+    if (closed) {
+      throw new IllegalStateException();
+    }
+
+    this.sendListener = listener;
+
+    if (initialized) {
+      connectionManager.setSendListener(listener);
+    }
   }
 
   /**
    * Returns the local port on which the local hidden service is listening.
    */
   public int getLocalPort() {
+    if (!initialized || closed) {
+      throw new IllegalStateException();
+    }
+
     return hiddenServicePort;
   }
 
@@ -465,8 +517,12 @@ public class PTP implements ReceiveListener {
           receiveListener.messageReceived(message.getData(), source);
         }
 
-        if (queueMessages || receiveListener == null) {
+        if (queueMessages) {
           messageTypes.addMessageToQueue(message.getData(), source, System.currentTimeMillis());
+        }
+
+        if (receiveListener == null && !queueMessages) {
+          logger.log(Level.WARNING, "Dropping received message because no receive listener ist set.");
         }
       } else {
         if (messageTypes.hasListener(obj)) {
@@ -486,6 +542,17 @@ public class PTP implements ReceiveListener {
     }
   }
 
+  private void readPrivateKey(File privateKey) throws IOException {
+    if (privateKey == null) {
+      throw new IOException("Failed to get private key");
+    }
+
+    try {
+      cryptHelper.setKeyPair(cryptHelper.readKeyPairFromFile(privateKey));
+    } catch (InvalidKeyException | InvalidKeySpecException e) {
+      throw new IOException("Invalid private key");
+    }
+  }
 
   /**
    * Returns a manager listener that will close socket connections with expired TTL.

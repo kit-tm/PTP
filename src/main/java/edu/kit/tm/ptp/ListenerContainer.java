@@ -1,7 +1,7 @@
 package edu.kit.tm.ptp;
 
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.Map;
 import java.util.Set;
 
@@ -14,7 +14,7 @@ import java.util.Set;
  *
  */
 public class ListenerContainer {
-  private Map<Class<?>, Object> listeners = new HashMap<Class<?>, Object>();
+  private Map<Class<?>, Object> listeners = new Hashtable<Class<?>, Object>();
   protected Set<Class<?>> registerClasses = new HashSet<Class<?>>();
 
   /**
@@ -23,10 +23,6 @@ public class ListenerContainer {
   public <T> void putListener(Class<T> type, MessageReceivedListener<T> listener) {
     if (type == null || listener == null) {
       throw new NullPointerException("Parameter is null");
-    }
-    
-    if (listeners.get(type) != null) {
-      throw new IllegalArgumentException();
     }
     
     listeners.put(type, listener);

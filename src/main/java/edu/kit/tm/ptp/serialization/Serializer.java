@@ -7,6 +7,8 @@ import com.esotericsoftware.kryo.io.Output;
 import edu.kit.tm.ptp.auth.PublicKeyAuthenticator.AuthenticationMessage;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 
 
 /**
@@ -18,6 +20,7 @@ import java.io.IOException;
  */
 public class Serializer {
   private Kryo kryo = new Kryo();
+  private Set<Class<?>> registeredClasses = new HashSet<>();
   
   public Serializer() {
     kryo.register(ByteArrayMessage.class);
@@ -66,10 +69,19 @@ public class Serializer {
   /**
    * Registers the supplied class to be able to serialize objects of the class.
    * Keep in mind that the order of registration matters.
+   * Registering a class several times has no effect.
    * 
    * @param type The class to register.
    */
   public <T> void registerClass(Class<T> type) {
+    registeredClasses.add(type);
     kryo.register(type);
+  }
+
+  /**
+   * Returns true if the supplied class type has already been registered.
+   */
+  public <T> boolean isRegistered(Class<T> type) {
+    return registeredClasses.contains(type);
   }
 }

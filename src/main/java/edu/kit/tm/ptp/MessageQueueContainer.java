@@ -1,6 +1,6 @@
 package edu.kit.tm.ptp;
 
-import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  */
 
 public class MessageQueueContainer extends ListenerContainer {
-  private Map<Class<?>, Queue<Object>> queues = new HashMap<Class<?>, Queue<Object>>();
+  private Map<Class<?>, Queue<Object>> queues = new Hashtable<Class<?>, Queue<Object>>();
   
   /**
    * Adds a queue for messages of Type type.
@@ -82,6 +82,13 @@ public class MessageQueueContainer extends ListenerContainer {
       return false;
     }
     
+    return queues.get(type) != null;
+  }
+
+  /**
+   * Returns true if queuing has been enabled for the type.
+   */
+  protected <T> boolean queueEnabled(Class<T> type) {
     return queues.get(type) != null;
   }
   
