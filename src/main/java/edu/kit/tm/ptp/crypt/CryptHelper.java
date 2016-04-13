@@ -55,7 +55,6 @@ public class CryptHelper {
    * @throws NoSuchProviderException If the used provider isn't available.
    */
   public void init() throws NoSuchAlgorithmException, NoSuchProviderException {
-    // TODO use SHA1 like Tor?
     sign = Signature.getInstance("SHA256withRSA");
     verify = Signature.getInstance("SHA256withRSA");
     sha1 = MessageDigest.getInstance("SHA1");
