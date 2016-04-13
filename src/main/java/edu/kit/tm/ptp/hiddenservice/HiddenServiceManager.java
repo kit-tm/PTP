@@ -20,7 +20,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Manages the hidden service directory.
+ * Manages the hidden service currentDirectory.
  *
  * @author Timon Hackenjos
  */
@@ -31,8 +31,11 @@ public class HiddenServiceManager {
   /** The parameters of this client. */
   private final Configuration configuration;
 
-  /** The current hidden service sub-directory. */
-  private String directory = null;
+  /** The current hidden service sub-currentDirectory. */
+  private String currentDirectory = null;
+
+  /** The currentDirectory to use as hiddenService. */
+  private String hiddenServiceDirectoryName;
 
   /** The currently used hidden service identifier. */
   private Identifier currentIdentifier = null;
@@ -49,27 +52,21 @@ public class HiddenServiceManager {
   /**
    * Constructs a new HiddenServiceManager.
    * 
-   * @param directory The directory to use for the hidden service or null.
+   * @param hiddenServiceDirectoryName The name of the directory to use for the hidden service or null.
+   *                               The directory must not be in use by any other instance.
    * @param port The port the hidden service is listening on.
    */
-  public HiddenServiceManager(Configuration configuration, String directory, int port)
+  public HiddenServiceManager(Configuration configuration, String hiddenServiceDirectoryName, int port)
       throws IOException {
 
     this.configuration = configuration;
-
-    if (directory == null) {
-      this.directory = configuration.getHiddenServicesDirectory() + File.separator
-              + Constants.hiddenserviceprefix + port;
-    } else {
-      this.directory = directory;
-    }
-
+    this.hiddenServiceDirectoryName = hiddenServiceDirectoryName;
     this.port = port;
 
-    // Check if the hidden service directory exists, if not create it.
+    // Check if the hidden service currentDirectory exists, if not create it.
     File hiddenServicesDirectory = new File(configuration.getHiddenServicesDirectory());
     if (!hiddenServicesDirectory.exists() && !hiddenServicesDirectory.mkdirs()) {
-      throw new IOException("Could not create hidden service directory!");
+      throw new IOException("Could not create hidden service currentDirectory!");
     }
 
     // Check if the lock file exists, if not create it.
@@ -90,16 +87,16 @@ public class HiddenServiceManager {
   }
 
   /**
-   * Deletes the currently used hidden service directory.
+   * Deletes the currently used hidden service currentDirectory.
    * 
-   * @throws IOException If an error occurs while deleting the directory.
+   * @throws IOException If an error occurs while deleting the currentDirectory.
    */
   public void deleteHiddenService() throws IOException {
     try {
       apiLock.lock();
-      deleteHiddenServiceDirectory(directory);
+      deleteHiddenServiceDirectory(currentDirectory);
 
-      directory = null;
+      currentDirectory = null;
       currentIdentifier = null;
     } finally {
       apiLock.release();
@@ -111,22 +108,22 @@ public class HiddenServiceManager {
   }
   
   public String getHiddenServiceDirectory() {
-    return directory;
+    return currentDirectory;
   }
   
   /**
    * Returns the private key file of the currently used hidden service.
    */
   public File getPrivateKeyFile() {
-    if (directory == null) {
+    if (currentDirectory == null) {
       return null;
     }
     
-    return new File(directory + File.separator + Constants.prkey);
+    return new File(currentDirectory + File.separator + Constants.prkey);
   }
 
   /**
-   * Removes the lock from the hidden service directory.
+   * Removes the lock from the hidden service currentDirectory.
    */
   public void close() {
     if (hiddenServiceLock != null && hiddenServiceLock.exists()) {
@@ -146,27 +143,35 @@ public class HiddenServiceManager {
       }
       
       if (hiddenServiceLock != null && hiddenServiceLock.exists()) {
-        // New identifier is requested. Delete lock file of last hidden service directory
+        // New identifier is requested. Delete lock file of last hidden service currentDirectory
         hiddenServiceLock.delete();
       }
 
-      // Search for hidden services to reuse
-      // or delete them if a new identifier is requested
-      String freeHsDir = checkHiddenServices(reuse);
-
-      if (freeHsDir != null) {
-        logger.log(Level.INFO, "Reusing hidden service directory " + freeHsDir);
-        directory = freeHsDir;
-      } else {
-        logger.log(Level.INFO, "Creating new hidden service directory " + directory);
+      if (hiddenServiceDirectoryName != null) {
+        currentDirectory = configuration.getHiddenServicesDirectory()
+            + File.separator + hiddenServiceDirectoryName;
         newHiddenService();
+      } else {
+        // Search for hidden services to reuse
+        // or delete them if a new identifier is requested
+        String freeHsDir = checkHiddenServices(reuse);
+
+        if (freeHsDir != null) {
+          logger.log(Level.INFO, "Reusing hidden service currentDirectory " + freeHsDir);
+          currentDirectory = freeHsDir;
+        } else {
+          logger.log(Level.INFO, "Creating new hidden service currentDirectory " + currentDirectory);
+          currentDirectory = configuration.getHiddenServicesDirectory() + File.separator
+              + Constants.hiddenserviceprefix + port;
+          newHiddenService();
+        }
       }
 
       writePortFile();
 
       registerHiddenServices();
 
-      currentIdentifier = new Identifier(readIdentifier(directory));
+      currentIdentifier = new Identifier(readIdentifier(currentDirectory));
 
     } finally {
       // Release the lock, if acquired.
@@ -181,9 +186,9 @@ public class HiddenServiceManager {
     File hiddenServicesDirectory = new File(configuration.getHiddenServicesDirectory());
     String freeHsDir = null;
 
-    // Search for a valid hidden service directory
+    // Search for a valid hidden service currentDirectory
     for (File hiddenService : hiddenServicesDirectory.listFiles()) {
-      // Skip over any files in the directory.
+      // Skip over any files in the currentDirectory.
       if (!hiddenService.isDirectory()) {
         continue;
       }
@@ -201,7 +206,7 @@ public class HiddenServiceManager {
       }
 
       if (!reuse) {
-        logger.log(Level.INFO, "Deleting hidden service directory " + name);
+        logger.log(Level.INFO, "Deleting hidden service currentDirectory " + name);
         deleteHiddenServiceDirectory(hiddenService.getAbsolutePath());
       }
 
@@ -214,7 +219,7 @@ public class HiddenServiceManager {
         freeHsDir = hiddenService.getAbsolutePath();
         hiddenServiceLock = hsLockFile;
 
-        logger.log(Level.INFO, "Found hidden service directory to reuse " + freeHsDir);
+        logger.log(Level.INFO, "Found hidden service currentDirectory to reuse " + freeHsDir);
       }
     }
 
@@ -222,11 +227,11 @@ public class HiddenServiceManager {
   }
 
   private void newHiddenService() throws IOException {
-    File hsDir = new File(directory);
+    File hsDir = new File(currentDirectory);
     File hsLockFile = new File(hsDir + File.separator + Constants.hiddenservicelockfile);
 
     if (!hsDir.exists() && !hsDir.mkdir()) {
-      throw new IOException("Unable to create the hidden service directory!");
+      throw new IOException("Unable to create the hidden service currentDirectory!");
     }
 
     if (!hsLockFile.exists() && !hsLockFile.createNewFile()) {
@@ -237,7 +242,7 @@ public class HiddenServiceManager {
   }
 
   private void writePortFile() throws IOException {
-    File portFile = new File(directory + File.separator + Constants.portfile);
+    File portFile = new File(currentDirectory + File.separator + Constants.portfile);
     ObjectOutputStream stream = new ObjectOutputStream(new FileOutputStream(portFile, false));
     stream.writeInt(port);
     stream.close();
@@ -246,7 +251,7 @@ public class HiddenServiceManager {
 
   /**
    * Creates a Tor hidden service by connecting to the Tor control port and invoking JTorCtl. The
-   * directory of the hidden service must already be present.
+   * currentDirectory of the hidden service must already be present.
    *
    * @throws IOException Throws an IOException when the Tor control socket is not reachable, or if
    *         the Tor authentication fails.
@@ -267,15 +272,15 @@ public class HiddenServiceManager {
     LinkedList<String> properties = new LinkedList<String>();
     File hiddenServicesDirectory = new File(configuration.getHiddenServicesDirectory());
 
-    // Read the hidden service directories in the hidden service root directory, and add them to the
+    // Read the hidden service directories in the hidden service root currentDirectory, and add them to the
     // new hidden service configuration.
     for (File hiddenService : hiddenServicesDirectory.listFiles()) {
-      // Skip over any files in the directory.
+      // Skip over any files in the currentDirectory.
       if (!hiddenService.isDirectory()) {
         continue;
       }
 
-      // Fix directory permissions so that Tor doesn't complain
+      // Fix currentDirectory permissions so that Tor doesn't complain
       hiddenService.setReadable(false, false);
       hiddenService.setReadable(true, true);
       hiddenService.setWritable(false, false);
@@ -322,7 +327,7 @@ public class HiddenServiceManager {
 
 
   /**
-   * Deletes the hidden service directory.
+   * Deletes the hidden service currentDirectory.
    *
    * @throws IOException Propagates any IOException that occured during deletion.
    */
@@ -332,7 +337,7 @@ public class HiddenServiceManager {
       return;
     }
 
-    logger.log(Level.INFO, "Deleting hidden service directory.");
+    logger.log(Level.INFO, "Deleting hidden service currentDirectory.");
     File hostname = new File(directory + File.separator + Constants.hostname);
     File hiddenservice = new File(directory);
     File privatekey = new File(directory + File.separator + Constants.prkey);
@@ -349,11 +354,11 @@ public class HiddenServiceManager {
     logger.log(Level.INFO, "Deleted hidden service lock file: " + (lockFileDeleted ? "yes" : "no"));
     boolean directoryDeleted = hiddenservice.delete();
     logger.log(Level.INFO,
-        "Deleted hidden service directory: " + (directoryDeleted ? "yes" : "no"));
+        "Deleted hidden service currentDirectory: " + (directoryDeleted ? "yes" : "no"));
 
     if (!directoryDeleted) {
       throw new IOException(
-          "Client failed to delete hidden service directory: " + hiddenservice.getAbsolutePath());
+          "Client failed to delete hidden service currentDirectory: " + hiddenservice.getAbsolutePath());
     }
   }
 

@@ -46,13 +46,12 @@ public class PTP implements ReceiveListener {
   private final MessageQueueContainer messageTypes = new MessageQueueContainer();
   private volatile boolean initialized = false;
   private volatile boolean closed = false;
-  private String hiddenServiceDirectory;
+  private String hiddenServiceDirectoryName;
   private String workingDirectory;
   private int controlPort;
   private int socksPort;
   private boolean usePTPTor;
   private Thread clientThread = null;
-  private boolean android = false;
   private volatile boolean queueMessages = false;
   private CryptHelper cryptHelper = new CryptHelper();
 
@@ -84,13 +83,13 @@ public class PTP implements ReceiveListener {
    * @param controlPort The control port of the Tor process.
    * @param socksPort The SOCKS port of the Tor process.
    * @param localPort The port on which the local hidden service should run.
-   * @param directory The name of the hidden service directory.
+   * @param hiddenServiceDirectoryName The name of the hidden service directory.
    * @throws IOException If an error occurs.
    *
    */
   public PTP(String workingDirectory, int controlPort, int socksPort, int localPort,
-      String directory) {
-    initPTP(directory, workingDirectory, false, localPort);
+      String hiddenServiceDirectoryName) {
+    initPTP(workingDirectory, hiddenServiceDirectoryName, false, localPort);
     configReader =
         new ConfigurationFileReader(workingDirectory + File.separator + Constants.configfile);
 
@@ -105,7 +104,6 @@ public class PTP implements ReceiveListener {
    */
   public PTP(String workingDirectory) {
     this(workingDirectory, null);
-    this.android = workingDirectory != null;
   }
 
   /**
@@ -113,19 +111,19 @@ public class PTP implements ReceiveListener {
    * Tor process.
    * 
    * @param workingDirectory The directory to start PTP in.
-   * @param hiddenServiceDirectory The directory of a hidden service to use.
+   * @param hiddenServiceDirectoryName The name of the directory of a hidden service to use.
    */
-  public PTP(String workingDirectory, String hiddenServiceDirectory) {
-    initPTP(hiddenServiceDirectory, workingDirectory, true, Constants.anyport);
+  public PTP(String workingDirectory, String hiddenServiceDirectoryName) {
+    initPTP(workingDirectory, hiddenServiceDirectoryName,true, Constants.anyport);
   }
 
-  private void initPTP(String hsDirectory, String workingDirectory, boolean usePTPTor,
+  private void initPTP(String workingDirectory, String hiddenServiceDirectoryName, boolean usePTPTor,
       int hiddenServicePort) {
     configReader = new ConfigurationFileReader(
         (workingDirectory != null ? workingDirectory + File.separator : "") + Constants.configfile);
 
     this.workingDirectory = workingDirectory;
-    this.hiddenServiceDirectory = hsDirectory;
+    this.hiddenServiceDirectoryName = hiddenServiceDirectoryName;
     this.usePTPTor = usePTPTor;
     this.hiddenServicePort = hiddenServicePort;
     clientThread = Thread.currentThread();
@@ -170,7 +168,7 @@ public class PTP implements ReceiveListener {
         .setHiddenServicesDirectory(workingDirectory + File.separator + Constants.hiddenservicedir);
 
     if (usePTPTor) {
-      tor = new TorManager(workingDirectory, android);
+      tor = new TorManager(workingDirectory);
       // Start the Tor process.
       tor.startTor();
 
@@ -210,7 +208,7 @@ public class PTP implements ReceiveListener {
     connectionManager.start();
     hiddenServicePort = connectionManager.startBindServer(hiddenServicePort);
     hiddenServiceManager =
-        new HiddenServiceManager(config, hiddenServiceDirectory, hiddenServicePort);
+        new HiddenServiceManager(config, hiddenServiceDirectoryName, hiddenServicePort);
 
     // Create the manager with the given TTL.
     ttlManager = new TTLManager(getTTLManagerListener(), config.getTTLPoll());

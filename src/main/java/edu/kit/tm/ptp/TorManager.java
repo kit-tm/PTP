@@ -57,7 +57,6 @@ public class TorManager {
   private volatile boolean torRunning = false;
   private volatile boolean torBootstrapped = false;
   private volatile boolean portsFileWritten = false;
-  private boolean useAbsolutePath;
 
   private class OutputThread implements Runnable {
     @Override
@@ -208,12 +207,9 @@ public class TorManager {
    * Constructs a new TorManager object.
    * 
    * @param workingDirectory The directory to run Tor in.
-   * @param useAbsolutePath If the Tor binary lies in the workingDirectory and the full path should
-   *        be used to call it.
    */
-  public TorManager(String workingDirectory, boolean useAbsolutePath) {
+  public TorManager(String workingDirectory) {
     this.workingDirectory = workingDirectory;
-    this.useAbsolutePath = useAbsolutePath;
   }
 
   /**
@@ -492,6 +488,9 @@ public class TorManager {
    */
   private boolean runTor() {
     logger.log(Level.INFO, "TorManager starting Tor process.");
+
+    boolean useAbsolutePath = workingDirectory != null
+        && new File(workingDirectory + File.separator + Constants.torfile).exists();
 
     String torFile = useAbsolutePath ? workingDirectory + File.separator : "";
     torFile += Constants.torfile;
