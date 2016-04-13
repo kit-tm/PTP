@@ -23,9 +23,10 @@ public class Serializer {
   private Set<Class<?>> registeredClasses = new HashSet<>();
   
   public Serializer() {
-    kryo.register(ByteArrayMessage.class);
-    kryo.register(AuthenticationMessage.class);
-    kryo.register(edu.kit.tm.ptp.auth.DummyAuthenticator.AuthenticationMessage.class);
+    registerClass(byte[].class);
+    registerClass(ByteArrayMessage.class);
+    registerClass(AuthenticationMessage.class);
+    registerClass(edu.kit.tm.ptp.auth.DummyAuthenticator.AuthenticationMessage.class);
   }
 
   /**

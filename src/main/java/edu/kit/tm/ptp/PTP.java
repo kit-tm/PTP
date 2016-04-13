@@ -129,7 +129,7 @@ public class PTP implements ReceiveListener {
     this.usePTPTor = usePTPTor;
     this.hiddenServicePort = hiddenServicePort;
     clientThread = Thread.currentThread();
-    messageTypes.addMessageQueue(ByteArrayMessage.class);
+    messageTypes.addMessageQueue(byte[].class);
   }
 
   /**
@@ -200,8 +200,6 @@ public class PTP implements ReceiveListener {
     } catch (NoSuchAlgorithmException | NoSuchProviderException e) {
       throw new IOException("Cryptographic algorithm or provider unavailable: " + e.getMessage());
     }
-
-    messageTypes.addMessageQueue(byte[].class);
 
     connectionManager = new ConnectionManager(cryptHelper, Constants.localhost,
         config.getTorSOCKSProxyPort(), config.getHiddenServicePort());
