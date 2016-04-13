@@ -30,16 +30,16 @@ public abstract class Authenticator {
   }
 
   /**
-   * Tries to authenticate a connection with an unknown remote end. Waits for the other end to
-   * authenticate itself first.
+   * Authenticate a connection with an unknown remote end. Waits for the remote end to
+   * authenticate itself.
    * 
-   * @param ownIdentifier Own identifier to reveal to the remote end.
+   * @param own Own identifier.
    */
   public abstract void authenticate(Identifier own);
 
 
   /**
-   * Tries to authenticate a connection to the supplied identifier.
+   * Authenticate a connection to the supplied identifier.
    * 
    * @param own Own identifier to reveal to the remote end.
    * @param other Expected identifier of the remote end.

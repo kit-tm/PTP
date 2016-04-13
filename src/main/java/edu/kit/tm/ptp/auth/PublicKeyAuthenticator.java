@@ -15,32 +15,27 @@ import java.security.InvalidKeyException;
 import java.security.PublicKey;
 import java.security.SignatureException;
 import java.security.spec.InvalidKeySpecException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * Authenticator using an RSA signature.
+ * The initiator of the authentication sends an AuthenticationMessage to the target.
+ * The target checks the validity of the AuthenticationMessage and responds with a
+ * AUTHENTICATION_SUCCESS_MESSAGE in that case. Otherwise the channel will be closed.
  * 
  * @author Timon Hackenjos
  *
  */
-// TODO restrict usable public keys and algorithms?
-public class PublicKeyAuthenticator extends Authenticator implements ChannelMessageListener {
-  private static final Logger logger = Logger.getLogger(PublicKeyAuthenticator.class.getName());
-  private ChannelMessageListener oldListener;
-  private boolean sendSuccess;
-  private boolean sent;
-  private boolean received;
-  private static final Map<Identifier, HashSet<Long>> nonces =
-      new HashMap<Identifier, HashSet<Long>>();
+public class PublicKeyAuthenticator extends Authenticator {
   protected Identifier own = null;
   protected Identifier other = null;
-  private static final long authenticatorLifetime = 60 * 1000; // in ms
-  private static final long maxClockDifference = 20 * 1000; // in ms
+
+  private static final Logger logger = Logger.getLogger(PublicKeyAuthenticator.class.getName());
+  private static final byte AUTHENTICATION_SUCCESS_MESSAGE = 0x0;
+  private static final long TIMESTAMP_INTERVALL = 60 * 1000; // in ms
+
+  private ChannelMessageListener oldListener;
   private CryptHelper cryptHelper;
 
   public PublicKeyAuthenticator(AuthenticationListener listener, MessageChannel channel,
@@ -51,6 +46,8 @@ public class PublicKeyAuthenticator extends Authenticator implements ChannelMess
 
   /**
    * Message to authenticate oneself against another PTP instance.
+   * The message contains a timestamp and is only valid for a limited amount of time
+   * defined by TIMESTAMP_INTERVALL.
    * 
    * @author Timon Hackenjos
    *
@@ -67,7 +64,7 @@ public class PublicKeyAuthenticator extends Authenticator implements ChannelMess
      * 
      * @see System#currentTimeMillis()
      */
-    public long nonce;
+    public long timestamp;
     /** An RSA signature using private key of the hidden service. */
     public byte[] signature;
 
@@ -75,84 +72,81 @@ public class PublicKeyAuthenticator extends Authenticator implements ChannelMess
       source = null;
       destination = null;
       pubKey = null;
-      nonce = -1;
+      timestamp = -1;
       signature = null;
     }
 
     public AuthenticationMessage(Identifier source, Identifier destination, byte[] pubKey,
-        long nonce, byte[] signature) {
+                                 long timestamp, byte[] signature) {
       this.source = source;
       this.destination = destination;
       this.pubKey = pubKey;
-      this.nonce = nonce;
+      this.timestamp = timestamp;
       this.signature = signature;
     }
   }
 
-  @Override
-  public void messageSent(long id, MessageChannel destination) {
-    if (!channel.equals(destination)) {
-      logger.log(Level.SEVERE, "Wrong message channel.");
-      authFailed();
-      return;
+  /**
+   * Contains the behavior if we are the initiator of the authentication.
+   */
+  public class InitiatorListener implements ChannelMessageListener {
+    @Override
+    public void messageSent(long id, MessageChannel destination) {
+      assert id == 0;
+      assert channel.equals(destination);
     }
 
-    if (id != 0) {
-      logger.log(Level.WARNING, "Unexpected message with id " + id + " has been sent");
-      authFailed();
-      return;
-    }
+    @Override
+    public void messageReceived(byte[] data, MessageChannel source) {
+      assert channel.equals(source);
 
-    sendSuccess = true;
-
-    if (received) {
-      authSuccess();
+      if (data.length == 1 && data[0] == AUTHENTICATION_SUCCESS_MESSAGE) {
+        authSuccess();
+      } else {
+        authFailed();
+      }
     }
   }
 
-  @Override
-  public void messageReceived(byte[] data, MessageChannel source) {
-    if (!channel.equals(source)) {
-      logger.log(Level.WARNING, "Received message from wrong channel");
-      authFailed();
-      return;
-    }
+  /**
+   * Contains the behavior if we are the target of the authentication.
+   */
+  public class TargetListener implements ChannelMessageListener {
+    @Override
+    public void messageSent(long id, MessageChannel destination) {
+      assert id == 0;
+      assert channel.equals(destination);
 
-    received = true;
-
-    AuthenticationMessage authMessage;
-    try {
-      authMessage = deserialize(data);
-    } catch (IOException e) {
-      logger.log(Level.INFO, "Unable to deserialize received authentication message");
-      authFailed();
-      return;
-    }
-
-    if (authMessage == null || !authenticatorValid(authMessage)) {
-      authFailed();
-      return;
-    }
-
-    if (other == null) {
-      other = authMessage.source;
-    }
-
-    if (sendSuccess) {
+      // Authentication success message has been sent successfully
       authSuccess();
-    } else if (!sent) {
-      AuthenticationMessage response;
+    }
 
+    @Override
+    public void messageReceived(byte[] data, MessageChannel source) {
+      assert channel.equals(source);
+
+      AuthenticationMessage authMessage;
+
+      // deserialize received message
       try {
-        response = createAuthenticator();
-      } catch (GeneralSecurityException | UnsupportedEncodingException e) {
-        logger.log(Level.WARNING, "Failed to create authentication message");
+        authMessage = deserialize(data);
+      } catch (IOException e) {
+        logger.log(Level.INFO, "Unable to deserialize received authentication message");
         authFailed();
         return;
       }
 
-      sendAuthMessage(response);
-      sent = true;
+      // check if the authentication message is valid
+      if (authMessage == null || !authenticationMessageValid(authMessage)) {
+        authFailed();
+        return;
+      }
+
+      // now we know the identifier of the initiator
+      other = authMessage.source;
+
+      // respond with message to signal successfull authentication
+      channel.addMessage(new byte[] {AUTHENTICATION_SUCCESS_MESSAGE}, 0);
     }
   }
 
@@ -165,7 +159,9 @@ public class PublicKeyAuthenticator extends Authenticator implements ChannelMess
     this.own = own;
 
     oldListener = channel.getChannelMessageListener();
-    channel.setChannelMessageListener(this);
+
+    // Wait for the other end to send an authentication message
+    channel.setChannelMessageListener(new TargetListener());
   }
 
   @Override
@@ -177,14 +173,12 @@ public class PublicKeyAuthenticator extends Authenticator implements ChannelMess
     this.own = own;
     this.other = other;
 
+    oldListener = channel.getChannelMessageListener();
+    channel.setChannelMessageListener(new InitiatorListener());
+
+    // We initiated the authentication process and therefore send an authentication message
     try {
-      AuthenticationMessage auth = createAuthenticator();
-
-      oldListener = channel.getChannelMessageListener();
-      channel.setChannelMessageListener(this);
-
-      sendAuthMessage(auth);
-      sent = true;
+      sendAuthMessage(createAuthenticationMessage());
     } catch (GeneralSecurityException | UnsupportedEncodingException e) {
       logger.log(Level.WARNING, "Failed to sign authentication message");
       authFailed();
@@ -217,7 +211,15 @@ public class PublicKeyAuthenticator extends Authenticator implements ChannelMess
     }
   }
 
-  protected boolean authenticatorValid(AuthenticationMessage message) {
+  /**
+   * Checks if the authentication message is valid which means that
+   * the destination identifier equals our own identifier, the timestamp isn't expired or invalid,
+   * the public key and the source identifier match, the signature is valid.
+   *
+   * @param message The message to check.
+   * @return True if the message is valid.
+   */
+  protected boolean authenticationMessageValid(AuthenticationMessage message) {
     if (message.source == null || message.destination == null || message.pubKey == null
         || message.signature == null) {
       logger.log(Level.WARNING, "Authentication message contains null values");
@@ -234,17 +236,14 @@ public class PublicKeyAuthenticator extends Authenticator implements ChannelMess
       return false;
     }
 
-    if (containsNonce(message.source, message.nonce)) {
-      logger.log(Level.WARNING, "Received same authentication message again");
-      return false;
-    }
+    long currentTime = System.currentTimeMillis();
 
-    if (isNonceExpired(message.nonce)) {
+    if (currentTime - message.timestamp > TIMESTAMP_INTERVALL) {
       logger.log(Level.WARNING, "Received expired authentication message");
       return false;
     }
 
-    if (message.nonce - System.currentTimeMillis() > maxClockDifference) {
+    if (message.timestamp - currentTime > TIMESTAMP_INTERVALL) {
       logger.log(Level.WARNING,
           "Received authentication message which expires too far in the future.");
       return false;
@@ -265,10 +264,7 @@ public class PublicKeyAuthenticator extends Authenticator implements ChannelMess
         return false;
       }
 
-      if (cryptHelper.verifySignature(getBytes(message), message.signature, pubKey)) {
-        addNonce(message.source, message.nonce);
-        return true;
-      }
+      return cryptHelper.verifySignature(getBytes(message), message.signature, pubKey);
 
     } catch (InvalidKeySpecException e) {
       logger.log(Level.WARNING, "Failed to read public key in authentication message");
@@ -283,25 +279,25 @@ public class PublicKeyAuthenticator extends Authenticator implements ChannelMess
     return false;
   }
 
-  protected AuthenticationMessage createAuthenticator()
+  protected AuthenticationMessage createAuthenticationMessage()
       throws GeneralSecurityException, UnsupportedEncodingException {
-    return createAuthenticator(System.currentTimeMillis());
+    return createAuthenticationMessage(System.currentTimeMillis());
   }
 
-  protected AuthenticationMessage createAuthenticator(long nonce)
+  protected AuthenticationMessage createAuthenticationMessage(long timestamp)
       throws GeneralSecurityException, UnsupportedEncodingException {
     byte[] pubKey = cryptHelper.getPublicKeyBytes();
-    ByteBuffer toSign = getBytes(own, other, pubKey, nonce);
+    ByteBuffer toSign = getBytes(own, other, pubKey, timestamp);
 
     byte[] signature = cryptHelper.sign(toSign);
 
-    AuthenticationMessage auth = new AuthenticationMessage(own, other, pubKey, nonce, signature);
+    AuthenticationMessage auth = new AuthenticationMessage(own, other, pubKey, timestamp, signature);
 
     return auth;
   }
 
   private ByteBuffer getBytes(Identifier source, Identifier destination, byte[] pubKey,
-      long nonce) throws UnsupportedEncodingException {
+      long timestamp) throws UnsupportedEncodingException {
     byte[] sourceBytes = source.toString().getBytes(Constants.charset);
     byte[] destinationBytes = source.toString().getBytes(Constants.charset);
 
@@ -311,55 +307,13 @@ public class PublicKeyAuthenticator extends Authenticator implements ChannelMess
     buffer.put(sourceBytes);
     buffer.put(destinationBytes);
     buffer.put(pubKey);
-    buffer.putLong(nonce);
+    buffer.putLong(timestamp);
 
     buffer.rewind();
     return buffer;
   }
 
   private ByteBuffer getBytes(AuthenticationMessage message) throws UnsupportedEncodingException {
-    return getBytes(message.source, message.destination, message.pubKey, message.nonce);
-  }
-
-  private boolean containsNonce(Identifier other, Long nonce) {
-    synchronized (nonces) {
-      HashSet<Long> userNonces = nonces.get(other);
-
-      if (userNonces == null) {
-        return false;
-      }
-
-      return userNonces.contains(nonce);
-    }
-  }
-
-  private void addNonce(Identifier other, Long nonce) {
-    synchronized (nonces) {
-      logger.log(Level.INFO, "Adding nonce " + nonce + " for " + other.toString());
-      HashSet<Long> userNonces = nonces.get(other);
-
-      if (userNonces == null) {
-        userNonces = new HashSet<Long>();
-        nonces.put(other, userNonces);
-      }
-
-      removeOldNonces(userNonces);
-
-      userNonces.add(nonce);
-    }
-  }
-
-  private boolean isNonceExpired(long nonce) {
-    return nonce + authenticatorLifetime < System.currentTimeMillis();
-  }
-  
-  private void removeOldNonces(HashSet<Long> userNonces) {
-    Iterator<Long> nonceIterator = userNonces.iterator();
-
-    while (nonceIterator.hasNext()) {
-      if (isNonceExpired(nonceIterator.next())) {
-        nonceIterator.remove();
-      }
-    }
+    return getBytes(message.source, message.destination, message.pubKey, message.timestamp);
   }
 }

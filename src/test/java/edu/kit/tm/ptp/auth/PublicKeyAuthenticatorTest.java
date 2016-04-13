@@ -87,19 +87,19 @@ public class PublicKeyAuthenticatorTest {
   private void testAuthenticator(boolean unknown) throws IOException, GeneralSecurityException {
     auth.own = ptp1.getIdentifier();
     auth.other = ptp2.getIdentifier();
-    AuthenticationMessage authMessage = auth.createAuthenticator();
+    AuthenticationMessage authMessage = auth.createAuthenticationMessage();
 
     auth2.own = ptp2.getIdentifier();
     auth2.other = unknown ? null : ptp1.getIdentifier();
 
-    assertEquals(true, auth2.authenticatorValid(authMessage));
+    assertEquals(true, auth2.authenticationMessageValid(authMessage));
   }
 
   @Test
   public void testWrongAuthenticator() throws IOException, GeneralSecurityException {
     auth.own = ptp1.getIdentifier();
     auth.other = ptp2.getIdentifier();
-    AuthenticationMessage authMessage = auth.createAuthenticator();
+    AuthenticationMessage authMessage = auth.createAuthenticationMessage();
     byte[] signature = authMessage.signature;
 
     // flip bits of first byte
@@ -109,43 +109,43 @@ public class PublicKeyAuthenticatorTest {
 
     auth2.own = ptp2.getIdentifier();
 
-    assertEquals(false, auth2.authenticatorValid(authMessage));
+    assertEquals(false, auth2.authenticationMessageValid(authMessage));
   }
 
   @Test
   public void testWrongSource() throws IOException, GeneralSecurityException {
     auth.own = new Identifier("aaaaaaaaaaaaaaaa.onion");
     auth.other = ptp2.getIdentifier();
-    AuthenticationMessage authMessage = auth.createAuthenticator();
+    AuthenticationMessage authMessage = auth.createAuthenticationMessage();
 
     auth2.own = ptp2.getIdentifier();
     auth2.other = ptp1.getIdentifier();
 
-    assertEquals(false, auth2.authenticatorValid(authMessage));
+    assertEquals(false, auth2.authenticationMessageValid(authMessage));
   }
 
   @Test
   public void testInvalidSourceIdentifier() throws IOException, GeneralSecurityException {
     auth.own = new Identifier("xyz");
     auth.other = ptp2.getIdentifier();
-    AuthenticationMessage authMessage = auth.createAuthenticator();
+    AuthenticationMessage authMessage = auth.createAuthenticationMessage();
 
     auth2.own = ptp2.getIdentifier();
     auth2.other = ptp1.getIdentifier();
 
-    assertEquals(false, auth2.authenticatorValid(authMessage));
+    assertEquals(false, auth2.authenticationMessageValid(authMessage));
   }
 
   @Test
   public void testInvalidDestinationIdentifier() throws IOException, GeneralSecurityException {
     auth.own = ptp1.getIdentifier();
     auth.other = new Identifier("xyz");
-    AuthenticationMessage authMessage = auth.createAuthenticator();
+    AuthenticationMessage authMessage = auth.createAuthenticationMessage();
 
     auth2.own = ptp2.getIdentifier();
     auth2.other = ptp1.getIdentifier();
 
-    assertEquals(false, auth2.authenticatorValid(authMessage));
+    assertEquals(false, auth2.authenticationMessageValid(authMessage));
   }
 
 
@@ -153,23 +153,11 @@ public class PublicKeyAuthenticatorTest {
   public void testWrongDestination() throws IOException, GeneralSecurityException {
     auth.own = ptp1.getIdentifier();
     auth.other = new Identifier("aaaaaaaaaaaaaaaa.onion");
-    AuthenticationMessage authMessage = auth.createAuthenticator();
+    AuthenticationMessage authMessage = auth.createAuthenticationMessage();
 
     auth2.own = ptp2.getIdentifier();
 
-    assertEquals(false, auth2.authenticatorValid(authMessage));
-  }
-
-  @Test
-  public void testUseAuthTwoTimes() throws IOException, GeneralSecurityException {
-    auth.own = ptp1.getIdentifier();
-    auth.other = ptp2.getIdentifier();
-    AuthenticationMessage authMessage = auth.createAuthenticator();
-
-    auth2.own = ptp2.getIdentifier();
-
-    assertEquals(true, auth2.authenticatorValid(authMessage));
-    assertEquals(false, auth2.authenticatorValid(authMessage));
+    assertEquals(false, auth2.authenticationMessageValid(authMessage));
   }
 
   @Test
@@ -179,11 +167,11 @@ public class PublicKeyAuthenticatorTest {
 
     // 2 minutes old authenticator
     AuthenticationMessage authMessage =
-        auth.createAuthenticator(System.currentTimeMillis() - 120 * 1000);
+        auth.createAuthenticationMessage(System.currentTimeMillis() - 120 * 1000);
 
     auth2.own = ptp2.getIdentifier();
 
-    assertEquals(false, auth2.authenticatorValid(authMessage));
+    assertEquals(false, auth2.authenticationMessageValid(authMessage));
   }
 
   @Test
@@ -193,11 +181,11 @@ public class PublicKeyAuthenticatorTest {
 
     // timestamp 2 minutes in the future
     AuthenticationMessage authMessage =
-        auth.createAuthenticator(System.currentTimeMillis() + 120 * 1000);
+        auth.createAuthenticationMessage(System.currentTimeMillis() + 120 * 1000);
 
     auth2.own = ptp2.getIdentifier();
 
-    assertEquals(false, auth2.authenticatorValid(authMessage));
+    assertEquals(false, auth2.authenticationMessageValid(authMessage));
   }
 
 
