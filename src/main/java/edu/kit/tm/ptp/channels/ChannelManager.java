@@ -9,6 +9,8 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -24,6 +26,7 @@ public class ChannelManager implements Runnable {
   private ChannelListener listener;
   private Thread thread;
   private static final Logger logger = Logger.getLogger(ChannelManager.class.getName());
+  private Lock lock = new ReentrantLock();
 
   /**
    * Initializes a new ChannelManager.
@@ -94,6 +97,8 @@ public class ChannelManager implements Runnable {
     long timeout = 100;
 
     while (!thread.isInterrupted()) {
+      lock.lock();
+      lock.unlock();
       try {
         readyChannels = selector.select(timeout);
       } catch (IOException e) {
@@ -162,6 +167,14 @@ public class ChannelManager implements Runnable {
 
   }
 
+  private void registerChannel(Selector selector, int interestOps, SelectableChannel channel,
+                               Object attachement) throws ClosedChannelException {
+    lock.lock();
+    selector.wakeup();
+    channel.register(selector, interestOps, attachement);
+    lock.unlock();
+  }
+
   /**
    * Adds a ServerSocketChannel to accept connections from. The server has to be listening already.
    * Calls channelOpened() on the ChannelListener when a connection is received.
@@ -172,7 +185,7 @@ public class ChannelManager implements Runnable {
    */
   public void addServerSocket(ServerSocketChannel server) throws IOException {
     server.configureBlocking(false);
-    server.register(selector, SelectionKey.OP_ACCEPT, server);
+    registerChannel(selector, SelectionKey.OP_ACCEPT, server, server);
   }
 
   /**
@@ -187,7 +200,7 @@ public class ChannelManager implements Runnable {
   public MessageChannel connect(SocketChannel socket) throws IOException {
     socket.configureBlocking(false);
     MessageChannel channel = new MessageChannel(socket, this);
-    socket.register(selector, SelectionKey.OP_CONNECT, channel);
+    registerChannel(selector, SelectionKey.OP_CONNECT, socket, channel);
     return channel;
   }
 
@@ -198,7 +211,7 @@ public class ChannelManager implements Runnable {
    * @throws ClosedChannelException If the channel is closed.
    */
   public void addChannel(MessageChannel channel) throws ClosedChannelException {
-    channel.getChannel().register(selector, 0, channel);
+    registerChannel(selector, 0, channel.getChannel(), channel);
   }
 
   /**
