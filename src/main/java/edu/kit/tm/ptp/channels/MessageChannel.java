@@ -100,6 +100,13 @@ public class MessageChannel {
           break;
         case DATA:
           read = channel.read(receiveBuffer);
+
+          if (read == -1) {
+            logger.log(Level.INFO, "Reading reached end of stream");
+            closeChannel();
+            return;
+          }
+
           if (!receiveBuffer.hasRemaining()) {
             byte[] data = receiveBuffer.array();
 
