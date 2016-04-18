@@ -175,9 +175,9 @@ public class MessageChannel {
     } catch (IOException ioe) {
       logger.log(Level.WARNING, "Caught exception while writing: " + ioe.getMessage());
       closeChannel();
+    } finally {
+      writeLock.unlock();
     }
-
-    writeLock.unlock();
   }
 
   /**
@@ -192,18 +192,22 @@ public class MessageChannel {
    */
   public void addMessage(byte[] data, long id) {
     writeLock.lock();
-    if (writeState != State.IDLE) {
-      logger.log(Level.SEVERE, "Tried to add message to busy channel");
-      throw new IllegalStateException();
-    }
-    sendLengthBuffer.putInt(data.length);
-    sendLengthBuffer.flip();
-    sendBuffer = ByteBuffer.wrap(data);
 
-    currentId = id;
-    writeState = State.LENGTH;
-    manager.registerWrite(this, true);
-    writeLock.unlock();
+    try {
+      if (writeState != State.IDLE) {
+        logger.log(Level.SEVERE, "Tried to add message to busy channel");
+        throw new IllegalStateException();
+      }
+      sendLengthBuffer.putInt(data.length);
+      sendLengthBuffer.flip();
+      sendBuffer = ByteBuffer.wrap(data);
+
+      currentId = id;
+      writeState = State.LENGTH;
+      manager.registerWrite(this, true);
+    } finally {
+      writeLock.unlock();
+    }
   }
 
   public SocketChannel getChannel() {

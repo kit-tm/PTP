@@ -170,9 +170,12 @@ public class ChannelManager implements Runnable {
   private void registerChannel(Selector selector, int interestOps, SelectableChannel channel,
                                Object attachement) throws ClosedChannelException {
     lock.lock();
-    selector.wakeup();
-    channel.register(selector, interestOps, attachement);
-    lock.unlock();
+    try {
+      selector.wakeup();
+      channel.register(selector, interestOps, attachement);
+    } finally {
+      lock.unlock();
+    }
   }
 
   /**
