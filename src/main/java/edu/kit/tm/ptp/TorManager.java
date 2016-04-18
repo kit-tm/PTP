@@ -482,16 +482,12 @@ public class TorManager {
       } else {
         logger.log(Level.WARNING, "TorManager file lock is broken!");
       }
-
-      // Release the lock.
-      logger.log(Level.INFO, "TorManager releasing the lock on the TorManager lock file.");
-      lock.release();
-      lock = null;
     } catch (IOException e) {
       logger.log(Level.WARNING,
           "TorManager caught an IOException while closing Tor process: " + e.getMessage());
     } finally {
       if (lock != null) {
+        logger.log(Level.INFO, "TorManager releasing the lock on the TorManager lock file.");
         lock.release();
       }
     }
