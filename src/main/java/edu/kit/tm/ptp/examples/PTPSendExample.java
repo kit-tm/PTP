@@ -83,7 +83,7 @@ public class PTPSendExample {
       while (!Thread.interrupted()) {
         System.out.println("Enter message to send (or exit to stop):");
         String content = br.readLine();
-        if (content.equals("exit")) {
+        if (content == null || content.equals("exit")) {
           break;
         }
         ptp.sendMessage(content.getBytes(charset), destination);
