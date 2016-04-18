@@ -127,7 +127,10 @@ public class HiddenServiceManager {
    */
   public void close() {
     if (hiddenServiceLock != null && hiddenServiceLock.exists()) {
-      hiddenServiceLock.delete();
+      if (!hiddenServiceLock.delete()) {
+        logger.log(Level.WARNING, "Failed to delete lock file "
+            + hiddenServiceLock.getAbsolutePath());
+      }
     }
   }
 
@@ -144,7 +147,10 @@ public class HiddenServiceManager {
       
       if (hiddenServiceLock != null && hiddenServiceLock.exists()) {
         // New identifier is requested. Delete lock file of last hidden service currentDirectory
-        hiddenServiceLock.delete();
+        if (!hiddenServiceLock.delete()) {
+          logger.log(Level.WARNING, "Failed to delete lock file "
+              + hiddenServiceLock.getAbsolutePath());
+        }
       }
 
       if (hiddenServiceDirectoryName != null) {
@@ -289,12 +295,13 @@ public class HiddenServiceManager {
         }
 
         // Fix currentDirectory permissions so that Tor doesn't complain
-        hiddenService.setReadable(false, false);
-        hiddenService.setReadable(true, true);
-        hiddenService.setWritable(false, false);
-        hiddenService.setWritable(true, true);
-        hiddenService.setExecutable(false, false);
-        hiddenService.setExecutable(true, true);
+        if (!(hiddenService.setReadable(false, false) && hiddenService.setReadable(true, true)
+            && hiddenService.setWritable(false, false) && hiddenService.setWritable(true, true)
+            && hiddenService.setExecutable(false, false) && hiddenService.setExecutable(true, true))
+            ) {
+          logger.log(Level.WARNING, "Failed to set permissions for folder "
+              + hiddenService.getAbsolutePath());
+        }
 
         // Skip over any directories without the hidden service prefix.
         String name = hiddenService.getName();

@@ -472,9 +472,12 @@ public class TorManager {
           }
 
           // Delete the TorManager ports file.
-          portsFile.delete();
-
-          logger.log(Level.INFO, "Deleted TorManager ports file.");
+          if (portsFile.delete()) {
+            logger.log(Level.INFO, "Deleted TorManager ports file.");
+          } else {
+            logger.log(Level.WARNING, "Failed to delete ports file "
+                + portsFile.getAbsolutePath());
+          }
         }
       } else {
         logger.log(Level.WARNING, "TorManager file lock is broken!");
