@@ -25,8 +25,7 @@ import java.util.Set;
  *
  */
 public class PTPFloodingExample {
-
-  static PTP ptp;
+  
   private static final String charset = "UTF-8";
 
   /**
