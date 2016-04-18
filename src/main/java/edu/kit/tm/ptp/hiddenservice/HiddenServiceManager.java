@@ -186,8 +186,14 @@ public class HiddenServiceManager {
     File hiddenServicesDirectory = new File(configuration.getHiddenServicesDirectory());
     String freeHsDir = null;
 
+    File[] dirs = hiddenServicesDirectory.listFiles();
+
+    if (dirs == null) {
+      return freeHsDir;
+    }
+
     // Search for a valid hidden service currentDirectory
-    for (File hiddenService : hiddenServicesDirectory.listFiles()) {
+    for (File hiddenService : dirs) {
       // Skip over any files in the currentDirectory.
       if (!hiddenService.isDirectory()) {
         continue;
@@ -272,50 +278,53 @@ public class HiddenServiceManager {
     LinkedList<String> properties = new LinkedList<String>();
     File hiddenServicesDirectory = new File(configuration.getHiddenServicesDirectory());
 
+    File[] dirs =  hiddenServicesDirectory.listFiles();
     // Read the hidden service directories in the hidden service root currentDirectory, and add them to the
     // new hidden service configuration.
-    for (File hiddenService : hiddenServicesDirectory.listFiles()) {
-      // Skip over any files in the currentDirectory.
-      if (!hiddenService.isDirectory()) {
-        continue;
+    if (dirs != null) {
+      for (File hiddenService : dirs) {
+        // Skip over any files in the currentDirectory.
+        if (!hiddenService.isDirectory()) {
+          continue;
+        }
+
+        // Fix currentDirectory permissions so that Tor doesn't complain
+        hiddenService.setReadable(false, false);
+        hiddenService.setReadable(true, true);
+        hiddenService.setWritable(false, false);
+        hiddenService.setWritable(true, true);
+        hiddenService.setExecutable(false, false);
+        hiddenService.setExecutable(true, true);
+
+        // Skip over any directories without the hidden service prefix.
+        String name = hiddenService.getName();
+        if (!name.startsWith(Constants.hiddenserviceprefix)) {
+          continue;
+        }
+        // Get the port file.
+        File portFile = new File(hiddenService + File.separator + Constants.portfile);
+        if (!portFile.exists()) {
+          continue;
+        }
+
+        final int port;
+
+        try {
+          // Read the port of the hidden service from the port file.
+          ObjectInputStream stream = new ObjectInputStream(new FileInputStream(portFile));
+          port = stream.readInt();
+          stream.close();
+        } catch (IOException e) {
+          logger.log(Level.WARNING,
+              "Received IOException while reading the hidden service port file: " + e.getMessage());
+          continue;
+        }
+
+        // Add the hidden service property to the configuration properties so far.
+        properties.add(Constants.hsdirkeyword + " " + hiddenService.getAbsolutePath());
+        properties.add(Constants.hsportkeyword + " " + configuration.getHiddenServicePort() + " "
+            + Constants.localhost + ":" + port);
       }
-
-      // Fix currentDirectory permissions so that Tor doesn't complain
-      hiddenService.setReadable(false, false);
-      hiddenService.setReadable(true, true);
-      hiddenService.setWritable(false, false);
-      hiddenService.setWritable(true, true);
-      hiddenService.setExecutable(false, false);
-      hiddenService.setExecutable(true, true);
-
-      // Skip over any directories without the hidden service prefix.
-      String name = hiddenService.getName();
-      if (!name.startsWith(Constants.hiddenserviceprefix)) {
-        continue;
-      }
-      // Get the port file.
-      File portFile = new File(hiddenService + File.separator + Constants.portfile);
-      if (!portFile.exists()) {
-        continue;
-      }
-
-      final int port;
-
-      try {
-        // Read the port of the hidden service from the port file.
-        ObjectInputStream stream = new ObjectInputStream(new FileInputStream(portFile));
-        port = stream.readInt();
-        stream.close();
-      } catch (IOException e) {
-        logger.log(Level.WARNING,
-            "Received IOException while reading the hidden service port file: " + e.getMessage());
-        continue;
-      }
-
-      // Add the hidden service property to the configuration properties so far.
-      properties.add(Constants.hsdirkeyword + " " + hiddenService.getAbsolutePath());
-      properties.add(Constants.hsportkeyword + " " + configuration.getHiddenServicePort() + " "
-          + Constants.localhost + ":" + port);
     }
 
     logger.log(Level.INFO, "Setting configuration:" + Constants.newline + properties.toString());

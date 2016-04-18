@@ -60,10 +60,12 @@ public class ConfigurationFileReader {
         new InputStreamReader(new FileInputStream(configurationFile), Constants.charset));
     HashMap<String, String> properties = new HashMap<String, String>();
 
+
+
     // Read the entries of the configuration file in the map.
     int lineCount = 0;
-    while (buffer.ready()) {
-      String line = buffer.readLine();
+    String line = buffer.readLine();
+    while (line != null) {
       ++lineCount;
 
       // Skip empty lines.
@@ -86,6 +88,8 @@ public class ConfigurationFileReader {
 
       // Add the entry.
       properties.put(pair[0], pair[1]);
+
+      line = buffer.readLine();
     }
 
     buffer.close();
