@@ -566,8 +566,8 @@ public class TorManager {
     String socksPortLine = reader.readLine();
 
     try {
-      torControlPort = Integer.valueOf(controlPortLine).intValue();
-      torSocksProxyPort = Integer.valueOf(socksPortLine).intValue();
+      torControlPort = Integer.parseInt(controlPortLine);
+      torSocksProxyPort = Integer.parseInt(socksPortLine);
     } catch (NumberFormatException e) {
       throw new IOException("Failed to read ports file.");
     } finally {
@@ -600,6 +600,6 @@ public class TorManager {
     String port = matcher.group();
 
     logger.log(Level.INFO, "Read port: " + port + " [" + line + "].");
-    return Integer.valueOf(port);
+    return Integer.parseInt(port);
   }
 }

@@ -166,7 +166,7 @@ public class ConfigurationFileReader {
     int value = 0;
 
     try {
-      value = Integer.valueOf(map.get(key));
+      value = Integer.parseInt(map.get(key));
     } catch (NumberFormatException e) {
       throw new IllegalArgumentException(
           "Could not parse the integer value of the " + key + " property.");
