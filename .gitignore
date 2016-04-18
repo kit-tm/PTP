@@ -12,7 +12,7 @@ build/
 
 # Intellij Idea
 .idea/
-PTP.iml
+ptp.iml
 
 # Runtime data
 ptp-data/
