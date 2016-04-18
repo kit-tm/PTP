@@ -57,6 +57,7 @@ public class TorManager {
   private volatile boolean torRunning = false;
   private volatile boolean torBootstrapped = false;
   private volatile boolean portsFileWritten = false;
+  private boolean dedicatedTorProcess; // Kill Tor process independent of other PTP instances
 
   private class OutputThread implements Runnable {
     @Override
@@ -209,7 +210,19 @@ public class TorManager {
    * @param workingDirectory The directory to run Tor in.
    */
   public TorManager(String workingDirectory) {
+    this(workingDirectory, false);
+  }
+
+  /**
+   * Constructs a new TorManager object.
+   *
+   * @param workingDirectory The directory to run Tor in,
+   * @param dedicatedTorProcess If true the TorManager will kill the Tor process on exit
+   *                         without checking if it's used by others.
+   */
+  public TorManager(String workingDirectory, boolean dedicatedTorProcess) {
     this.workingDirectory = workingDirectory;
+    this.dedicatedTorProcess = dedicatedTorProcess;
   }
 
   /**
@@ -439,7 +452,7 @@ public class TorManager {
         raf.writeInt(Math.max(0, numberOfApis - 1));
 
         // Check if this is the only API using the Tor process, if so stop the Tor process.
-        if (numberOfApis == 1) {
+        if (numberOfApis == 1 || dedicatedTorProcess) {
           logger.log(Level.INFO, "TorManager stopping Tor process.");
           if (process != null) {
             logger.log(Level.INFO, "Killing own Tor process");

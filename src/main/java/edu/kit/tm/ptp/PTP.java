@@ -54,6 +54,7 @@ public class PTP implements ReceiveListener {
   private Thread clientThread = null;
   private volatile boolean queueMessages = false;
   private CryptHelper cryptHelper = new CryptHelper();
+  private boolean dedicatedTorProcess;
 
   /**
    * Constructs a new PTP object. Manages a own Tor process.
@@ -89,7 +90,7 @@ public class PTP implements ReceiveListener {
    */
   public PTP(String workingDirectory, int controlPort, int socksPort, int localPort,
       String hiddenServiceDirectoryName) {
-    initPTP(workingDirectory, hiddenServiceDirectoryName, false, localPort);
+    initPTP(workingDirectory, hiddenServiceDirectoryName, false, localPort, false);
     configReader =
         new ConfigurationFileReader(workingDirectory + File.separator + Constants.configfile);
 
@@ -114,11 +115,15 @@ public class PTP implements ReceiveListener {
    * @param hiddenServiceDirectoryName The name of the directory of a hidden service to use.
    */
   public PTP(String workingDirectory, String hiddenServiceDirectoryName) {
-    initPTP(workingDirectory, hiddenServiceDirectoryName,true, Constants.anyport);
+    this(workingDirectory, hiddenServiceDirectoryName, true);
+  }
+
+  public PTP(String workingDirectory, String hiddenServiceDirectoryName, boolean dedicatedTorProcess) {
+    initPTP(workingDirectory, hiddenServiceDirectoryName, true, Constants.anyport, dedicatedTorProcess);
   }
 
   private void initPTP(String workingDirectory, String hiddenServiceDirectoryName, boolean usePTPTor,
-      int hiddenServicePort) {
+      int hiddenServicePort, boolean sharedTorProcess) {
     configReader = new ConfigurationFileReader(
         (workingDirectory != null ? workingDirectory + File.separator : "") + Constants.configfile);
 
@@ -126,6 +131,8 @@ public class PTP implements ReceiveListener {
     this.hiddenServiceDirectoryName = hiddenServiceDirectoryName;
     this.usePTPTor = usePTPTor;
     this.hiddenServicePort = hiddenServicePort;
+    this.dedicatedTorProcess = sharedTorProcess;
+
     clientThread = Thread.currentThread();
     messageTypes.addMessageQueue(byte[].class);
   }
@@ -168,7 +175,7 @@ public class PTP implements ReceiveListener {
         .setHiddenServicesDirectory(workingDirectory + File.separator + Constants.hiddenservicedir);
 
     if (usePTPTor) {
-      tor = new TorManager(workingDirectory);
+      tor = new TorManager(workingDirectory, dedicatedTorProcess);
       // Start the Tor process.
       tor.startTor();
 
