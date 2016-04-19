@@ -91,8 +91,6 @@ public class PTP implements ReceiveListener {
   public PTP(String workingDirectory, int controlPort, int socksPort, int localPort,
       String hiddenServiceDirectoryName) {
     initPTP(workingDirectory, hiddenServiceDirectoryName, false, localPort, false);
-    configReader =
-        new ConfigurationFileReader(workingDirectory + File.separator + Constants.configfile);
 
     this.controlPort = controlPort;
     this.socksPort = socksPort;
@@ -115,15 +113,17 @@ public class PTP implements ReceiveListener {
    * @param hiddenServiceDirectoryName The name of the directory of a hidden service to use.
    */
   public PTP(String workingDirectory, String hiddenServiceDirectoryName) {
-    this(workingDirectory, hiddenServiceDirectoryName, true);
+    this(workingDirectory, hiddenServiceDirectoryName, false);
   }
 
-  public PTP(String workingDirectory, String hiddenServiceDirectoryName, boolean dedicatedTorProcess) {
-    initPTP(workingDirectory, hiddenServiceDirectoryName, true, Constants.anyport, dedicatedTorProcess);
+  public PTP(String workingDirectory, String hiddenServiceDirectoryName,
+      boolean dedicatedTorProcess) {
+    initPTP(workingDirectory, hiddenServiceDirectoryName, true, Constants.anyport,
+        dedicatedTorProcess);
   }
 
-  private void initPTP(String workingDirectory, String hiddenServiceDirectoryName, boolean usePTPTor,
-      int hiddenServicePort, boolean sharedTorProcess) {
+  private void initPTP(String workingDirectory, String hiddenServiceDirectoryName,
+      boolean usePTPTor, int hiddenServicePort, boolean dedicatedTorProcess) {
     configReader = new ConfigurationFileReader(
         (workingDirectory != null ? workingDirectory + File.separator : "") + Constants.configfile);
 
@@ -131,7 +131,7 @@ public class PTP implements ReceiveListener {
     this.hiddenServiceDirectoryName = hiddenServiceDirectoryName;
     this.usePTPTor = usePTPTor;
     this.hiddenServicePort = hiddenServicePort;
-    this.dedicatedTorProcess = sharedTorProcess;
+    this.dedicatedTorProcess = dedicatedTorProcess;
 
     clientThread = Thread.currentThread();
     messageTypes.addMessageQueue(byte[].class);
@@ -199,7 +199,7 @@ public class PTP implements ReceiveListener {
     } else {
       config.setTorConfiguration(controlPort, socksPort);
     }
-    
+
     try {
       cryptHelper.init();
     } catch (NoSuchAlgorithmException | NoSuchProviderException e) {
@@ -344,8 +344,8 @@ public class PTP implements ReceiveListener {
   }
 
   /**
-   * Register class to be able to send and receive instances of the class.
-   * Registering a class several times has no effect.
+   * Register class to be able to send and receive instances of the class. Registering a class
+   * several times has no effect.
    */
   public <T> void registerClass(Class<T> type) {
     if (closed) {
@@ -525,7 +525,8 @@ public class PTP implements ReceiveListener {
         }
 
         if (receiveListener == null && !queueMessages) {
-          logger.log(Level.WARNING, "Dropping received message because no receive listener ist set.");
+          logger.log(Level.WARNING,
+              "Dropping received message because no receive listener ist set.");
         }
       } else {
         if (messageTypes.hasListener(obj)) {
