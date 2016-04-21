@@ -1,4 +1,4 @@
-# PeerTorPeer (PTP)
+# Peer-Tor-Peer (PTP)
 
 A proof-of-concept prototyping library for peer-to-peer
 apps using Tor and Tor hidden services for connectivity.
