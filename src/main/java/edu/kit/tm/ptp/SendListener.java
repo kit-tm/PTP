@@ -35,7 +35,8 @@ public interface SendListener {
   /**
    * Indicates that the message was sent or could not be sent.
    *
-   * @param message The message with which the sending was initiated.
+   * @param id The id of the message.
+   * @param destination The destination of the message.
    * @param state If the sending succeeded and why.
    */
   public void messageSent(long id, Identifier destination, State state);

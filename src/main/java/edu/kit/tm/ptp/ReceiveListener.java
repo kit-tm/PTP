@@ -3,7 +3,7 @@ package edu.kit.tm.ptp;
 
 
 /**
- * An interface for subscribers to received messages via the local Tor hidden service socket.
+ * An interface for subscribers to received byte[] messages.
  *
  * @author Simeon Andreev
  *
@@ -12,9 +12,10 @@ public interface ReceiveListener {
 
 
   /**
-   * Indicates that a message was received over the Tor Hidden Service.
+   * Indicates that a message was received.
    *
-   * @param message The received message.
+   * @param data The received message.
+   * @param source The hidden service identifier of the source of the message.
    */
   public void messageReceived(byte[] data, Identifier source);
 

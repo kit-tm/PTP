@@ -20,13 +20,19 @@ import java.util.logging.Logger;
 
 
 /**
- * Provides the PTP API.
+ * Class that provides the PTP API. The method {@link #init() init()} needs to be called to to use
+ * PTP. Before calling {@link #init() init()} only the following methods may be called:
+ * {@link #setReceiveListener(ReceiveListener) setReceiveListener(ReceiveListener)},
+ * {@link #setReceiveListener(Class, MessageReceivedListener) setReceiveListener(Class,
+ * MessageReceivedListener)}, {@link #registerClass(Class) registerClass(Class)},
+ * {@link #enableMessageQueue() enableMessageQueue()}, {@link #enableMessageQueue(Class)
+ * enableMessageQueue(Class)}.
  *
  * @author Simeon Andreev
  * @author Timon Hackenjos
  *
  */
-public class PTP implements ReceiveListener {
+public class PTP {
   /** The logger for this class. */
   private Logger logger;
   /** The configuration of the client. */
@@ -57,7 +63,7 @@ public class PTP implements ReceiveListener {
   private boolean dedicatedTorProcess;
 
   /**
-   * Constructs a new PTP object. Manages a own Tor process.
+   * Constructs a new PTP object. Manages an own Tor process.
    *
    * @throws IOException If an error occurs.
    */
@@ -106,8 +112,8 @@ public class PTP implements ReceiveListener {
   }
 
   /**
-   * Constructs a new PTP object using the supplied hidden service directory name. Manages an own
-   * Tor process.
+   * Constructs a new PTP object using the supplied hidden service directory name and working
+   * directory. Manages an own Tor process.
    * 
    * @param workingDirectory The directory to start PTP in.
    * @param hiddenServiceDirectoryName The name of the directory of a hidden service to use.
@@ -116,6 +122,15 @@ public class PTP implements ReceiveListener {
     this(workingDirectory, hiddenServiceDirectoryName, false);
   }
 
+  /**
+   * Constructs a new PTP object using the supplied hidden service directory name and working
+   * directory. Manages an own Tor process.
+   * 
+   * @param workingDirectory The directory to start PTP in.
+   * @param hiddenServiceDirectoryName The name of the directory of a hidden service to use.
+   * @param dedicatedTorProcess True if this PTP instance is the only using the Tor process in the
+   *        working directory.
+   */
   public PTP(String workingDirectory, String hiddenServiceDirectoryName,
       boolean dedicatedTorProcess) {
     initPTP(workingDirectory, hiddenServiceDirectoryName, true, Constants.anyport,
@@ -139,9 +154,9 @@ public class PTP implements ReceiveListener {
 
   /**
    * Initializes the PTP object. Reads the configuration file and starts Tor if PTP manages the Tor
-   * process. Sets up necessary managers.
+   * process.
    * 
-   * @throws IOException If starting Tor or starting another service fails.
+   * @throws IOException If starting Tor fails.
    */
   public void init() throws IOException {
     if (initialized) {
@@ -210,7 +225,7 @@ public class PTP implements ReceiveListener {
         config.getTorSOCKSProxyPort(), config.getHiddenServicePort());
     connectionManager.setSerializer(serializer);
     connectionManager.setSendListener(sendListener);
-    connectionManager.setReceiveListener(this);
+    connectionManager.setReceiveListener(new PTPReceiveListener());
 
     connectionManager.start();
     hiddenServicePort = connectionManager.startBindServer(hiddenServicePort);
@@ -225,6 +240,9 @@ public class PTP implements ReceiveListener {
     initialized = true;
   }
 
+  /**
+   * Returns true if PTP was initialized successfully.
+   */
   public boolean isInitialized() {
     return initialized;
   }
@@ -251,6 +269,9 @@ public class PTP implements ReceiveListener {
     return hiddenServiceManager.getHiddenServiceIdentifier();
   }
 
+  /**
+   * Returns the directory of the currently used hidden service.
+   */
   public String getHiddenServiceDirectory() {
     if (!initialized || closed) {
       throw new IllegalStateException();
@@ -373,6 +394,11 @@ public class PTP implements ReceiveListener {
     messageTypes.putListener(type, listener);
   }
 
+  /**
+   * Sets the listener for received byte[] messages.
+   * 
+   * @param listener The listener to inform.
+   */
   public void setReceiveListener(ReceiveListener listener) {
     if (closed) {
       throw new IllegalStateException();
@@ -382,8 +408,8 @@ public class PTP implements ReceiveListener {
   }
 
   /**
-   * Enables queueing of objects of a previously registered type. Objects can be received using the
-   * IMessageQueue provided by {@link #getMessageQueue(Class) getMessageQueue()}.
+   * Enables queueing of objects of a previously registered type. Objects can be received using
+   * {@link #getMessageQueue(Class) getMessageQueue(Class)}.
    * 
    * @param type The type of objects to queue.
    * @see #setReceiveListener(Class, MessageReceivedListener)
@@ -397,6 +423,18 @@ public class PTP implements ReceiveListener {
       throw new IllegalArgumentException("Class type hasn't been registered before");
     }
     messageTypes.addMessageQueue(type);
+  }
+
+  /**
+   * Enables queueing of byte[] messages. Objects can be received using {@link #getMessageQueue()
+   * getMessageQueue()}
+   */
+  public void enableMessageQueue() {
+    if (closed) {
+      throw new IllegalStateException();
+    }
+
+    this.queueMessages = true;
   }
 
   /**
@@ -428,16 +466,10 @@ public class PTP implements ReceiveListener {
   }
 
   /**
-   * Sets a boolean stating if received bytearray messages should be queued.
+   * Sets the listener to be informed about sent messages.
+   * 
+   * @param listener The lister to inform.
    */
-  public void setQueueMessages(boolean queueMessages) {
-    if (closed) {
-      throw new IllegalStateException();
-    }
-
-    this.queueMessages = queueMessages;
-  }
-
   public void setSendListener(SendListener listener) {
     if (closed) {
       throw new IllegalStateException();
@@ -462,11 +494,11 @@ public class PTP implements ReceiveListener {
   }
 
   /**
-   * Delete the currently used hidden service directory. Should only be called after {@link #init()
-   * init} and {@link #exit() exit} have been called in that order.
+   * Delete the currently used hidden service directory. The method is only allowed to be called
+   * after {@link #exit() exit} has been called.
    */
   public void deleteHiddenService() {
-    if (!initialized || closed) {
+    if (!(initialized && closed)) {
       throw new IllegalStateException();
     }
 
@@ -479,8 +511,8 @@ public class PTP implements ReceiveListener {
   }
 
   /**
-   * Closes the local hidden service and any open connections. Stops the socket TTL manager and the
-   * Tor process manager. Does nothing if exit has already been called before.
+   * Stops PTP. Only the method {@link #deleteHiddenService() deleteHiddenService()} may be called
+   * afterwards. Calling this method several times has no effect.
    */
   public void exit() {
     if (closed) {
@@ -507,42 +539,44 @@ public class PTP implements ReceiveListener {
     closed = true;
   }
 
-  @Override
-  public void messageReceived(byte[] data, Identifier source) {
-    Object obj;
-    try {
-      obj = serializer.deserialize(data);
+  private class PTPReceiveListener implements ReceiveListener {
+    @Override
+    public void messageReceived(byte[] data, Identifier source) {
+      Object obj;
+      try {
+        obj = serializer.deserialize(data);
 
-      if (obj instanceof ByteArrayMessage) {
-        ByteArrayMessage message = (ByteArrayMessage) obj;
+        if (obj instanceof ByteArrayMessage) {
+          ByteArrayMessage message = (ByteArrayMessage) obj;
 
-        if (receiveListener != null) {
-          receiveListener.messageReceived(message.getData(), source);
-        }
+          if (receiveListener != null) {
+            receiveListener.messageReceived(message.getData(), source);
+          }
 
-        if (queueMessages) {
-          messageTypes.addMessageToQueue(message.getData(), source, System.currentTimeMillis());
-        }
+          if (queueMessages) {
+            messageTypes.addMessageToQueue(message.getData(), source, System.currentTimeMillis());
+          }
 
-        if (receiveListener == null && !queueMessages) {
-          logger.log(Level.WARNING,
-              "Dropping received message because no receive listener ist set.");
-        }
-      } else {
-        if (messageTypes.hasListener(obj)) {
-          messageTypes.callReceiveListener(obj, source);
-        }
-        if (messageTypes.hasQueue(obj)) {
-          messageTypes.addMessageToQueue(obj, source, System.currentTimeMillis());
-        }
+          if (receiveListener == null && !queueMessages) {
+            logger.log(Level.WARNING,
+                "Dropping received message because no receive listener ist set.");
+          }
+        } else {
+          if (messageTypes.hasListener(obj)) {
+            messageTypes.callReceiveListener(obj, source);
+          }
+          if (messageTypes.hasQueue(obj)) {
+            messageTypes.addMessageToQueue(obj, source, System.currentTimeMillis());
+          }
 
-        if (!messageTypes.hasListener(obj) && !messageTypes.hasQueue(obj)) {
-          logger.log(Level.WARNING,
-              "Received message of unregistered type with length " + data.length);
+          if (!messageTypes.hasListener(obj) && !messageTypes.hasQueue(obj)) {
+            logger.log(Level.WARNING,
+                "Received message of unregistered type with length " + data.length);
+          }
         }
+      } catch (IOException e) {
+        logger.log(Level.WARNING, "Error occurred while deserializing data: " + e.getMessage());
       }
-    } catch (IOException e) {
-      logger.log(Level.WARNING, "Error occurred while deserializing data: " + e.getMessage());
     }
   }
 
