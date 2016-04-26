@@ -68,7 +68,7 @@ public class PTPTest {
   }
   
   @Rule
-  public ExpectedException thrown= ExpectedException.none();
+  public ExpectedException thrown = ExpectedException.none();
 
   /**
    * @throws IOException Propagates any IOException thrown by the API wrapper during construction.
@@ -631,53 +631,58 @@ public class PTPTest {
     assertFalse(hsDir.exists());
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testSetListenerUnregisteredClass() throws IOException {
     client1.init();
 
+    thrown.expect(IllegalArgumentException.class);
     client1.setReceiveListener(Message.class, new MessageReceivedListener<Message>() {
       @Override
       public void messageReceived(Message message, Identifier source) {}
     });
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testSendMessageNull() throws IOException {
     client1.init();
     client1.reuseHiddenService();
 
     assertNotNull(client1.getIdentifier());
 
+    thrown.expect(IllegalArgumentException.class);
     client1.sendMessage(null, client1.getIdentifier());
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testSendMessageNull2() throws IOException {
     client1.init();
     client1.reuseHiddenService();
 
     assertNotNull(client1.getIdentifier());
 
+    thrown.expect(IllegalArgumentException.class);
     client1.sendMessage((Object) null, client1.getIdentifier());
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testSendMessageNull3() throws IOException {
     client1.init();
     client1.reuseHiddenService();
 
     assertNotNull(client1.getIdentifier());
 
+    thrown.expect(IllegalArgumentException.class);
     client1.sendMessage(null, client1.getIdentifier(), -1);
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testSendMessageNull4() throws IOException {
     client1.init();
     client1.reuseHiddenService();
 
     assertNotNull(client1.getIdentifier());
 
+    thrown.expect(IllegalArgumentException.class);
     client1.sendMessage((Object) null, client1.getIdentifier(), -1);
   }
 
