@@ -2,9 +2,11 @@ package edu.kit.tm.ptp;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import edu.kit.tm.ptp.connection.ConnectionManager;
 import edu.kit.tm.ptp.utility.RNG;
 import edu.kit.tm.ptp.utility.TestConstants;
 import edu.kit.tm.ptp.utility.TestHelper;
@@ -13,7 +15,12 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -538,5 +545,133 @@ public class PTPTest {
     client1.createHiddenService();
     identifier = client1.getIdentifier();
     assertFalse(pastIdentifiers.contains(identifier));
+  }
+  
+  @Test
+  public void testSendGarbagePreAuth() throws IOException {
+    client1.init();
+    
+    client1.reuseHiddenService();
+    
+    SendReceiveListener listener = new SendReceiveListener();
+    
+    client1.setReceiveListener(listener);
+    
+    Socket socket = new Socket();
+    socket.connect(new InetSocketAddress(InetAddress.getLoopbackAddress(), client1.getLocalPort()),
+        TestConstants.socketConnectTimeout);
+
+    assertEquals(true, socket.isConnected());
+    
+    OutputStream os = socket.getOutputStream();
+    byte[] testData = { 0x0, 0x1, 0x1A, (byte) 0xB4};
+    os.write(testData);
+    os.flush();
+    
+    TestHelper.sleep(TestConstants.listenerTimeout);
+    socket.close();
+    
+    assertEquals(0, listener.received.get());
+  }
+  
+  @Test
+  public void testSendGarbagePostAuth() throws IOException {
+    sendPostAuth(new byte[][] {new byte[] {0x1, (byte) 0xB2, 0x11, 0x7A, 0x0, 0x2, 0x3}});
+  }
+  
+  @Test
+  public void testSendEmptyByteArrayPostAuth() throws IOException {
+    sendPostAuth(new byte[][]{new byte[] {}, new byte[] {0x0}});
+  }
+  
+  private void sendPostAuth(byte[][] data) throws IOException {
+    client1.init();
+    client2.init();
+    
+    client1.reuseHiddenService();
+    client2.reuseHiddenService();
+    
+    SendReceiveListener listener = new SendReceiveListener();
+    
+    client1.setSendListener(listener);
+    client2.setReceiveListener(listener);
+    
+    assertNotNull(client2.getIdentifier());
+    
+    ConnectionManager cm1 = client1.connectionManager;
+    
+    for (byte[] array: data) {
+      cm1.send(array, client2.getIdentifier(), -1);
+    }
+    
+    TestHelper.wait(listener.sent, data.length, TestConstants.hiddenServiceSetupTimeout);
+    assertEquals(data.length, listener.sent.get());
+    
+    TestHelper.sleep(TestConstants.listenerTimeout);
+    assertEquals(0, listener.received.get());
+  }
+  
+  @Test
+  public void testDeleteHiddenService() throws IOException {
+    client1.init();
+    client1.reuseHiddenService();
+    
+    File hsDir = new File(client1.getHiddenServiceDirectory());
+    
+    client1.exit();
+    client1.deleteHiddenService();
+    
+    assertFalse(hsDir.exists());
+  }
+  
+  @Test (expected = IllegalArgumentException.class)
+  public void testSetListenerUnregisteredClass() throws IOException {
+    client1.init();
+    
+    client1.setReceiveListener(Message.class, new MessageReceivedListener<Message>() {
+      @Override
+      public void messageReceived(Message message, Identifier source) {
+      }
+    });
+  }
+  
+  @Test (expected = IllegalArgumentException.class)
+  public void testSendMessageNull() throws IOException {
+    client1.init();
+    client1.reuseHiddenService();
+    
+    assertNotNull(client1.getIdentifier());
+    
+    client1.sendMessage(null, client1.getIdentifier());
+  }
+  
+  @Test (expected = IllegalArgumentException.class)
+  public void testSendMessageNull2() throws IOException {
+    client1.init();
+    client1.reuseHiddenService();
+    
+    assertNotNull(client1.getIdentifier());
+    
+    client1.sendMessage((Object)null, client1.getIdentifier());
+  }
+  
+  @Test (expected = IllegalArgumentException.class)
+  public void testSendMessageNull3() throws IOException {
+    client1.init();
+    client1.reuseHiddenService();
+    
+    assertNotNull(client1.getIdentifier());
+    
+    client1.sendMessage(null, client1.getIdentifier(), -1);
+  }
+  
+  @Test (expected = IllegalArgumentException.class)
+  public void testSendMessageNull4() throws IOException {
+    client1.init();
+    client1.reuseHiddenService();
+    
+    assertNotNull(client1.getIdentifier());
+    
+    client1.sendMessage((Object)null, client1.getIdentifier(), -1);
   }
 }
