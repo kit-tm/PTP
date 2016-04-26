@@ -320,6 +320,10 @@ public class PTP {
    * @return Identifier of the message.
    */
   public long sendMessage(byte[] data, Identifier destination, long timeout) {
+    if (data == null || destination == null) {
+      throw new IllegalArgumentException();
+    }
+    
     ByteArrayMessage msg = new ByteArrayMessage(data);
     return sendMessage(msg, destination, timeout);
   }
@@ -331,6 +335,10 @@ public class PTP {
    * @param destination The hidden service identifier of the destination.
    */
   public long sendMessage(byte[] data, Identifier destination) {
+    if (data == null || destination == null) {
+      throw new IllegalArgumentException();
+    }
+    
     return sendMessage(data, destination, -1);
   }
 
@@ -343,6 +351,10 @@ public class PTP {
    * @see #enableMessageQueue(Class)
    */
   public long sendMessage(Object message, Identifier destination) {
+    if (message == null || destination == null) {
+      throw new IllegalArgumentException();
+    }
+    
     return sendMessage(message, destination, -1);
   }
 
@@ -358,6 +370,10 @@ public class PTP {
   public long sendMessage(Object message, Identifier destination, long timeout) {
     if (!initialized || closed) {
       throw new IllegalStateException();
+    }
+    
+    if (message == null || destination == null) {
+      throw new IllegalArgumentException();
     }
 
     byte[] data = serializer.serialize(message);
