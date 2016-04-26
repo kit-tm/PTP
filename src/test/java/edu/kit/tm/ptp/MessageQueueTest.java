@@ -1,8 +1,10 @@
 package edu.kit.tm.ptp;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 
+import edu.kit.tm.ptp.PTPTest.Message;
 import edu.kit.tm.ptp.utility.TestConstants;
 
 import org.junit.After;
@@ -20,6 +22,7 @@ import java.io.IOException;
 public class MessageQueueTest {
   private PTP ptp;
   private PTP ptp2;
+  private static final byte[] testData = {(byte) 0xFF, 0x0, 0x1A};
 
   private static final class TestMessage {
     public String data;
@@ -50,7 +53,7 @@ public class MessageQueueTest {
   }
   
   @Test
-  public void testPollIterator() throws IOException, InterruptedException {
+  public void testPollTestMessageType() throws IOException, InterruptedException {
     ptp.registerClass(TestMessage.class);
     ptp2.registerClass(TestMessage.class);
 
@@ -76,40 +79,7 @@ public class MessageQueueTest {
     
     pollMessageIterator(message, receiveQueue);
   }
-
-  @Test
-  public void testPollMessageListener() throws IOException, InterruptedException {
-    ptp.registerClass(TestMessage.class);
-    ptp2.registerClass(TestMessage.class);
-
-    ptp.reuseHiddenService();
-    ptp2.reuseHiddenService();
-
-    ptp.setReceiveListener(TestMessage.class, new MessageReceivedListener<TestMessage>() {
-      @Override
-      public void messageReceived(TestMessage message, Identifier source) {
-      }
-    });
-    ptp2.enableMessageQueue(TestMessage.class);
-
-    assertNotEquals(null, ptp2.getIdentifier());
-
-    TestMessage message = new TestMessage("Hallo", 123, false);
-    ptp.sendMessage(message, ptp2.getIdentifier());
-    
-    IMessageQueue<TestMessage> receiveQueue = ptp2.getMessageQueue(TestMessage.class);
-
-    long start = System.currentTimeMillis();
-
-    while (!receiveQueue.hasMessage()
-        && System.currentTimeMillis() - start < TestConstants.hiddenServiceSetupTimeout) {
-      Thread.sleep(1000);
-    }
-
-    pollMessageIterator(message, receiveQueue);
-  }
-
-
+  
   private void pollMessageIterator(TestMessage sent, IMessageQueue<TestMessage> queue) {
     assertEquals(true, queue.hasMessage());
     
@@ -125,4 +95,44 @@ public class MessageQueueTest {
     
     assertEquals(false, queue.hasMessage());
   }
+  
+  @Test
+  public void testPollByteArrayMessages() throws IOException, InterruptedException {
+    ptp.reuseHiddenService();
+    ptp2.reuseHiddenService();
+    
+    ptp2.enableMessageQueue();
+    
+    assertNotEquals(null, ptp2.getIdentifier());
+    
+    int sendCount = 3;
+    
+    for (int i = 0; i < sendCount; i++) {
+      ptp.sendMessage(testData, ptp2.getIdentifier());
+    }
+    
+    IMessageQueue<byte[]> receiveQueue = ptp2.getMessageQueue();
+
+    long start = System.currentTimeMillis();
+
+    while (!receiveQueue.hasMessage()
+        && System.currentTimeMillis() - start < TestConstants.hiddenServiceSetupTimeout) {
+      Thread.sleep(1000);
+    }
+    
+    int receiveCount = 0;
+    
+    while (receiveQueue.hasMessage()) {
+      assertArrayEquals(testData, receiveQueue.pollMessage().data);
+      receiveCount++;
+    }
+    
+    assertEquals(sendCount, receiveCount);
+  }
+  
+  @Test (expected = IllegalArgumentException.class)
+  public void testEnableQueueUnregisteredClass() throws IOException {    
+    ptp.enableMessageQueue(TestMessage.class);
+  }
+
 }
