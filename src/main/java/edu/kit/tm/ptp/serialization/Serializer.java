@@ -56,6 +56,10 @@ public class Serializer {
    * @throws IOException If an error occurs while deserializing.
    */
   public Object deserialize(byte[] data) throws IOException {
+    if (data.length == 0) {
+      throw new IOException("Can't deserialize empty byte array");
+    }
+    
     Input input = new Input(data);
 
     Object obj = kryo.readClassAndObject(input);
