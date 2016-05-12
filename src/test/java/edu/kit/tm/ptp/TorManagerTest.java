@@ -15,8 +15,8 @@ public class TorManagerTest {
   
   @Before
   public void setUp() throws Exception {
-    manager = new TorManager("./ptp-data/");
-    manager2 = new TorManager("./ptp-data/");
+    manager = new SharedTorManager("./ptp-data/", false);
+    manager2 = new SharedTorManager("./ptp-data/", false);
   }
 
   @After

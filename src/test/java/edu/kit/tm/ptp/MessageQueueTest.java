@@ -40,8 +40,8 @@ public class MessageQueueTest {
 
   @Before
   public void setUp() throws Exception {
-    ptp = new PTP();
-    ptp2 = new PTP();
+    ptp = new PTP(true);
+    ptp2 = new PTP(true);
     ptp.init();
     ptp2.init();
   }

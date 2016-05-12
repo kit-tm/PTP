@@ -84,8 +84,8 @@ public class PTPTest {
     testString = random.string(minMessageLength, maxMessageLength);
 
     // Create the API wrapper objects.
-    client1 = new PTP();
-    client2 = new PTP();
+    client1 = new PTP(true);
+    client2 = new PTP(true);
   }
 
   /**
@@ -470,7 +470,7 @@ public class PTPTest {
     assertEquals(identifier1, identifier2);
 
     client1.exit();
-    client1 = new PTP();
+    client1 = new PTP(true);
     client1.init();
 
     client1.reuseHiddenService();
@@ -484,14 +484,14 @@ public class PTPTest {
     assertEquals(identifier1, identifier2);
 
     client1.exit();
-    client1 = new PTP();
+    client1 = new PTP(true);
     client1.init();
 
     client1.createHiddenService();
     identifier1 = client1.getIdentifier();
 
     client1.exit();
-    client1 = new PTP();
+    client1 = new PTP(true);
     client1.init();
 
     client1.reuseHiddenService();
@@ -520,7 +520,7 @@ public class PTPTest {
     pastIdentifiers.add(identifier);
 
     client1.exit();
-    client1 = new PTP();
+    client1 = new PTP(true);
     client1.init();
 
     client1.createHiddenService();
@@ -537,7 +537,7 @@ public class PTPTest {
     assertFalse(pastIdentifiers.contains(identifier));
 
     client1.exit();
-    client1 = new PTP();
+    client1 = new PTP(true);
     client1.init();
 
     client1.reuseHiddenService();
@@ -546,7 +546,7 @@ public class PTPTest {
     pastIdentifiers.add(identifier);
 
     client1.exit();
-    client1 = new PTP();
+    client1 = new PTP(true);
     client1.init();
 
     client1.createHiddenService();

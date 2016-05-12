@@ -35,8 +35,8 @@ public class PublicKeyAuthenticatorTest {
   @BeforeClass
   public static void setUpClass() throws IOException, InvalidKeyException, InvalidKeySpecException,
       NoSuchAlgorithmException, NoSuchProviderException {
-    ptp1 = new PTP();
-    ptp2 = new PTP();
+    ptp1 = new PTP(true);
+    ptp2 = new PTP(true);
 
     ptp1.init();
     ptp2.init();

@@ -54,7 +54,7 @@ public class ConnectionManagerTest {
 
   @Test
   public void testSend() throws IOException {
-    ptp = new PTP();
+    ptp = new PTP(true);
     ptp.init();
     ptp.reuseHiddenService();
 

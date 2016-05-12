@@ -1,7 +1,5 @@
 package edu.kit.tm.ptp;
 
-import edu.kit.tm.ptp.hiddenservice.LockFile;
-import edu.kit.tm.ptp.hiddenservice.LockFileFactory;
 import edu.kit.tm.ptp.utility.Constants;
 
 import net.freehaven.tor.control.TorControlConnection;
@@ -14,7 +12,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.io.RandomAccessFile;
 import java.net.Socket;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -23,7 +20,7 @@ import java.util.regex.Pattern;
 
 
 /**
- * A manager for the personal Tor process of the API.
+ * A manager for the Tor process of the API.
  *
  * @author Timon Hackenjos
  * @author Simeon Andreev
@@ -33,15 +30,12 @@ public class TorManager {
 
   /** A reglar expression, used to find numbers in a string. */
   private static final String regex = "[0-9]+";
-
   /** The Tor working directory path. */
-  private final String workingDirectory;
+  protected final String workingDirectory;
   /** The TorManager running file. */
   private File portsFile;
-  /** The TorManager lock file. */
-  private File lockFile;
   /** The managed Tor process. */
-  private Process process = null;
+  protected Process process = null;
   /** The thread reading the stdout of the Tor process. */
   private Thread output = null;
   /** The thread reading the stderr of the Tor process. */
@@ -57,7 +51,7 @@ public class TorManager {
   private volatile boolean torRunning = false;
   private volatile boolean torBootstrapped = false;
   private volatile boolean portsFileWritten = false;
-  private boolean dedicatedTorProcess; // Kill Tor process independent of other PTP instances
+  private boolean externalTor;
 
   private class OutputThread implements Runnable {
     @Override
@@ -206,119 +200,37 @@ public class TorManager {
 
   /**
    * Constructs a new TorManager object.
-   * 
-   * @param workingDirectory The directory to run Tor in.
-   */
-  public TorManager(String workingDirectory) {
-    this(workingDirectory, false);
-  }
-
-  /**
-   * Constructs a new TorManager object.
    *
-   * @param workingDirectory The directory to run Tor in,
-   * @param dedicatedTorProcess If true the TorManager will kill the Tor process on exit
-   *                         without checking if it's used by others.
+   * @param workingDirectory The directory to run Tor in.
+   * @param externalTor True if the Tor process runs outside PTP and shouldn't be stopped.
    */
-  public TorManager(String workingDirectory, boolean dedicatedTorProcess) {
+  public TorManager(String workingDirectory, boolean externalTor) {
     this.workingDirectory = workingDirectory;
-    this.dedicatedTorProcess = dedicatedTorProcess;
+    this.externalTor = externalTor;
   }
 
   /**
    * Checks if a Tor process is already running and otherwise starts a new Tor process.
    */
   public void startTor() throws IOException {
+    createWorkingDirectory();
+    logger.log(Level.INFO, "TorManager working directory exists.");
+
+    if (checkTorRunning()) {
+      torRunning = true;
+      torBootstrapped = true;
+    } else {
+      // Run the Tor process.
+      torRunning = runTor();
+    }
+  }
+  
+  protected void createWorkingDirectory() throws IOException {
     // Check if the home directory exists, if not try to create it.
     File directory = new File(workingDirectory);
     if (!directory.exists() && !directory.mkdirs()) {
       // Home directory does not exist and was not created.
-      throw new IOException("Unable to create missing PTP home directory.");
-    }
-
-    logger.log(Level.INFO, "TorManager working directory exists.");
-
-    // Check if the lock file exists, if not create it.
-    lockFile = new File(workingDirectory + File.separator + Constants.tormanagerlockfile);
-    if (!lockFile.exists() && !lockFile.createNewFile()) {
-      // Lock file does not exist and was not created.
-      throw new IOException("Unable to create missing PTP TorManager lock file.");
-    }
-
-    // Get a handle on the TorManager ports file.
-    portsFile = new File(workingDirectory + File.separator + Constants.tormanagerportsfile);
-
-    logger.log(Level.INFO, "Read Tor working directory: " + workingDirectory.toString());
-    logger.log(Level.INFO, "TorManager lock file is: " + lockFile.getAbsolutePath());
-    logger.log(Level.INFO, "TorManager ports file is: " + portsFile.getAbsolutePath());
-
-    // Check if another TorManager is currently running a Tor process.
-    LockFile lock = null;
-    try {
-      // Block until a lock on the TorManager lock file is available.
-      logger.log(Level.INFO, "TorManager acquiring lock on TorManager lock file.");
-
-      lock = LockFileFactory.getLockFile(lockFile);
-      lock.lock();
-      RandomAccessFile raf = lock.getRandomAccessFile();
-
-      logger.log(Level.INFO, "TorManager has the lock on the TorManager lock file.");
-
-      if (portsFile.exists()) {
-        logger.log(Level.INFO, "TorManager checking if Tor is running.");
-
-        readPorts();
-        // Attempt a JTorCtl connection to the Tor process. If Tor is not running the connection
-        // will not succeed.
-        try {
-          logger.log(Level.INFO, "TorManager attempting to connect to the Tor process.");
-
-          Socket socket = new Socket(Constants.localhost, torControlPort);
-          TorControlConnection conn = new TorControlConnection(socket);
-          conn.authenticate(new byte[0]);
-          socket.close();
-
-          torRunning = true;
-          torBootstrapped = true;
-        } catch (IOException e) {
-          logger.log(Level.INFO, "TorManager could not connect to the Tor process,"
-              + "the file lock counter is broken.");
-        }
-      }
-      int numApis = raf.length() == 0 ? 0 : raf.readInt();
-      logger.log(Level.INFO,
-          "TorManager checked if Tor is running: " + (torRunning ? "running" : "not running"));
-
-      if (!torRunning) {
-        // Run the Tor process.
-        final boolean success = runTor();
-        // Check if the Tor process failed to start.
-        if (success) {
-          torRunning = true;
-          raf.seek(0);
-          raf.writeInt(1);
-
-          logger.log(Level.INFO, "TorManager set lock file counter to: " + 1);
-        } else {
-          throw new IOException("Failed to start Tor");
-        }
-        // Otherwise, increment the counter in the lock file. Indicates that another API is using
-        // the Tor process.
-      } else {
-        raf.seek(0);
-        raf.writeInt(numApis + 1);
-
-        logger.log(Level.INFO, "TorManager set lock file counter to: " + (numApis + 1));
-      }
-
-      // Release the lock.
-      logger.log(Level.INFO, "TorManager releasing the lock on the TorManager lock file.");
-      lock.release();
-      lock = null;
-    } finally {
-      if (lock != null) {
-        lock.release();
-      }
+      throw new IOException("Unable to create missing PTP working directory.");
     }
   }
 
@@ -336,7 +248,7 @@ public class TorManager {
   }
 
   /**
-   * Stops the Tor process if it isn't used by others.
+   * Stops the Tor process.
    */
   public void stopTor() {
     logger.log(Level.INFO, "Closing output thread.");
@@ -369,8 +281,9 @@ public class TorManager {
       }
     }
 
-    // Stop Tor, if no other API is using the process.
-    shutdownTor();
+    if (!externalTor) {
+      shutdownTor();
+    }
 
     torRunning = false;
     torBootstrapped = false;
@@ -421,76 +334,75 @@ public class TorManager {
 
 
   /**
-   * Stops the Tor process, if no other API is using the process.
+   * Stops the Tor process.
    */
-  private void shutdownTor() {
+  protected void shutdownTor() {
     if (!torRunning) {
       return;
     }
 
-    logger.log(Level.INFO, "TorManager checking if Tor process should be closed.");
-    LockFile lock = null;
-
     try {
-      logger.log(Level.INFO, "TorManager acquiring lock on TorManager lock file.");
-      lock = LockFileFactory.getLockFile(lockFile);
-      lock.lock();
-      RandomAccessFile raf = lock.getRandomAccessFile();
-
-      logger.log(Level.INFO, "TorManager has the lock on the TorManager lock file.");
-
-      final long length = raf.length();
-
-      // If the lock file does not contain a single integer, something is wrong.
-      if (length == Integer.SIZE / 8) {
-
-        final int numberOfApis = raf.readInt();
-        logger.log(Level.INFO,
-            "TorManager read the number of APIs from the TorManager lock file: " + numberOfApis);
-
-        raf.seek(0);
-        raf.writeInt(Math.max(0, numberOfApis - 1));
-
-        // Check if this is the only API using the Tor process, if so stop the Tor process.
-        if (numberOfApis == 1 || dedicatedTorProcess) {
-          logger.log(Level.INFO, "TorManager stopping Tor process.");
-          if (process != null) {
-            logger.log(Level.INFO, "Killing own Tor process");
-            process.destroy();
-          } else {
-            logger.log(Level.INFO, "Using control port: " + torControlPort);
-
-            Socket socket = new Socket(Constants.localhost, torControlPort);
-            logger.log(Level.INFO, "TorManager attempting to shutdown Tor process.");
-
-            TorControlConnection conn = new TorControlConnection(socket);
-            conn.authenticate(new byte[0]);
-            conn.shutdownTor(Constants.shutdownsignal);
-            socket.close();
-
-            logger.log(Level.INFO, "TorManager sent shutdown signal.");
-          }
-
-          // Delete the TorManager ports file.
-          if (portsFile.delete()) {
-            logger.log(Level.INFO, "Deleted TorManager ports file.");
-          } else {
-            logger.log(Level.WARNING, "Failed to delete ports file "
-                + portsFile.getAbsolutePath());
-          }
-        }
+      logger.log(Level.INFO, "TorManager stopping Tor process.");
+      if (process != null) {
+        logger.log(Level.INFO, "Killing own Tor process");
+        process.destroy();
       } else {
-        logger.log(Level.WARNING, "TorManager file lock is broken!");
+        logger.log(Level.INFO, "Using control port: " + torControlPort);
+
+        Socket socket = new Socket(Constants.localhost, torControlPort);
+        logger.log(Level.INFO, "TorManager attempting to shutdown Tor process.");
+
+        TorControlConnection conn = new TorControlConnection(socket);
+        conn.authenticate(new byte[0]);
+        conn.shutdownTor(Constants.shutdownsignal);
+        socket.close();
+
+        logger.log(Level.INFO, "TorManager sent shutdown signal.");
+      }
+
+      // Delete the TorManager ports file.
+      if (portsFile.delete()) {
+        logger.log(Level.INFO, "Deleted TorManager ports file.");
+      } else {
+        logger.log(Level.WARNING, "Failed to delete ports file " + portsFile.getAbsolutePath());
       }
     } catch (IOException e) {
       logger.log(Level.WARNING,
           "TorManager caught an IOException while closing Tor process: " + e.getMessage());
-    } finally {
-      if (lock != null) {
-        logger.log(Level.INFO, "TorManager releasing the lock on the TorManager lock file.");
-        lock.release();
+    }
+  }
+
+  private boolean checkTorRunning() throws IOException {
+    boolean running = false;
+    // Get a handle on the TorManager ports file.
+    portsFile = new File(workingDirectory + File.separator + Constants.tormanagerportsfile);
+
+    logger.log(Level.INFO, "Read Tor working directory: " + workingDirectory.toString());
+    logger.log(Level.INFO, "TorManager ports file is: " + portsFile.getAbsolutePath());
+
+    if (portsFile.exists()) {
+      logger.log(Level.INFO, "TorManager checking if Tor is running.");
+
+      readPorts();
+      // Attempt a JTorCtl connection to the Tor process. If Tor is not running the connection
+      // will not succeed.
+      try {
+        logger.log(Level.INFO, "TorManager attempting to connect to the Tor process.");
+
+        Socket socket = new Socket(Constants.localhost, torControlPort);
+        TorControlConnection conn = new TorControlConnection(socket);
+        conn.authenticate(new byte[0]);
+        socket.close();
+
+        running = true;
+
+      } catch (IOException e) {
+        logger.log(Level.INFO, "TorManager could not connect to the Tor process");
       }
     }
+    logger.log(Level.INFO,
+        "TorManager checked if Tor is running: " + (torRunning ? "running" : "not running"));
+    return running;
   }
 
   /**

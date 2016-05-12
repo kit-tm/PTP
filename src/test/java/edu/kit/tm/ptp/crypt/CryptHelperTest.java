@@ -32,7 +32,7 @@ public class CryptHelperTest {
   public void testCalculateHiddenServiceIdentifier()
       throws IOException, InterruptedException, InvalidKeySpecException, InvalidKeyException,
       NoSuchAlgorithmException, NoSuchProviderException {
-    PTP ptp = new PTP();
+    PTP ptp = new PTP(true);
     
     ptp.init();
     ptp.reuseHiddenService();

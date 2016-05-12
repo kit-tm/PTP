@@ -60,7 +60,7 @@ public class PTP {
   private Thread clientThread = null;
   private volatile boolean queueMessages = false;
   private CryptHelper cryptHelper = new CryptHelper();
-  private boolean dedicatedTorProcess;
+  private boolean sharedTorProcess;
 
   /**
    * Constructs a new PTP object. Manages an own Tor process.
@@ -69,6 +69,17 @@ public class PTP {
    */
   public PTP() {
     this(null);
+  }
+
+  /**
+   * Constructs a new PTP object. Manages an own Tor process.
+   * 
+   * @param sharedTorProcess If true the Tor process will be shared between PTP instances in the
+   *        same directory.
+   * @throws IOException If an error occurs.
+   */
+  public PTP(boolean sharedTorProcess) {
+    this(null, null, sharedTorProcess);
   }
 
   /**
@@ -128,17 +139,16 @@ public class PTP {
    * 
    * @param workingDirectory The directory to start PTP in.
    * @param hiddenServiceDirectoryName The name of the directory of a hidden service to use.
-   * @param dedicatedTorProcess True if this PTP instance is the only using the Tor process in the
-   *        working directory.
+   * @param sharedTorProcess If true the Tor process will be shared between PTP instances in the
+   *        same directory.
    */
-  public PTP(String workingDirectory, String hiddenServiceDirectoryName,
-      boolean dedicatedTorProcess) {
+  public PTP(String workingDirectory, String hiddenServiceDirectoryName, boolean sharedTorProcess) {
     initPTP(workingDirectory, hiddenServiceDirectoryName, true, Constants.anyport,
-        dedicatedTorProcess);
+        sharedTorProcess);
   }
 
   private void initPTP(String workingDirectory, String hiddenServiceDirectoryName,
-      boolean usePTPTor, int hiddenServicePort, boolean dedicatedTorProcess) {
+      boolean usePTPTor, int hiddenServicePort, boolean sharedTorProcess) {
     configReader = new ConfigurationFileReader(
         (workingDirectory != null ? workingDirectory + File.separator : "") + Constants.configfile);
 
@@ -146,7 +156,7 @@ public class PTP {
     this.hiddenServiceDirectoryName = hiddenServiceDirectoryName;
     this.usePTPTor = usePTPTor;
     this.hiddenServicePort = hiddenServicePort;
-    this.dedicatedTorProcess = dedicatedTorProcess;
+    this.sharedTorProcess = sharedTorProcess;
 
     clientThread = Thread.currentThread();
     messageTypes.addMessageQueue(byte[].class);
@@ -190,7 +200,11 @@ public class PTP {
         .setHiddenServicesDirectory(workingDirectory + File.separator + Constants.hiddenservicedir);
 
     if (usePTPTor) {
-      tor = new TorManager(workingDirectory, dedicatedTorProcess);
+      if (sharedTorProcess) {
+        tor = new SharedTorManager(workingDirectory, !usePTPTor);
+      } else {
+        tor = new TorManager(workingDirectory, !usePTPTor);
+      }
       // Start the Tor process.
       tor.startTor();
 
@@ -323,7 +337,7 @@ public class PTP {
     if (data == null || destination == null) {
       throw new IllegalArgumentException();
     }
-    
+
     ByteArrayMessage msg = new ByteArrayMessage(data);
     return sendMessage(msg, destination, timeout);
   }
@@ -338,7 +352,7 @@ public class PTP {
     if (data == null || destination == null) {
       throw new IllegalArgumentException();
     }
-    
+
     return sendMessage(data, destination, -1);
   }
 
@@ -354,7 +368,7 @@ public class PTP {
     if (message == null || destination == null) {
       throw new IllegalArgumentException();
     }
-    
+
     return sendMessage(message, destination, -1);
   }
 
@@ -371,7 +385,7 @@ public class PTP {
     if (!initialized || closed) {
       throw new IllegalStateException();
     }
-    
+
     if (message == null || destination == null) {
       throw new IllegalArgumentException();
     }

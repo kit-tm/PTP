@@ -41,7 +41,7 @@ public class ChannelManagerTest {
     listener = new Listener();
     channelManager = new ChannelManager(listener);
     
-    ptp = new PTP();
+    ptp = new PTP(true);
   }
 
   @After
