@@ -7,6 +7,7 @@ import static org.junit.Assert.fail;
 import edu.kit.tm.ptp.Identifier;
 import edu.kit.tm.ptp.connection.ExpireListener;
 import edu.kit.tm.ptp.connection.TTLManager;
+import edu.kit.tm.ptp.utility.Constants;
 import edu.kit.tm.ptp.utility.RNG;
 import edu.kit.tm.ptp.utility.TestHelper;
 
@@ -15,6 +16,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 
@@ -81,9 +83,11 @@ public class TTLManagerTest {
   public void setUp() throws IOException {
     // Create a RNG.
     RNG random = new RNG();
+    
+    Charset charset = Charset.forName(Constants.charset);
 
     // Create the random identifier within the given length bounds.
-    String randomString = random.string(minimumIdentifierLength, maximumIdentifierLength);
+    String randomString = random.string(minimumIdentifierLength, maximumIdentifierLength, charset);
     identifier = new Identifier(randomString);
 
     // Set the expiration timer. Choose a random number within the expiration time bounds.

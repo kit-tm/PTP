@@ -1,5 +1,6 @@
 package edu.kit.tm.ptp.utility;
 
+import java.nio.charset.Charset;
 import java.util.Random;
 
 
@@ -32,15 +33,16 @@ public class RNG {
    *
    * @param minLength Minimum length for the random string.
    * @param maxLength Maximum length for the random string.
+   * @param charset The charset to use.
    * @return The generated random string.
    */
-  public String string(int minLength, int maxLength) {
+  public String string(int minLength, int maxLength, Charset charset) {
     // Create the random string. Choose random length within the length bounds and choose random
     // bytes.
     final int length = minLength + random.nextInt(maxLength - minLength + 1);
     byte[] buffer = new byte[length];
     random.nextBytes(buffer);
-    return new String(buffer);
+    return new String(buffer, charset);
   }
 
   /**

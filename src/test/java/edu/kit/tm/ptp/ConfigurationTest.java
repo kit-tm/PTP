@@ -11,8 +11,9 @@ import org.junit.Test;
 
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Random;
@@ -60,7 +61,8 @@ public class ConfigurationTest {
     // Set the default identifier.
     defaultIdentifier = "defid";
     // Set the hidden service directory.
-    hiddenServicesDirectory = Paths.get("").toString() + File.separator + Constants.hiddenservicedir;
+    hiddenServicesDirectory =
+        Paths.get("").toString() + File.separator + Constants.hiddenservicedir;
     // Set the authentication bytes.
     authenticationBytes = new byte[] {};
 
@@ -76,7 +78,8 @@ public class ConfigurationTest {
     ttlPoll = random.nextInt();
 
     // Write the properties to the input file.
-    FileWriter writer = new FileWriter(file);
+    BufferedWriter writer = new BufferedWriter(
+        new OutputStreamWriter(new FileOutputStream(file), Constants.charset));
 
     System.out.println(ConfigurationFileReader.HiddenServicePort + " " + hiddenServicePort);
     System.out.println(ConfigurationFileReader.SocketTTL + " " + socketTtl + newline);

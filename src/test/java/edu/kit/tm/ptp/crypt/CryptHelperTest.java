@@ -5,6 +5,7 @@ import static org.junit.Assert.assertNotNull;
 
 import edu.kit.tm.ptp.Identifier;
 import edu.kit.tm.ptp.PTP;
+import edu.kit.tm.ptp.utility.Constants;
 
 import org.junit.After;
 import org.junit.Before;
@@ -12,8 +13,9 @@ import org.junit.Test;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
@@ -46,7 +48,8 @@ public class CryptHelperTest {
     for (File dir : hiddenServices.listFiles()) {
       if (dir.isDirectory()) {
         File hostname = new File(dir.getAbsolutePath() + File.separator + "hostname");
-        reader = new BufferedReader(new FileReader(hostname));
+        reader = new BufferedReader(
+            new InputStreamReader(new FileInputStream(hostname), Constants.charset));
         String onionName = reader.readLine();
         
         if (onionName.equals(ptp.getIdentifier().toString())) {

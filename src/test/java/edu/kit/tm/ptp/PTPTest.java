@@ -7,6 +7,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import edu.kit.tm.ptp.connection.ConnectionManager;
+import edu.kit.tm.ptp.utility.Constants;
 import edu.kit.tm.ptp.utility.RNG;
 import edu.kit.tm.ptp.utility.TestConstants;
 import edu.kit.tm.ptp.utility.TestHelper;
@@ -26,6 +27,7 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -66,7 +68,7 @@ public class PTPTest {
       this.id = id;
     }
   }
-  
+
   @Rule
   public ExpectedException thrown = ExpectedException.none();
 
@@ -79,9 +81,11 @@ public class PTPTest {
   public void setUp() throws IOException {
     // Create a RNG.
     RNG random = new RNG();
+    
+    Charset charset = Charset.forName(Constants.charset);
 
     // Generate a random message within the length bounds.
-    testString = random.string(minMessageLength, maxMessageLength);
+    testString = random.string(minMessageLength, maxMessageLength, charset);
 
     // Create the API wrapper objects.
     client1 = new PTP(true);
@@ -120,6 +124,7 @@ public class PTPTest {
    */
   @Test
   public void testSendFail() throws IOException, InterruptedException {
+    final Charset charset = Charset.forName(Constants.charset);
     client1.init();
 
     // An atomic boolean used to check whether the sent message was received.
@@ -156,7 +161,7 @@ public class PTPTest {
 
         // Send a message.
         final long timeout = 20 * 1000;
-        final long msgId = client1.sendMessage(testString.getBytes(), id, timeout);
+        final long msgId = client1.sendMessage(testString.getBytes(charset), id, timeout);
         // Wait for the sending result.
         final long waitStart = System.currentTimeMillis();
         while ((System.currentTimeMillis() - waitStart <= timeout + (10 * 1000))
@@ -191,6 +196,7 @@ public class PTPTest {
    */
   @Test
   public void testSelfSend() throws IOException {
+    final Charset charset = Charset.forName(Constants.charset);
     client1.init();
     // Make sure there is a hidden service identifier.
 
@@ -206,9 +212,11 @@ public class PTPTest {
     client1.setReceiveListener(new ReceiveListener() {
       @Override
       public void messageReceived(byte[] data, Identifier source) {
-        System.out.println("Received message: " + new String(data));
         received.set(true);
-        matches.set(new String(data).equals(testString));
+        String message = new String(data, charset);
+        System.out.println("Received message: " + message);
+
+        matches.set(message.equals(testString));
       }
     });
 
@@ -227,7 +235,7 @@ public class PTPTest {
 
     });
 
-    client1.sendMessage(testString.getBytes(), identifier, timeout);
+    client1.sendMessage(testString.getBytes(Constants.charset), identifier, timeout);
     // Wait for the sending result.
     TestHelper.wait(sendSuccess, timeout + 5 * 1000);
 
@@ -248,6 +256,7 @@ public class PTPTest {
    */
   @Test
   public void testPingPong() throws IOException, InterruptedException {
+    final Charset charset = Charset.forName(Constants.charset);
     client1.init();
     client2.init();
     // The maximum number of received messages during the ping-pong.
@@ -272,7 +281,7 @@ public class PTPTest {
       @Override
       public void messageReceived(byte[] data, Identifier source) {
         counter1.incrementAndGet();
-        matchFail.set(!(new String(data).equals(testString)));
+        matchFail.set(!(new String(data, charset).equals(testString)));
         if (counter1.get() - counter2.get() > 1) {
           countingFail.set(true);
         }
@@ -283,7 +292,7 @@ public class PTPTest {
       @Override
       public void messageReceived(byte[] data, Identifier source) {
         counter2.incrementAndGet();
-        matchFail.set(!(new String(data).equals(testString)));
+        matchFail.set(!(new String(data, charset).equals(testString)));
         if (counter2.get() - counter1.get() > 1) {
           countingFail.set(true);
         }
@@ -303,7 +312,8 @@ public class PTPTest {
     });
 
     // Send the initial ping-pong message.
-    client1.sendMessage(testString.getBytes(), client2.getIdentifier(), 180 * 1000);
+    client1.sendMessage(testString.getBytes(Constants.charset), client2.getIdentifier(),
+        180 * 1000);
 
     // Wait for the sending result, to ensure first identifier is available.
     TestHelper.wait(sendSuccess, TestConstants.hiddenServiceSetupTimeout);
@@ -335,6 +345,8 @@ public class PTPTest {
    */
   @Test
   public void testSendBig() throws IOException {
+    final Charset charset = Charset.forName(Constants.charset);
+    
     client1.init();
     client2.init();
 
@@ -362,7 +374,7 @@ public class PTPTest {
 
       @Override
       public void messageReceived(byte[] data, Identifier source) {
-        matches.set((new String(data)).equals(bigString));
+        matches.set((new String(data, charset)).equals(bigString));
         receiveSuccess.set(true);
       }
     });
@@ -382,7 +394,7 @@ public class PTPTest {
 
     final long timeout = 300 * 1000;
     // send the big message
-    client1.sendMessage(bigString.getBytes(), client2.getIdentifier(), timeout);
+    client1.sendMessage(bigString.getBytes(Constants.charset), client2.getIdentifier(), timeout);
 
     // Wait for the sending result
     long waitStart = System.currentTimeMillis();
@@ -714,7 +726,7 @@ public class PTPTest {
       os.flush();
 
       TestHelper.sleep(TestConstants.listenerTimeout);
-      
+
       thrown.expect(SocketException.class);
       is.read();
     } finally {

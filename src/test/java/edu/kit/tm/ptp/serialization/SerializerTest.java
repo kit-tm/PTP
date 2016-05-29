@@ -7,7 +7,10 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import edu.kit.tm.ptp.utility.Constants;
+
 import java.io.IOException;
+import java.nio.charset.Charset;
 
 public class SerializerTest {
   private Serializer serializer;
@@ -22,9 +25,10 @@ public class SerializerTest {
 
   @Test
   public void testSerializeByteArrayMessage() throws IOException {    
+    final Charset charset = Charset.forName(Constants.charset);
     serializer.registerClass(ByteArrayMessage.class);
     
-    byte[] bytes = new String("Hallo").getBytes();
+    byte[] bytes = new String("Hallo").getBytes(charset);
     ByteArrayMessage message = new ByteArrayMessage(bytes);
     
     byte[] serializedMessage = serializer.serialize(message);
