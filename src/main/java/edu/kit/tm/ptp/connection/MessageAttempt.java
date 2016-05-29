@@ -1,6 +1,7 @@
 package edu.kit.tm.ptp.connection;
 
 import edu.kit.tm.ptp.Identifier;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * An attempt to send a message.
@@ -37,7 +38,7 @@ public class MessageAttempt {
   public long getId() {
     return id;
   }
-  
+
   public void setId(long id) {
     this.id = id;
   }
@@ -46,35 +47,41 @@ public class MessageAttempt {
   public long getSendTimestamp() {
     return sendTimestamp;
   }
-  
+
   public void setSendTimestamp(long sendTimestamp) {
     this.sendTimestamp = sendTimestamp;
   }
-  
+
+  @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+      justification = "MessageAttempt is just a simple container."
+          + " Avoid to copy data several times.")
   public byte[] getData() {
     return data;
   }
-  
+
+  @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+      justification = "MessageAttempt is just a simple container."
+          + " Avoid to copy data several times.")
   public void setData(byte[] data) {
     this.data = data;
   }
-  
+
   public long getTimeout() {
     return timeout;
   }
-  
+
   public void setTimeout(long timeout) {
     this.timeout = timeout;
   }
-  
+
   public Identifier getDestination() {
     return destination;
   }
-  
+
   public void setDestination(Identifier destination) {
     this.destination = destination;
   }
-  
+
   @Override
   public int hashCode() {
     final int prime = 31;
@@ -88,21 +95,21 @@ public class MessageAttempt {
     if (this == obj) {
       return true;
     }
-    
+
     if (obj == null) {
       return false;
     }
-    
+
     if (getClass() != obj.getClass()) {
       return false;
     }
-    
+
     MessageAttempt other = (MessageAttempt) obj;
-    
+
     if (id != other.id) {
       return false;
     }
-    
+
     return true;
   }
 }

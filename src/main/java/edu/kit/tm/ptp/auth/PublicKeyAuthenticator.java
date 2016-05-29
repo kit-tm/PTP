@@ -6,6 +6,7 @@ import edu.kit.tm.ptp.channels.MessageChannel;
 import edu.kit.tm.ptp.crypt.CryptHelper;
 import edu.kit.tm.ptp.serialization.Serializer;
 import edu.kit.tm.ptp.utility.Constants;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -19,10 +20,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Authenticator using an RSA signature.
- * The initiator of the authentication sends an AuthenticationMessage to the target.
- * The target checks the validity of the AuthenticationMessage and responds with a
- * AUTHENTICATION_SUCCESS_MESSAGE in that case. Otherwise the channel will be closed.
+ * Authenticator using an RSA signature. The initiator of the authentication sends an
+ * AuthenticationMessage to the target. The target checks the validity of the AuthenticationMessage
+ * and responds with a AUTHENTICATION_SUCCESS_MESSAGE in that case. Otherwise the channel will be
+ * closed.
  * 
  * @author Timon Hackenjos
  *
@@ -45,9 +46,8 @@ public class PublicKeyAuthenticator extends Authenticator {
   }
 
   /**
-   * Message to authenticate oneself against another PTP instance.
-   * The message contains a timestamp and is only valid for a limited amount of time
-   * defined by TIMESTAMP_INTERVALL.
+   * Message to authenticate oneself against another PTP instance. The message contains a timestamp
+   * and is only valid for a limited amount of time defined by TIMESTAMP_INTERVALL.
    * 
    * @author Timon Hackenjos
    *
@@ -76,8 +76,11 @@ public class PublicKeyAuthenticator extends Authenticator {
       signature = null;
     }
 
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "AuthenticationMessage is just a simple container."
+            + " Avoid to copy data several times.")
     public AuthenticationMessage(Identifier source, Identifier destination, byte[] pubKey,
-                                 long timestamp, byte[] signature) {
+        long timestamp, byte[] signature) {
       this.source = source;
       this.destination = destination;
       this.pubKey = pubKey;
@@ -212,9 +215,9 @@ public class PublicKeyAuthenticator extends Authenticator {
   }
 
   /**
-   * Checks if the authentication message is valid which means that
-   * the destination identifier equals our own identifier, the timestamp isn't expired or invalid,
-   * the public key and the source identifier match, the signature is valid.
+   * Checks if the authentication message is valid which means that the destination identifier
+   * equals our own identifier, the timestamp isn't expired or invalid, the public key and the
+   * source identifier match, the signature is valid.
    *
    * @param message The message to check.
    * @return True if the message is valid.
@@ -291,7 +294,8 @@ public class PublicKeyAuthenticator extends Authenticator {
 
     byte[] signature = cryptHelper.sign(toSign);
 
-    AuthenticationMessage auth = new AuthenticationMessage(own, other, pubKey, timestamp, signature);
+    AuthenticationMessage auth =
+        new AuthenticationMessage(own, other, pubKey, timestamp, signature);
 
     return auth;
   }
