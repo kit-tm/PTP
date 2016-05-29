@@ -35,7 +35,7 @@ public class TTLManagerTest {
    * @author Simeon Andreev
    *
    */
-  private class Client implements ExpireListener {
+  private static class Client implements ExpireListener {
 
     /** An atomic boolean used to check whether an expiration timer has been reached. */
     public AtomicBoolean disconnected = new AtomicBoolean(false);

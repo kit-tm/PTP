@@ -29,6 +29,7 @@ import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.HashSet;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -434,7 +435,8 @@ public class PTPTest {
     client2.reuseHiddenService();
 
     final Identifier from = client1.getIdentifier();
-    final Message toSend = new Message((int) (Math.random() * Integer.MAX_VALUE));
+    Random rand = new Random();
+    final Message toSend = new Message(rand.nextInt(Integer.MAX_VALUE));
 
     class MessageListener implements MessageReceivedListener<Message> {
       @Override

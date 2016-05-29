@@ -28,7 +28,7 @@ public class SerializerTest {
     final Charset charset = Charset.forName(Constants.charset);
     serializer.registerClass(ByteArrayMessage.class);
     
-    byte[] bytes = new String("Hallo").getBytes(charset);
+    byte[] bytes = "Hallo".getBytes(charset);
     ByteArrayMessage message = new ByteArrayMessage(bytes);
     
     byte[] serializedMessage = serializer.serialize(message);
