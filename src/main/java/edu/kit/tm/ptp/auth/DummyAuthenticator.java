@@ -10,8 +10,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Dummy implementation of an Authenticator.
- * Just sends over the own Identifier and trusts the
+ * Dummy implementation of an Authenticator. Just sends over the own Identifier and trusts the
  * Identifer presented by the remote end.
  * 
  * @author Timon Hackenjos
@@ -43,7 +42,7 @@ public class DummyAuthenticator extends Authenticator implements ChannelMessageL
 
   public static class AuthenticationMessage {
     private Identifier source;
-    
+
     public AuthenticationMessage() {
       this.source = null;
     }
@@ -60,9 +59,9 @@ public class DummyAuthenticator extends Authenticator implements ChannelMessageL
       logger.log(Level.WARNING, "Unexpected message with id " + id + " has been sent");
       return;
     }
-    
+
     sent = true;
-    
+
     if (received) {
       finishAuth();
     }
@@ -74,18 +73,18 @@ public class DummyAuthenticator extends Authenticator implements ChannelMessageL
       logger.log(Level.WARNING, "Received message from wrong channel");
       return;
     }
-    
+
+    response = (byte[]) data.clone();
     received = true;
-    response = data;
-    
+
     if (sent) {
       finishAuth();
     }
   }
-  
+
   private void finishAuth() {
     channel.setChannelMessageListener(oldListener);
-    
+
     try {
       Object message = serializer.deserialize(response);
 
@@ -100,7 +99,7 @@ public class DummyAuthenticator extends Authenticator implements ChannelMessageL
       authListener.authenticationFailed(channel);
     }
   }
-  
+
 
   @Override
   public void authenticate(Identifier own) {

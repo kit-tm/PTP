@@ -140,7 +140,7 @@ public class Configuration {
 
 
   public void setAuthenticationBytes(byte[] authenticationBytes) {
-    this.authenticationBytes = authenticationBytes;
+    this.authenticationBytes = (byte[]) authenticationBytes.clone();
   }
 
   public void setWorkingDirectory(String workingDirectory) {
@@ -231,7 +231,7 @@ public class Configuration {
    *      torproject.org/torspec.git/tree/control-spec.txt</a>
    */
   public byte[] getAuthenticationBytes() {
-    return authenticationBytes;
+    return (byte[]) authenticationBytes.clone();
   }
 
   /**
