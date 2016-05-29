@@ -23,6 +23,7 @@ public class SharedTorManager extends TorManager {
 
   public SharedTorManager(String workingDirectory, boolean externalTor) {
     super(workingDirectory, externalTor);
+    torrc = "config/testtorrc";
   }
 
   @Override

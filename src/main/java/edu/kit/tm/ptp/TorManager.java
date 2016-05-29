@@ -52,6 +52,7 @@ public class TorManager {
   private volatile boolean torBootstrapped = false;
   private volatile boolean portsFileWritten = false;
   private boolean externalTor;
+  protected String torrc = "config/torrc";
 
   private class OutputThread implements Runnable {
     @Override
@@ -419,7 +420,7 @@ public class TorManager {
     String torFile = useAbsolutePath ? workingDirectory + File.separator : "";
     torFile += Constants.torfile;
     String torrcFile = useAbsolutePath ? workingDirectory + File.separator : "";
-    torrcFile += Constants.torrcfile;
+    torrcFile += torrc;
 
     try {
       /** The parameters for the Tor execution command. */
