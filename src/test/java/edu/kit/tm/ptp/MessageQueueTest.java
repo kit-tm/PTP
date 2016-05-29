@@ -2,9 +2,11 @@ package edu.kit.tm.ptp;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 
-import edu.kit.tm.ptp.PTPTest.Message;
+import edu.kit.tm.ptp.utility.Constants;
 import edu.kit.tm.ptp.utility.TestConstants;
 
 import org.junit.After;
@@ -84,8 +86,8 @@ public class MessageQueueTest {
     assertEquals(true, queue.hasMessage());
     
     QueuedMessage<TestMessage> message = queue.pollMessage();
-    TestMessage receivedMessage = message.data;
-    Identifier source = message.source;
+    TestMessage receivedMessage = message.getData();
+    Identifier source = message.getSource();
     
     assertEquals(ptp.getIdentifier(), source);
     
@@ -123,7 +125,7 @@ public class MessageQueueTest {
     int receiveCount = 0;
     
     while (receiveQueue.hasMessage()) {
-      assertArrayEquals(testData, receiveQueue.pollMessage().data);
+      assertArrayEquals(testData, receiveQueue.pollMessage().getData());
       receiveCount++;
     }
     
@@ -133,6 +135,41 @@ public class MessageQueueTest {
   @Test (expected = IllegalArgumentException.class)
   public void testEnableQueueUnregisteredClass() throws IOException {    
     ptp.enableMessageQueue(TestMessage.class);
+  }
+  
+  @Test
+  public void testByteArrayMessageQueue() throws IOException, InterruptedException {
+    ptp.reuseHiddenService();
+    ptp2.reuseHiddenService();
+
+    ptp.enableMessageQueue();
+    ptp2.enableMessageQueue();
+
+    assertNotEquals(null, ptp2.getIdentifier());
+
+    byte[] message = "Test123".getBytes(Constants.charset);
+    long sent = System.currentTimeMillis();
+    ptp.sendMessage(message, ptp2.getIdentifier());
+    
+    IMessageQueue<byte[]> receiveQueue = ptp2.getMessageQueue();
+
+    long start = System.currentTimeMillis();
+
+    while (!receiveQueue.hasMessage()
+        && System.currentTimeMillis() - start < TestConstants.hiddenServiceSetupTimeout) {
+      Thread.sleep(1000);
+    }
+    
+    assertTrue(receiveQueue.hasMessage());
+    QueuedMessage<byte[]> received = receiveQueue.pollMessage();
+    long now = System.currentTimeMillis();
+    
+    long receiveTime = received.getReceiveTime();
+    assertTrue(sent < receiveTime && receiveTime < now);
+    assertArrayEquals(message, received.getData());
+    assertEquals(ptp.getIdentifier(), received.getSource());
+    
+    assertFalse(receiveQueue.hasMessage());
   }
 
 }

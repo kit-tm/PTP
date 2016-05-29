@@ -9,20 +9,32 @@ package edu.kit.tm.ptp;
  * @param <T> The type of the message.
  */
 public final class QueuedMessage<T> {
-  public Identifier source = null;
-  public T data = null;
-  long receiveTime = -1;
+  private Identifier source = null;
+  private T data = null;
+  private long receiveTime = -1;
 
-  public QueuedMessage(Identifier source, T data) {
+  protected QueuedMessage(Identifier source, T data) {
     this.source = source;
     this.data = data;
   }
   
-  public QueuedMessage(Identifier source, T data, long receiveTime) {
+  protected QueuedMessage(Identifier source, T data, long receiveTime) {
     this(source, data);
     this.receiveTime = receiveTime;
   }
   
   public QueuedMessage() {    
+  }
+  
+  public Identifier getSource() {
+    return source;
+  }
+
+  public T getData() {
+    return data;
+  }
+
+  public long getReceiveTime() {
+    return receiveTime;
   }
 }
