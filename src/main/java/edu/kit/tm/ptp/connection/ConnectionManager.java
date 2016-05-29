@@ -232,7 +232,8 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
 
   @Override
   public void messageReceived(byte[] data, MessageChannel source) {
-    receivedMessages.add(new ReceivedMessage(data, source));
+    byte[] copy = data.clone();
+    receivedMessages.add(new ReceivedMessage(copy, source));
     semaphore.release();
   }
 

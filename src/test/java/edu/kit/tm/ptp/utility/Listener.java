@@ -30,7 +30,7 @@ public class Listener implements ChannelListener {
 
   @Override
   public void messageReceived(byte[] data, MessageChannel source) {
-    passedBytes = data;
+    passedBytes = (byte[]) data.clone();
     this.source = source;
     other.incrementAndGet();
     read.incrementAndGet();
