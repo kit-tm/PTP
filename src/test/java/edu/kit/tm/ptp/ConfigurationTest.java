@@ -1,6 +1,7 @@
 package edu.kit.tm.ptp;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import edu.kit.tm.ptp.utility.Constants;
@@ -109,7 +110,7 @@ public class ConfigurationTest {
   @After
   public void tearDown() {
     // Delete the file containing the properties.
-    file.delete();
+    assertTrue(file.delete());
     assertFalse(file.exists());
   }
 
