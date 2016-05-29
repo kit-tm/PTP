@@ -45,14 +45,17 @@ public class CryptHelperTest {
     File privateKey = null;
     BufferedReader reader = null;
     
-    for (File dir : hiddenServices.listFiles()) {
+    File[] dirs = hiddenServices.listFiles();
+    assertNotNull(dirs);
+    
+    for (File dir : dirs) {
       if (dir.isDirectory()) {
         File hostname = new File(dir.getAbsolutePath() + File.separator + "hostname");
         reader = new BufferedReader(
             new InputStreamReader(new FileInputStream(hostname), Constants.charset));
         String onionName = reader.readLine();
         
-        if (onionName.equals(ptp.getIdentifier().toString())) {
+        if (onionName != null && onionName.equals(ptp.getIdentifier().toString())) {
           found++;
           privateKey = new File(dir.getAbsolutePath() + File.separator + "private_key");
         }
