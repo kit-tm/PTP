@@ -105,8 +105,6 @@ public class PublicKeyAuthenticatorTest {
     // flip bits of first byte
     signature[0] = (byte) (signature[0] ^ 0xff);
 
-    authMessage.signature = signature;
-
     auth2.own = ptp2.getIdentifier();
 
     assertEquals(false, auth2.authenticationMessageValid(authMessage));
