@@ -4,6 +4,7 @@ import edu.kit.tm.ptp.Identifier;
 import edu.kit.tm.ptp.channels.ChannelMessageListener;
 import edu.kit.tm.ptp.channels.MessageChannel;
 import edu.kit.tm.ptp.serialization.Serializer;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.logging.Level;
@@ -68,13 +69,15 @@ public class DummyAuthenticator extends Authenticator implements ChannelMessageL
   }
 
   @Override
+  @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "MessageChannel uses"
+            + "a new buffer for each message and doesn't change old buffers.")
   public void messageReceived(byte[] data, MessageChannel source) {
     if (!channel.equals(source)) {
       logger.log(Level.WARNING, "Received message from wrong channel");
       return;
     }
 
-    response = (byte[]) data.clone();
+    response = data;
     received = true;
 
     if (sent) {

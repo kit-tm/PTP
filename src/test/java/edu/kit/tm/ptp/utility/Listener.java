@@ -2,6 +2,7 @@ package edu.kit.tm.ptp.utility;
 
 import edu.kit.tm.ptp.channels.ChannelListener;
 import edu.kit.tm.ptp.channels.MessageChannel;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -29,8 +30,10 @@ public class Listener implements ChannelListener {
   }
 
   @Override
+  @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "MessageChannel uses"
+      + "a new buffer for each message and doesn't change old buffers.")
   public void messageReceived(byte[] data, MessageChannel source) {
-    passedBytes = (byte[]) data.clone();
+    passedBytes = data;
     this.source = source;
     other.incrementAndGet();
     read.incrementAndGet();

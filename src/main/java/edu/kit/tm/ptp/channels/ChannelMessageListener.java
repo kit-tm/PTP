@@ -17,8 +17,6 @@ public interface ChannelMessageListener {
 
   /**
    * Gets called when a new message has been received.
-   * The message will only be available during the execution
-   * of the method. Copy it if you need to access it later.
    * 
    * @param data The message itself.
    * @param source The channel that received the message.
