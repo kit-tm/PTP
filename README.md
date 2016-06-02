@@ -18,3 +18,12 @@ If you want to use eclipse run `gradle eclipse` to create proper
 `.classpath` and `.project` files.
 
 *WORK IN PROGRESS*
+
+## Tests
+
+Start `gradle test` to run the tests.
+
+You can also set up your own tor network for testing purposes and run the tests there.
+For this to work you need chutney (https://git.torproject.org/chutney.git).
+Set the location of chutney in the variable `CHUTNEY_DIR` in chutneyTests.sh.
+Run `./chutneyTests.sh` to set up a local tor network and start the tests.
