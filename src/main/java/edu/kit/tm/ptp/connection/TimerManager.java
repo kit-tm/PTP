@@ -17,31 +17,64 @@ import java.util.logging.Logger;
  * @author Simeon Andreev
  *
  */
-public class TTLManager implements Runnable  {
-
-
-  /**
-   * Convenience wrapper class for the integer timeout.
-   *
-   * @author Simeon Andreev
-   *
-   */
-  private static class Timeout {
-
-    /** The TTL left of a socket. */
-    public int timer = 0;
-
-  }
+public class TimerManager implements Runnable  {
 
   /** The logger for this class. */
-  private final Logger logger = Logger.getLogger(TTLManager.class.getName());
+  private final Logger logger = Logger.getLogger(TimerManager.class.getName());
   /** The client whos connections should be automatically closed. */
   private final ExpireListener listener;
   /** The mapping from identifiers to TTL. */
-  private final HashMap<Identifier, Timeout> map = new HashMap<Identifier, Timeout>();
+  private final HashMap<TimerKey, Integer> map = new HashMap<TimerKey, Integer>();
   /** The interval in milliseconds at which the socket TTLs are updated. */
   private final int step;
   private Thread thread = new Thread(this);
+  
+  private static final class TimerKey {
+    public Identifier identifier;
+    public int timeoutClass;
+    
+    public TimerKey(Identifier identifier, int timeoutClass) {
+      this.identifier = identifier;
+      this.timeoutClass = timeoutClass;
+    }
+
+    @Override
+    public int hashCode() {
+      final int prime = 31;
+      int result = 1;
+      result = prime * result + ((identifier == null) ? 0 : identifier.hashCode());
+      result = prime * result + timeoutClass;
+      return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      if (this == obj) {
+        return true;
+      }
+      if (obj == null) {
+        return false;
+      }
+      if (getClass() != obj.getClass()) {
+        return false;
+      }
+      
+      TimerKey other = (TimerKey) obj;
+      if (identifier == null) {
+        if (other.identifier != null) {
+          return false;
+        }
+      } else if (!identifier.equals(other.identifier)) {
+        return false;
+      }
+      
+      if (timeoutClass != other.timeoutClass) {
+        return false;
+      }
+      
+      return true;
+    }
+  }
 
 
   /**
@@ -50,7 +83,7 @@ public class TTLManager implements Runnable  {
    * @param listener The listener that should be notified of expired connection TTLs.
    * @param step The interval in milliseconds at which the socket TTLs are updated.
    */
-  public TTLManager(ExpireListener listener, int step) {
+  public TimerManager(ExpireListener listener, int step) {
     this.listener = listener;
     this.step = step;
     logger.log(Level.INFO, "TTLManager object created.");
@@ -114,23 +147,13 @@ public class TTLManager implements Runnable  {
   }
 
   /**
-   * Adds the given identifier to the connections map.
-   *
-   * @param identifier The identifier that should be added.
-   */
-  public synchronized void put(Identifier identifier) {
-    logger.log(Level.INFO, "Adding identifier to map: " + identifier.toString());
-    map.put(identifier, new Timeout());
-  }
-
-  /**
    * Removes the given identifier from the connections map.
    *
    * @param identifier The identifier that should be removed.
    */
-  public synchronized void remove(Identifier identifier) {
+  public synchronized void remove(Identifier identifier, int timerClass) {
     logger.log(Level.INFO, "Removing identifier from map: " + identifier);
-    map.remove(identifier);
+    map.remove(new TimerKey(identifier, timerClass));
   }
 
   /**
@@ -139,14 +162,13 @@ public class TTLManager implements Runnable  {
    * @param identifier The identifier of the socket.
    * @param timer The TTL in milliseconds.
    */
-  public synchronized void set(Identifier identifier, int timer) {
-    logger.log(Level.INFO, "Setting timeout (" + timer + "ms) for identifier: " + identifier);
-    if (!map.containsKey(identifier)) {
-      return;
+  public synchronized void set(Identifier identifier, int timer, int timerClass) {
+    TimerKey key = new TimerKey(identifier, timerClass);
+    if (!map.containsKey(key)) {
+      logger.log(Level.INFO, "Setting timeout (" + timer + "ms) for identifier: " + identifier
+          + " class: " + timerClass);
+      map.put(key, timer);
     }
-
-    map.get(identifier).timer = timer;
-    logger.log(Level.INFO, "Timeout set.");
   }
 
 
@@ -157,25 +179,27 @@ public class TTLManager implements Runnable  {
    *         service identifier.
    */
   private synchronized void substract() throws IOException {
-    LinkedList<Identifier> closed = new LinkedList<Identifier>();
+    LinkedList<TimerKey> closed = new LinkedList<TimerKey>();
+    int timer;
 
     // Iterate over the identifiers and substract the step from the socket TTLs.
-    for (Entry<Identifier, Timeout> entry : map.entrySet()) {
-      entry.getValue().timer -= step;
+    for (Entry<TimerKey, Integer> entry : map.entrySet()) {      
+      timer = entry.getValue() - step;
+      entry.setValue(timer);
+      
       // Check if the TTL expired after the substraction.
-      if (entry.getValue().timer >= 0) {
+      if (timer >= 0) {
         continue;
       }
 
-      logger.log(Level.INFO, "TTL expired for identifier: " + entry.getKey());
       // Disconnect the socket.
-      listener.expired(entry.getKey());
+      listener.expired(entry.getKey().identifier, entry.getKey().timeoutClass);
       // Add the identifier to be removed from the map.
       closed.add(entry.getKey());
     }
 
-    for (Identifier identifier : closed) {
-      map.remove(identifier);
+    for (TimerKey key : closed) {
+      map.remove(key);
     }
   }
 

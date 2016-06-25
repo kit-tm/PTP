@@ -22,6 +22,6 @@ public interface ExpireListener {
    * @throws IOException Propagates any IOException the API received while disconnecting a hidden
    *         service identifier.
    */
-  public void expired(Identifier identifier) throws IOException;
+  public void expired(Identifier identifier, int timerClass) throws IOException;
 
 }

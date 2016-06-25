@@ -16,6 +16,7 @@ public class MessageAttempt {
   private byte[] data;
   private long timeout;
   private Identifier destination;
+  private boolean informSendListener;
 
   /**
    * Constructs a new MessageAttempt.
@@ -27,12 +28,13 @@ public class MessageAttempt {
    * @param destination The destination of the message.
    */
   public MessageAttempt(long id, long sendTimestamp, byte[] data, long timeout,
-      Identifier destination) {
+      Identifier destination, boolean informSendListener) {
     setId(id);
     setSendTimestamp(sendTimestamp);
     setData(data);
     setTimeout(timeout);
     setDestination(destination);
+    setInformSendListener(informSendListener);
   }
 
   public long getId() {
@@ -80,6 +82,14 @@ public class MessageAttempt {
 
   public void setDestination(Identifier destination) {
     this.destination = destination;
+  }
+  
+  public boolean isInformSendListener() {
+    return informSendListener;
+  }
+
+  public void setInformSendListener(boolean informSendListener) {
+    this.informSendListener = informSendListener;
   }
 
   @Override

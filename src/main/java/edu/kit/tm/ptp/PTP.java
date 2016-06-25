@@ -1,8 +1,6 @@
 package edu.kit.tm.ptp;
 
 import edu.kit.tm.ptp.connection.ConnectionManager;
-import edu.kit.tm.ptp.connection.ExpireListener;
-import edu.kit.tm.ptp.connection.TTLManager;
 import edu.kit.tm.ptp.crypt.CryptHelper;
 import edu.kit.tm.ptp.hiddenservice.HiddenServiceManager;
 import edu.kit.tm.ptp.serialization.ByteArrayMessage;
@@ -40,8 +38,6 @@ public class PTP {
   private ConfigurationFileReader configReader;
   /** The Tor process manager. */
   private TorManager tor;
-  /** The manager that closes sockets when their TTL expires. */
-  private TTLManager ttlManager;
   private ReceiveListener receiveListener = null;
   private SendListener sendListener = new SendListenerAdapter();
 
@@ -61,6 +57,7 @@ public class PTP {
   private volatile boolean queueMessages = false;
   private CryptHelper cryptHelper = new CryptHelper();
   private boolean sharedTorProcess;
+  private KeepaliveManager keepaliveManager = null;
 
   /**
    * Constructs a new PTP object. Manages an own Tor process.
@@ -238,7 +235,7 @@ public class PTP {
     connectionManager = new ConnectionManager(cryptHelper, Constants.localhost,
         config.getTorSOCKSProxyPort(), config.getHiddenServicePort());
     connectionManager.setSerializer(serializer);
-    connectionManager.setSendListener(sendListener);
+    connectionManager.setSendListener(new PTPSendListener());
     connectionManager.setReceiveListener(new PTPReceiveListener());
 
     connectionManager.start();
@@ -246,10 +243,8 @@ public class PTP {
     hiddenServiceManager =
         new HiddenServiceManager(config, hiddenServiceDirectoryName, hiddenServicePort);
 
-    // Create the manager with the given TTL.
-    ttlManager = new TTLManager(getTTLManagerListener(), config.getTTLPoll());
-    // Start the manager with the given TTL.
-    ttlManager.start();
+    keepaliveManager = new KeepaliveManager(this, config);
+    keepaliveManager.start();
 
     initialized = true;
   }
@@ -506,10 +501,6 @@ public class PTP {
     }
 
     this.sendListener = listener;
-
-    if (initialized) {
-      connectionManager.setSendListener(listener);
-    }
   }
 
   /**
@@ -553,8 +544,8 @@ public class PTP {
       connectionManager.stop();
     }
 
-    if (ttlManager != null) {
-      ttlManager.stop();
+    if (keepaliveManager != null) {
+      keepaliveManager.stop();
     }
 
     // Close the Tor process manager.
@@ -569,11 +560,38 @@ public class PTP {
     closed = true;
   }
 
+  public void closeConnections(Identifier destination) {
+    if (!initialized || closed) {
+      throw new IllegalStateException();
+    }
+
+    tor.closeCircuits(destination);
+  }
+
+  public void changeNetwork(boolean enable) {
+    if (!initialized || closed) {
+      throw new IllegalStateException();
+    }
+
+    tor.changeNetwork(enable);
+  }
+  
+  protected void sendKeepAlive(Identifier destination, long timeout) {
+    connectionManager.send(new byte[0], destination, timeout, false);
+  }
+
   private class PTPReceiveListener implements ReceiveListener {
     @Override
     public void messageReceived(byte[] data, Identifier source) {
       Object obj;
+      boolean isKeepalive = data.length == 0;
       try {
+        keepaliveManager.messageReceived(source, isKeepalive);
+        
+        if (isKeepalive) {
+          return;
+        }
+        
         obj = serializer.deserialize(data);
 
         if (obj instanceof ByteArrayMessage) {
@@ -610,6 +628,17 @@ public class PTP {
     }
   }
 
+  private class PTPSendListener implements SendListener {
+    @Override
+    public void messageSent(long id, Identifier destination, State state) {
+      if (state == State.SUCCESS) {
+        keepaliveManager.messageSent(destination);
+      }
+
+      sendListener.messageSent(id, destination, state);
+    }
+  }
+
   private void readPrivateKey(File privateKey) throws IOException {
     if (privateKey == null) {
       throw new IOException("Failed to get private key");
@@ -620,27 +649,6 @@ public class PTP {
     } catch (InvalidKeyException | InvalidKeySpecException e) {
       throw new IOException("Invalid private key");
     }
-  }
-
-  /**
-   * Returns a manager listener that will close socket connections with expired TTL.
-   */
-  private ExpireListener getTTLManagerListener() {
-    return new ExpireListener() {
-
-      /**
-       * Set the listener to disconnect connections with expired TTL.
-       *
-       * @param identifier The identifier with:00 the expired socket connection.
-       *
-       * @see TTLManager.Listener
-       */
-      @Override
-      public void expired(Identifier identifier) throws IOException {
-        connectionManager.disconnect(identifier);
-      }
-
-    };
   }
 
   private void addShutdownHook() {

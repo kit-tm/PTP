@@ -118,9 +118,9 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
   public void setReceiveListener(ReceiveListener listener) {
     this.receiveListener = listener;
   }
-  
-  /** 
-   * Sets the used authentication method by supplying a factory to create authenticator objects. 
+
+  /**
+   * Sets the used authentication method by supplying a factory to create authenticator objects.
    */
   public void setAuthenticatorFactory(AuthenticatorFactory factory) {
     this.authFactory = factory;
@@ -175,8 +175,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
   public int startBindServer(int localPort) throws IOException {
     logger.log(Level.INFO, "Starting bind server");
     ServerSocketChannel server = ServerSocketChannel.open();
-    server.socket()
-        .bind(new InetSocketAddress(Constants.localhost, localPort));
+    server.socket().bind(new InetSocketAddress(Constants.localhost, localPort));
     server.configureBlocking(false);
 
     channelManager.addServerSocket(server);
@@ -195,9 +194,13 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
    * @return Identifier for the message.
    */
   public long send(byte[] data, Identifier destination, long timeout) {
+    return send(data, destination, timeout, true);
+  }
+
+  public long send(byte[] data, Identifier destination, long timeout, boolean informSendListener) {
     long id = messageId.getAndIncrement();
-    MessageAttempt attempt =
-        new MessageAttempt(id, System.currentTimeMillis(), data, timeout, destination);
+    MessageAttempt attempt = new MessageAttempt(id, System.currentTimeMillis(), data, timeout,
+        destination, informSendListener);
     messageQueue.add(attempt);
 
     logger.log(Level.INFO, "Assigned id " + id + " to message attempt for identifier " + destination
@@ -207,6 +210,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
 
     return id;
   }
+
 
   /**
    * Closes an open connection to the supplied identifier.
@@ -266,7 +270,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
     if (localIdentifier == null || !localIdentifier.isValid()) {
       throw new IllegalArgumentException("Identifier is invalid.");
     }
-    
+
     this.localIdentifier = localIdentifier;
     logger.log(Level.INFO, "Set local identifier to " + localIdentifier);
   }
@@ -320,7 +324,9 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
       // Check timeout of message
       if (attempt.getTimeout() != -1
           && System.currentTimeMillis() - attempt.getSendTimestamp() >= attempt.getTimeout()) {
-        sendListener.messageSent(attempt.getId(), attempt.getDestination(), State.TIMEOUT);
+        if (attempt.isInformSendListener()) {
+          sendListener.messageSent(attempt.getId(), attempt.getDestination(), State.TIMEOUT);
+        }
         continue;
       }
 
@@ -376,7 +382,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
 
         if (attempt.getId() == id) {
           it.remove();
-          if (sendListener != null) {
+          if (sendListener != null && attempt.isInformSendListener()) {
             sendListener.messageSent(id, attempt.getDestination(), State.SUCCESS);
           }
 
@@ -428,7 +434,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
       channel = channelIdentifier.channel;
       identifier = channelIdentifier.identifier;
       context = channelContexts.get(channel);
-      
+
       context.authenticated(channel, identifier);
     }
   }
@@ -473,7 +479,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
 
     logger.log(Level.INFO, "ConnectionManager thread finishes execution");
   }
-  
+
   public CryptHelper getCryptHelper() {
     return cryptHelper;
   }

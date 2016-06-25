@@ -93,6 +93,11 @@ public class MessageChannel {
               return;
             }
             
+            if (readLength == 0) {
+              messageListener.messageReceived(new byte[0], this);
+              return;
+            }
+            
             receiveBuffer = ByteBuffer.allocate(readLength);
             readState = State.DATA;
           }

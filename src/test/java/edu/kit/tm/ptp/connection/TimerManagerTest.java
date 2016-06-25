@@ -6,7 +6,7 @@ import static org.junit.Assert.fail;
 
 import edu.kit.tm.ptp.Identifier;
 import edu.kit.tm.ptp.connection.ExpireListener;
-import edu.kit.tm.ptp.connection.TTLManager;
+import edu.kit.tm.ptp.connection.TimerManager;
 import edu.kit.tm.ptp.utility.Constants;
 import edu.kit.tm.ptp.utility.RNG;
 import edu.kit.tm.ptp.utility.TestHelper;
@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author Simeon Andreev
  *
  */
-public class TTLManagerTest {
+public class TimerManagerTest {
 
 
   /**
@@ -41,10 +41,10 @@ public class TTLManagerTest {
     public AtomicBoolean disconnected = new AtomicBoolean(false);
 
     /**
-     * @see TTLManager.Listener
+     * @see TimerManager.Listener
      */
     @Override
-    public void expired(Identifier identifier) {
+    public void expired(Identifier identifier, int timerClass) {
       disconnected.set(true);
     }
 
@@ -71,9 +71,9 @@ public class TTLManagerTest {
    */
   private Client client = null;
   /** The running TTLManager. */
-  private TTLManager runningManager = null;
+  private TimerManager runningManager = null;
   /** The not started TTLManager. */
-  private TTLManager manager = null;
+  private TimerManager manager = null;
 
 
   /**
@@ -96,10 +96,10 @@ public class TTLManagerTest {
     // Create the TTLManager listener.
     client = new Client();
     // Create and start the running TTLManager.
-    runningManager = new TTLManager(client, step);
+    runningManager = new TimerManager(client, step);
     runningManager.start();
     // Create the not started TTLManager.
-    manager = new TTLManager(new Client(), step);
+    manager = new TimerManager(new Client(), step);
 
     // Wait for the running TTLManager threads to enter their execution loops.
     try {
@@ -109,7 +109,7 @@ public class TTLManagerTest {
     }
 
     // Add the random identifier to the running TTLManager.
-    runningManager.put(identifier);
+    runningManager.set(identifier, 0, 0);
   }
 
   /**
@@ -121,14 +121,14 @@ public class TTLManagerTest {
   }
 
   /**
-   * Test method for {@link edu.kit.tm.ptp.connection.TTLManager#set(java.lang.String, int)}.
+   * Test method for {@link edu.kit.tm.ptp.connection.TimerManager#set(java.lang.String, int)}.
    * Checks whether an expire notification is sent for the random identifier by the TTLManager.
    * Fails iff the notififaction is not received shorty after the expiration time.
    */
   @Test
   public void testSet() {
     // Set the TTL of the identifier.
-    runningManager.set(identifier, expiration);
+    runningManager.set(identifier, expiration, 0);
 
     // Wait for the TTL to expire.
     final long start = System.currentTimeMillis();
