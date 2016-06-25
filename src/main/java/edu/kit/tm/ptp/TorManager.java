@@ -13,6 +13,10 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -43,9 +47,11 @@ public class TorManager {
   /** The thread waiting for the Tor ports file. */
   private Thread ports = null;
   /** The control port number of the Tor process. */
-  private int torControlPort;
+  private volatile int torControlPort = -1;
   /** The SOCKS proxy port number of the Tor process. */
-  private int torSocksProxyPort;
+  private volatile int torSocksProxyPort;
+  private TorControlConnection controlConn;
+  private Socket controlSocket;
 
   private static final Logger logger = Logger.getLogger(TorManager.class.getName());
   private volatile boolean torRunning = false;
@@ -53,6 +59,7 @@ public class TorManager {
   private volatile boolean portsFileWritten = false;
   private boolean externalTor;
   protected String torrc = "config/torrc";
+  private boolean torNetworkEnabled = true;
 
   private class OutputThread implements Runnable {
     @Override
@@ -181,21 +188,6 @@ public class TorManager {
       }
 
       logger.log(Level.INFO, "TorManager ports thread done waiting.");
-      logger.log(Level.INFO, "TorManager ports thread reading ports file.");
-
-      try {
-        // Read the control and SOCKS ports from the Tor ports file.
-        readPorts();
-
-        torBootstrapped = true;
-        logger.log(Level.INFO, "Tor bootstrapping was successfull.");
-      } catch (IOException e) {
-        logger.log(Level.WARNING,
-            "Ports thread caught an IOException while attempting to read the ports file: "
-                + e.getMessage());
-      }
-
-      logger.log(Level.INFO, "Ports thread exiting execution loop.");
     }
   }
 
@@ -223,6 +215,12 @@ public class TorManager {
     } else {
       // Run the Tor process.
       torRunning = runTor();
+      
+      if (torRunning) {
+        readPorts();
+        setUpControlConnection();
+        torBootstrapped = true;
+      }
     }
   }
   
@@ -286,6 +284,14 @@ public class TorManager {
       shutdownTor();
     }
 
+    if (controlSocket != null) {
+      try {
+        controlSocket.close();
+      } catch (IOException e) {
+        logger.log(Level.WARNING, "Failed to close control connection socket.");
+      }
+    }
+
     torRunning = false;
     torBootstrapped = false;
   }
@@ -332,6 +338,72 @@ public class TorManager {
   public String getTorWorkingDirectory() {
     return workingDirectory;
   }
+  
+  /**
+   * Closes all existing circuits with the supplied destination.
+   */
+  public void closeCircuits(Identifier destination) {
+    if (controlConn == null) {
+      logger.log(Level.WARNING, "No control connection open.");
+      return;
+    }
+
+    try {
+      List<String> commands = new LinkedList<String>();
+      commands.add("stream-status");
+      Map<String, String> streamStatus = controlConn.getInfo(commands);
+      
+      Collection<String> lines = streamStatus.values();
+      
+      List<String> circIds = new LinkedList<String>();
+      
+      for (String line : lines) {
+        if (line.equals("")) {
+          continue;
+        }
+        // StreamID SP StreamStatus SP CircuitID SP Target CRLF
+        String[] fields = line.split(" ");
+        
+        if (fields.length != 4) {
+          logger.log(Level.WARNING, "Invalid response to GETINFO stream-status");
+          continue;
+        }
+        
+        if (fields[3] != null && fields[3].startsWith(destination.getTorAddress()
+            ) && fields[2] != null) {
+          circIds.add(fields[2]);
+        }
+      }
+      
+      for (String circId : circIds) {
+        logger.log(Level.INFO, "Closing circuit " + circId);
+        controlConn.closeCircuit(circId, false);
+      }
+      
+    } catch (IOException e) {
+      logger.log(Level.WARNING, "Failed to close circuits");
+    }
+  }
+
+  public void changeNetwork(boolean enable) {
+    if (controlConn == null) {
+      logger.log(Level.WARNING, "No control connection open.");
+      return;
+    }
+
+    if (torNetworkEnabled == enable) {
+      return;
+    }
+
+    try {
+      logger.log(Level.INFO, (enable ? "En" : "Dis") + "abling network for Tor");
+
+      controlConn.setConf("DisableNetwork", enable ? "0" : "1");
+      torNetworkEnabled = enable;
+    } catch (IOException e) {
+      logger.log(Level.WARNING, "Failed to " + (enable ? "en" : "dis") + "able network");
+    }
+  }
 
 
   /**
@@ -342,21 +414,18 @@ public class TorManager {
       return;
     }
 
+    if (controlConn == null) {
+      logger.log(Level.WARNING, "No control connection open. Can't shutdown Tor.");
+      return;
+    }
+
     try {
       logger.log(Level.INFO, "TorManager stopping Tor process.");
       if (process != null) {
         logger.log(Level.INFO, "Killing own Tor process");
         process.destroy();
       } else {
-        logger.log(Level.INFO, "Using control port: " + torControlPort);
-
-        Socket socket = new Socket(Constants.localhost, torControlPort);
-        logger.log(Level.INFO, "TorManager attempting to shutdown Tor process.");
-
-        TorControlConnection conn = new TorControlConnection(socket);
-        conn.authenticate(new byte[0]);
-        conn.shutdownTor(Constants.shutdownsignal);
-        socket.close();
+        controlConn.shutdownTor(Constants.shutdownsignal);
 
         logger.log(Level.INFO, "TorManager sent shutdown signal.");
       }
@@ -390,10 +459,7 @@ public class TorManager {
       try {
         logger.log(Level.INFO, "TorManager attempting to connect to the Tor process.");
 
-        Socket socket = new Socket(Constants.localhost, torControlPort);
-        TorControlConnection conn = new TorControlConnection(socket);
-        conn.authenticate(new byte[0]);
-        socket.close();
+        setUpControlConnection();
 
         running = true;
 
@@ -456,9 +522,15 @@ public class TorManager {
       output.start();
       error.start();
       ports.start();
+      
+      // Wait until ports file is written
+      ports.join();
     } catch (IOException e) {
       logger.log(Level.WARNING,
           "TorManager thread caught an IOException when starting Tor: " + e.getMessage());
+      return false;
+    } catch (InterruptedException e) {
+      logger.log(Level.WARNING, "Failed to join PortsThread");
       return false;
     }
 
@@ -488,6 +560,12 @@ public class TorManager {
 
     logger.log(Level.INFO, "Ports thread read Tor control port from file: " + torControlPort);
     logger.log(Level.INFO, "Ports thread read Tor SOCKS port from file: " + torSocksProxyPort);
+  }
+
+  private void setUpControlConnection() throws IOException {
+    controlSocket = new Socket(Constants.localhost, torControlPort);
+    controlConn = new TorControlConnection(controlSocket);
+    controlConn.authenticate(new byte[0]);
   }
 
   /**
