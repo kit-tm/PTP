@@ -11,7 +11,7 @@ import java.util.logging.Logger;
 
 
 /**
- * A manager for the open connections. Will notify a listener of connections with TTL below zero.
+ * A manager which allows to set different timers for each Identifier.
  *
  * @author Timon Hackenjos
  * @author Simeon Andreev
@@ -21,11 +21,9 @@ public class TimerManager implements Runnable  {
 
   /** The logger for this class. */
   private final Logger logger = Logger.getLogger(TimerManager.class.getName());
-  /** The client whos connections should be automatically closed. */
   private final ExpireListener listener;
-  /** The mapping from identifiers to TTL. */
   private final HashMap<TimerKey, Integer> map = new HashMap<TimerKey, Integer>();
-  /** The interval in milliseconds at which the socket TTLs are updated. */
+  /** The interval in milliseconds at which the values are updated. */
   private final int step;
   private Thread thread = new Thread(this);
   
@@ -80,8 +78,8 @@ public class TimerManager implements Runnable  {
   /**
    * Constructor method.
    *
-   * @param listener The listener that should be notified of expired connection TTLs.
-   * @param step The interval in milliseconds at which the socket TTLs are updated.
+   * @param listener The listener that should be notified of expired connection timers.
+   * @param step The interval in milliseconds at which the timer values are updated.
    */
   public TimerManager(ExpireListener listener, int step) {
     this.listener = listener;
@@ -109,7 +107,7 @@ public class TimerManager implements Runnable  {
       } while (elapsed < step);
 
       try {
-        // Update the socket TTLs.
+        // Update the timer values
         substract();
       } catch (IOException e) {
         logger.log(Level.WARNING, "Received IOException while closing a socket: " + e.getMessage());
@@ -119,7 +117,7 @@ public class TimerManager implements Runnable  {
   }
   
   /**
-   * Start the TTLManager.
+   * Start the TimerManager.
    */
   public void start() {
     logger.log(Level.INFO, "Starting TTLManager");
@@ -128,7 +126,7 @@ public class TimerManager implements Runnable  {
   }
 
   /**
-   * Stops the TTLManager and clears timeouts.
+   * Stops the TimerManager and clears timeouts.
    * Does nothing if the manager has been stopped before.
    */
   public void stop() {
@@ -147,7 +145,7 @@ public class TimerManager implements Runnable  {
   }
 
   /**
-   * Removes the given identifier from the connections map.
+   * Removes the timeout with the specified class and identifier.
    *
    * @param identifier The identifier that should be removed.
    */
@@ -157,12 +155,13 @@ public class TimerManager implements Runnable  {
   }
 
   /**
-   * Sets the TTL of the socket of a hidden service identifier.
+   * Schedules a new timer if none is set already.
    *
-   * @param identifier The identifier of the socket.
-   * @param timer The TTL in milliseconds.
+   * @param identifier The identifier for the timeout.
+   * @param timer The delay in milliseconds.
+   * @param timerClass Identifies different timers of the same identifier.
    */
-  public synchronized void set(Identifier identifier, int timer, int timerClass) {
+  public synchronized void schedule(Identifier identifier, int timer, int timerClass) {
     TimerKey key = new TimerKey(identifier, timerClass);
     if (!map.containsKey(key)) {
       logger.log(Level.INFO, "Setting timeout (" + timer + "ms) for identifier: " + identifier
@@ -170,13 +169,25 @@ public class TimerManager implements Runnable  {
       map.put(key, timer);
     }
   }
+  
+  /**
+   * Schedules a new timer. Overwrites existing ones with the same timerClass and identifier.
+   *
+   * @param identifier The identifier for the timeout.
+   * @param timer The delay in milliseconds.
+   * @param timerClass Identifies different timers of the same identifier.
+   */
+  public synchronized void scheduleOverwrite(Identifier identifier, int timer, int timerClass) {
+    TimerKey key = new TimerKey(identifier, timerClass);
+    logger.log(Level.INFO, "Setting timeout (" + timer + "ms) for identifier: " + identifier
+          + " class: " + timerClass);
+    map.put(key, timer);
+  }
 
 
   /**
-   * Substracts the amount of milliseconds from the TTLs of open sockets.
+   * Substracts the amount of milliseconds from the timers.
    *
-   * @throws IOException Propagates any IOException the API received while disconnecting a hidden
-   *         service identifier.
    */
   private synchronized void substract() throws IOException {
     LinkedList<TimerKey> closed = new LinkedList<TimerKey>();
@@ -204,7 +215,7 @@ public class TimerManager implements Runnable  {
   }
 
   /**
-   * Clears the connections map.
+   * Clears all timeouts.
    */
   private synchronized void clear() {
     map.clear();

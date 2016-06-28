@@ -33,12 +33,12 @@ public class KeepaliveManager implements ExpireListener {
     
     if (!isKeepalive) {
       awaitsMessage.put(source, true);
-      ttlManager.set(source, KEEPALIVETIMEOUT - SENDTIME, SENDTIMERCLASS);  
+      ttlManager.schedule(source, KEEPALIVETIMEOUT - SENDTIME, SENDTIMERCLASS);  
     }
   }
   
   public void messageSent(Identifier destination) {
-    ttlManager.set(destination, KEEPALIVETIMEOUT, RECEIVETIMERCLASS);
+    ttlManager.schedule(destination, KEEPALIVETIMEOUT, RECEIVETIMERCLASS);
 
     awaitsMessage.put(destination, false);
     ttlManager.remove(destination, SENDTIMERCLASS);
