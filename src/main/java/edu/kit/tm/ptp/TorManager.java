@@ -94,7 +94,9 @@ public class TorManager {
    */
   public boolean startTor() {
     try {
-      createWorkingDirectory();
+      if (!externalTor) {
+        createWorkingDirectory();
+      }
     } catch (IOException e) {
       logger.log(Level.WARNING, "Failed to create workingDirectory");
     }
