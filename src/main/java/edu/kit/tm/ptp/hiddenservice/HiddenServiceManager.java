@@ -2,9 +2,8 @@ package edu.kit.tm.ptp.hiddenservice;
 
 import edu.kit.tm.ptp.Configuration;
 import edu.kit.tm.ptp.Identifier;
+import edu.kit.tm.ptp.TorManager;
 import edu.kit.tm.ptp.utility.Constants;
-
-import net.freehaven.tor.control.TorControlConnection;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -14,7 +13,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.net.Socket;
 import java.util.LinkedList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -48,6 +46,8 @@ public class HiddenServiceManager {
 
   /** Hidden service lock file. */
   private File hiddenServiceLock = null;
+  
+  private TorManager torManager;
 
   /**
    * Constructs a new HiddenServiceManager.
@@ -57,11 +57,12 @@ public class HiddenServiceManager {
    * @param port The port the hidden service is listening on.
    */
   public HiddenServiceManager(Configuration configuration, String hiddenServiceDirectoryName,
-      int port) throws IOException {
+      int port, TorManager torManager) throws IOException {
 
     this.configuration = configuration;
     this.hiddenServiceDirectoryName = hiddenServiceDirectoryName;
     this.port = port;
+    this.torManager = torManager;
 
     // Check if the hidden service currentDirectory exists, if not create it.
     File hiddenServicesDirectory = new File(configuration.getHiddenServicesDirectory());
@@ -271,15 +272,6 @@ public class HiddenServiceManager {
    */
   private void registerHiddenServices() throws IOException {
     logger.log(Level.INFO, "Registering hidden services.");
-    logger.log(Level.INFO, "Opening socket on " + Constants.localhost + ":"
-        + configuration.getTorControlPort() + " to control Tor.");
-    // Connect to the Tor control port.
-    Socket socket = new Socket(Constants.localhost, configuration.getTorControlPort());
-    logger.log(Level.INFO, "Fetching JTorCtl connection.");
-    TorControlConnection conn = new TorControlConnection(socket);
-    logger.log(Level.INFO, "Authenticating the connection.");
-    // Authenticate the connection.
-    conn.authenticate(configuration.getAuthenticationBytes());
 
     // Set the properties for the hidden service configuration.
     LinkedList<String> properties = new LinkedList<String>();
@@ -337,7 +329,7 @@ public class HiddenServiceManager {
     }
 
     logger.log(Level.INFO, "Setting configuration:" + Constants.newline + properties.toString());
-    conn.setConf(properties);
+    torManager.setConf(properties);
 
     logger.log(Level.INFO, "Registered hidden services.");
   }

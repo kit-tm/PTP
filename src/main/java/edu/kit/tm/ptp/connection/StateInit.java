@@ -60,6 +60,11 @@ public class StateInit extends AbstractState {
       return false;
     }
 
+    if (manager.socksPort == -1 || manager.socksHost == null) {
+      manager.logger.log(Level.INFO, "Delaying message attempt because socks proxy isn't set");
+      return false;
+    }
+
     manager.logger.log(Level.INFO, "Connection to destination " + identifier + " is closed");
     if (manager.lastTry.get(identifier) == null || System.currentTimeMillis()
         - manager.lastTry.get(identifier) >= Constants.connectInterval) {

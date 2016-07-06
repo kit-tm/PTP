@@ -198,32 +198,12 @@ public class PTP {
 
     if (usePTPTor) {
       if (sharedTorProcess) {
-        tor = new SharedTorManager(workingDirectory, !usePTPTor);
+        tor = new SharedTorManager(workingDirectory);
       } else {
-        tor = new TorManager(workingDirectory, !usePTPTor);
+        tor = new TorManager(workingDirectory);
       }
-      // Start the Tor process.
-      tor.startTor();
-
-      final long timeout = config.getTorBootstrapTimeout();
-
-      logger.log(Level.INFO, "Waiting for Tor bootstrapping to finish.");
-
-      try {
-        tor.waitForBootstrapping(timeout);
-      } catch (InterruptedException e) {
-        throw new IOException("Bootstrapping was interrupted");
-      }
-
-      // Check if Tor bootstrapped.
-      if (!tor.torBootstrapped()) {
-        tor.stopTor();
-        throw new IOException("Tor bootstrapping timeout expired!");
-      }
-
-      config.setTorConfiguration(tor.getTorControlPort(), tor.getTorSOCKSPort());
     } else {
-      config.setTorConfiguration(controlPort, socksPort);
+      tor = new TorManager(controlPort);
     }
 
     try {
@@ -232,16 +212,26 @@ public class PTP {
       throw new IOException("Cryptographic algorithm or provider unavailable: " + e.getMessage());
     }
 
-    connectionManager = new ConnectionManager(cryptHelper, Constants.localhost,
-        config.getTorSOCKSProxyPort(), config.getHiddenServicePort());
+    connectionManager = new ConnectionManager(cryptHelper, config.getHiddenServicePort());
     connectionManager.setSerializer(serializer);
     connectionManager.setSendListener(new PTPSendListener());
     connectionManager.setReceiveListener(new PTPReceiveListener());
 
+    tor.addSOCKSProxyListener(new SOCKSProxyPortListener());
+    tor.addSOCKSProxyListener(connectionManager);
+
+    // Start the Tor process.
+    if (!tor.startTor()) {
+      throw new IOException("Failed to start Tor");
+    }
+
+    //config.setTorConfiguration(tor.getTorControlPort(), tor.getTorSOCKSPort());
+    config.setTorControlPort(tor.getTorControlPort());
+
     connectionManager.start();
     hiddenServicePort = connectionManager.startBindServer(hiddenServicePort);
     hiddenServiceManager =
-        new HiddenServiceManager(config, hiddenServiceDirectoryName, hiddenServicePort);
+        new HiddenServiceManager(config, hiddenServiceDirectoryName, hiddenServicePort, tor);
 
     keepaliveManager = new KeepaliveManager(this, config);
     keepaliveManager.start();
@@ -636,6 +626,14 @@ public class PTP {
       }
 
       sendListener.messageSent(id, destination, state);
+    }
+  }
+
+  private class SOCKSProxyPortListener implements  TorManager.SOCKSProxyListener {
+
+    @Override
+    public void updateSOCKSProxy(String socksHost, int socksProxyPort) {
+      config.setTorSocksProxyPort(socksProxyPort);
     }
   }
 

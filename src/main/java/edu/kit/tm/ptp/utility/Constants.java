@@ -80,6 +80,13 @@ public class Constants {
   public static final String niaorigin = "N/A";
   /** The time in milliseconds to wait between two connection attempts to the same identifier. */
   public static final long connectInterval = 30 * 1000;
+  /** The time to wait for Tor to start.*/
+  public static final long torStartTimeout = 10 * 1000;
+
+  public static final String torDisableNetwork = "DisableNetwork";
+  public static final String torControlPortFileName = "control";
+  public static final String torControlPortWriteToFile = "ControlPortWriteToFile";
+  public static final String torGetInfoSOCKSProxy = "net/listeners/socks";
 
   /* Logger constants */
 
