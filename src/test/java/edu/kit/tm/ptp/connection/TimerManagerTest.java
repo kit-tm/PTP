@@ -109,7 +109,7 @@ public class TimerManagerTest {
     }
 
     // Add the random identifier to the running TTLManager.
-    runningManager.schedule(identifier, 0, 0);
+    runningManager.setTimerIfNoneExists(identifier, 0, 0);
   }
 
   /**
@@ -128,7 +128,7 @@ public class TimerManagerTest {
   @Test
   public void testSet() {
     // Set the TTL of the identifier.
-    runningManager.schedule(identifier, expiration, 0);
+    runningManager.setTimerIfNoneExists(identifier, expiration, 0);
 
     // Wait for the TTL to expire.
     final long start = System.currentTimeMillis();

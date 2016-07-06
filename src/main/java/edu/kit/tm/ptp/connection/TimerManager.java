@@ -161,7 +161,7 @@ public class TimerManager implements Runnable  {
    * @param timer The delay in milliseconds.
    * @param timerClass Identifies different timers of the same identifier.
    */
-  public synchronized void schedule(Identifier identifier, int timer, int timerClass) {
+  public synchronized void setTimerIfNoneExists(Identifier identifier, int timer, int timerClass) {
     TimerKey key = new TimerKey(identifier, timerClass);
     if (!map.containsKey(key)) {
       logger.log(Level.INFO, "Setting timeout (" + timer + "ms) for identifier: " + identifier
@@ -177,7 +177,7 @@ public class TimerManager implements Runnable  {
    * @param timer The delay in milliseconds.
    * @param timerClass Identifies different timers of the same identifier.
    */
-  public synchronized void scheduleOverwrite(Identifier identifier, int timer, int timerClass) {
+  public synchronized void setTimer(Identifier identifier, int timer, int timerClass) {
     TimerKey key = new TimerKey(identifier, timerClass);
     logger.log(Level.INFO, "Setting timeout (" + timer + "ms) for identifier: " + identifier
           + " class: " + timerClass);

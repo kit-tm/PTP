@@ -45,7 +45,7 @@ public class KeepaliveManager implements ExpireListener {
     
     if (!isKeepalive) {
       awaitsMessage.put(source, true);
-      ttlManager.schedule(source, KEEPALIVETIMEOUT - SENDTIME, SENDTIMERCLASS);  
+      ttlManager.setTimerIfNoneExists(source, KEEPALIVETIMEOUT - SENDTIME, SENDTIMERCLASS);  
     }
   }
   
@@ -55,7 +55,7 @@ public class KeepaliveManager implements ExpireListener {
    * @param destination The destination of the message.
    */
   public void messageSent(Identifier destination) {
-    ttlManager.schedule(destination, KEEPALIVETIMEOUT, RECEIVETIMERCLASS);
+    ttlManager.setTimerIfNoneExists(destination, KEEPALIVETIMEOUT, RECEIVETIMERCLASS);
 
     awaitsMessage.put(destination, false);
     ttlManager.remove(destination, SENDTIMERCLASS);
