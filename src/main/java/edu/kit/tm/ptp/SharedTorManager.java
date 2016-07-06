@@ -21,19 +21,28 @@ public class SharedTorManager extends TorManager {
   private static final Logger logger = Logger.getLogger(SharedTorManager.class.getName());
   private File lockFile;
 
-  public SharedTorManager(String workingDirectory, boolean externalTor) {
-    super(workingDirectory, externalTor);
+  public SharedTorManager(String workingDirectory) {
+    super(workingDirectory);
     torrc = "config/testtorrc";
+  }
+  
+  public SharedTorManager(int controlPort) {
+    super(controlPort);
+    throw new IllegalStateException();
   }
 
   @Override
-  public void startTor() throws IOException {
-    createWorkingDirectory();
-    // Check if the lock file exists, if not create it.
-    lockFile = new File(workingDirectory + File.separator + Constants.tormanagerlockfile);
-    if (!lockFile.exists() && !lockFile.createNewFile()) {
-      // Lock file does not exist and was not created.
-      throw new IOException("Unable to create missing PTP TorManager lock file.");
+  public boolean startTor() {
+    try {
+      createWorkingDirectory();
+      // Check if the lock file exists, if not create it.
+      lockFile = new File(workingDirectory + File.separator + Constants.tormanagerlockfile);
+      if (!lockFile.exists() && !lockFile.createNewFile()) {
+        return false;
+      }
+    } catch (IOException io) {
+      logger.log(Level.WARNING, "Failed to create lockFile in workingDirectory");
+      return false;
     }
 
     logger.log(Level.INFO, "TorManager lock file is: " + lockFile.getAbsolutePath());
@@ -50,7 +59,10 @@ public class SharedTorManager extends TorManager {
 
       logger.log(Level.INFO, "TorManager has the lock on the TorManager lock file.");
 
-      super.startTor();
+      if (!super.startTor()) {
+        // finally will be called so lock will be released
+        return false;
+      }
 
       int numApis;
 
@@ -66,12 +78,17 @@ public class SharedTorManager extends TorManager {
       raf.writeInt(numApis);
 
       logger.log(Level.INFO, "TorManager set lock file counter to: " + (numApis));
+    } catch (IOException e) {
+      logger.log(Level.WARNING, "Failed to set lockfile counter");
+      return false;
     } finally {
       if (lock != null) {
         logger.log(Level.INFO, "TorManager releasing the lock on the TorManager lock file.");
         lock.release();
       }
     }
+
+    return true;
   }
 
   @Override

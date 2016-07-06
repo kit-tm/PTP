@@ -4,6 +4,7 @@ import edu.kit.tm.ptp.Identifier;
 import edu.kit.tm.ptp.ReceiveListener;
 import edu.kit.tm.ptp.SendListener;
 import edu.kit.tm.ptp.SendListener.State;
+import edu.kit.tm.ptp.TorManager;
 import edu.kit.tm.ptp.auth.AuthenticationListener;
 import edu.kit.tm.ptp.auth.AuthenticatorFactory;
 import edu.kit.tm.ptp.auth.PublicKeyAuthenticatorFactory;
@@ -36,9 +37,9 @@ import java.util.logging.Logger;
  *
  * @author Timon Hackenjos
  */
-public class ConnectionManager implements Runnable, ChannelListener, AuthenticationListener {
-  private String socksHost;
-  private int socksPort;
+public class ConnectionManager implements Runnable, ChannelListener, AuthenticationListener, TorManager.SOCKSProxyListener {
+  protected String socksHost = null;
+  protected volatile int socksPort = -1;
   protected int hsPort;
   private Thread thread = new Thread(this);
   protected Serializer serializer;
@@ -97,14 +98,21 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
    * Construct a new ConnectionManager.
    * 
    * @param socksHost The host the socks proxy is listening on.
-   * @param socksPort The port the socks proxy is listening on.
    * @param hsPort The port to reach PTP hidden services from remote.
    */
-  public ConnectionManager(CryptHelper cryptHelper, String socksHost, int socksPort, int hsPort) {
-    this.socksHost = socksHost;
-    this.socksPort = socksPort;
+  public ConnectionManager(CryptHelper cryptHelper, int hsPort) {
     this.hsPort = hsPort;
     this.cryptHelper = cryptHelper;
+  }
+  
+  @Override
+  public void updateSOCKSProxy(String socksHost, int socksProxyPort) {
+    if (socksProxyPort == 0 || socksProxyPort < -1 || socksHost == null) {
+      throw new IllegalArgumentException();
+    }
+
+    this.socksPort = socksProxyPort;
+    this.socksHost = socksHost;
   }
 
   public void setSerializer(Serializer serializer) {

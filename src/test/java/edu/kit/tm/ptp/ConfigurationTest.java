@@ -101,7 +101,8 @@ public class ConfigurationTest {
     configuration = reader.readFromFile();
     configuration.setWorkingDirectory(Paths.get("").toString());
     configuration.setHiddenServicesDirectory(hiddenServicesDirectory);
-    configuration.setTorConfiguration(torControlPort, torSocksProxyPort);
+    configuration.setTorControlPort(torControlPort);
+    configuration.setTorSocksProxyPort(torSocksProxyPort);
   }
 
   /**

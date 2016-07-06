@@ -155,26 +155,9 @@ public class Configuration {
   public void setTorControlPort(int torControlPort) {
     this.torControlPort = torControlPort;
   }
-
-
-  /**
-   * Sets the Tor control and SOCKS port numbers of the configuration.
-   *
-   * @param controlPort The Tor control port number.
-   * @param socksPort The Tor SOCKS port number.
-   */
-  public void setTorConfiguration(int controlPort, int socksPort) {
-    torControlPort = controlPort;
-    logger.info("Set the Tor control port to: " + torControlPort);
-
-    torSocksProxyPort = socksPort;
-    logger.info("Set the Tor SOCKS port to: " + torSocksProxyPort);
-
-    /*workingDirectory = directory;
-    logger.info("Set the working directory to: " + this.workingDirectory);
-
-    hiddenServiceDirectory = workingDirectory + File.separator + Constants.hiddenservicedir;
-    logger.info("Set the hidden servide directory to: " + hiddenServiceDirectory);*/
+  
+  public void setTorSocksProxyPort(int torSocksProxyPort) {
+    this.torSocksProxyPort = torSocksProxyPort;
   }
 
 

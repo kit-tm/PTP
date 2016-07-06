@@ -40,7 +40,7 @@ public class ConnectionManagerTest {
 
   @Test
   public void testStartBindServer() throws IOException {
-    manager = new ConnectionManager(new CryptHelper(), Constants.localhost, 1000, 1001);
+    manager = new ConnectionManager(new CryptHelper(), 1000);// Dummy port
     manager.start();
     int port = manager.startBindServer(Constants.anyport);
 
@@ -64,8 +64,9 @@ public class ConnectionManagerTest {
     Serializer serializer = new Serializer();
     SendReceiveListener listener = new SendReceiveListener();
 
-    ConnectionManager manager = new ConnectionManager(new CryptHelper(), Constants.localhost,
-        config.getTorSOCKSProxyPort(), config.getHiddenServicePort());
+    ConnectionManager manager =
+        new ConnectionManager(new CryptHelper(), config.getHiddenServicePort());
+    manager.updateSOCKSProxy(Constants.localhost, config.getTorSOCKSProxyPort());
     manager.setSendListener(listener);
     manager.setLocalIdentifier(new Identifier("aaaaaaaaaaaaaaaa.onion"));
     manager.setSerializer(serializer);
@@ -88,7 +89,7 @@ public class ConnectionManagerTest {
 
   @Test(expected = IllegalArgumentException.class)
   public void invalidLocalIdentifier() {
-    manager = new ConnectionManager(new CryptHelper(), Constants.localhost, 1000, 1001);
+    manager = new ConnectionManager(new CryptHelper(), 1000);// Dummy port
     manager.setLocalIdentifier(new Identifier("xyz.onion"));
   }
 
