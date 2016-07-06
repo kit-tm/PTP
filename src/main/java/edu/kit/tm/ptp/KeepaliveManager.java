@@ -9,6 +9,12 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * Class to manage the sending of keepalive messages and closing expired connections.
+ * 
+ * @author Timon Hackenjos
+ *
+ */
 public class KeepaliveManager implements ExpireListener {
   private final PTP ptp;
   // Doesn't need synchronization because it's only altered by the connection manager thread
@@ -28,6 +34,12 @@ public class KeepaliveManager implements ExpireListener {
     ttlManager = new TimerManager(this, config.getTTLPoll());
   }
   
+  /**
+   * Informs the manager that a message was received.
+   * 
+   * @param source The identifier of the source of the message.
+   * @param isKeepalive True if the message was a keepalive.
+   */
   public void messageReceived(Identifier source, boolean isKeepalive) {
     ttlManager.remove(source, RECEIVETIMERCLASS);
     
@@ -37,6 +49,11 @@ public class KeepaliveManager implements ExpireListener {
     }
   }
   
+  /**
+   * Informs the manager that a message was sent.
+   * 
+   * @param destination The destination of the message.
+   */
   public void messageSent(Identifier destination) {
     ttlManager.schedule(destination, KEEPALIVETIMEOUT, RECEIVETIMERCLASS);
 
