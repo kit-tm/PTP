@@ -9,6 +9,8 @@ Good starting points:
 * the JUnit tests, especially `edu.kit.tm.ptp.test.PTPTest`
 * javadoc (generate it yourself please)
 
+*WORK IN PROGRESS*
+
 ## How to build
 
 PeerTorPeer uses the gradle build system.
@@ -16,8 +18,6 @@ Run `gradle assemble` to compile the code.
 
 If you want to use eclipse run `gradle eclipse` to create proper
 `.classpath` and `.project` files.
-
-*WORK IN PROGRESS*
 
 ## Tests
 
@@ -27,3 +27,13 @@ You can also set up your own tor network for testing purposes and run the tests 
 For this to work you need chutney (https://git.torproject.org/chutney.git).
 Set the location of chutney in the variable `CHUTNEY_DIR` in chutneyTests.sh.
 Run `./chutneyTests.sh` to set up a local tor network and start the tests.
+
+## Android support
+
+- https://git.scc.kit.edu/TM/ptp-android
+
+- https://git.scc.kit.edu/TM/ptp-androidexample
+
+## Projects using PTP
+
+[AluShare](https://github.com/weichweich/AluShare)
