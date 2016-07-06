@@ -51,7 +51,6 @@ public class PTP {
   private String hiddenServiceDirectoryName;
   private String workingDirectory;
   private int controlPort;
-  private int socksPort;
   private boolean usePTPTor;
   private Thread clientThread = null;
   private volatile boolean queueMessages = false;
@@ -84,11 +83,10 @@ public class PTP {
    *
    * @param workingDirectory The directory to start PTP in.
    * @param controlPort The control port of the Tor process.
-   * @param socksPort The SOCKS port of the Tor process.
    * @throws IOException If an error occurs.
    */
-  public PTP(String workingDirectory, int controlPort, int socksPort) {
-    this(workingDirectory, controlPort, socksPort, Constants.anyport, null);
+  public PTP(String workingDirectory, int controlPort) {
+    this(workingDirectory, controlPort, Constants.anyport, null);
   }
 
   /**
@@ -96,18 +94,16 @@ public class PTP {
    *
    * @param workingDirectory The directory to start PTP in.
    * @param controlPort The control port of the Tor process.
-   * @param socksPort The SOCKS port of the Tor process.
    * @param localPort The port on which the local hidden service should run.
    * @param hiddenServiceDirectoryName The name of the hidden service directory.
    * @throws IOException If an error occurs.
    *
    */
-  public PTP(String workingDirectory, int controlPort, int socksPort, int localPort,
+  public PTP(String workingDirectory, int controlPort, int localPort,
       String hiddenServiceDirectoryName) {
     initPTP(workingDirectory, hiddenServiceDirectoryName, false, localPort, false);
 
     this.controlPort = controlPort;
-    this.socksPort = socksPort;
   }
 
   /**
@@ -225,7 +221,6 @@ public class PTP {
       throw new IOException("Failed to start Tor");
     }
 
-    //config.setTorConfiguration(tor.getTorControlPort(), tor.getTorSOCKSPort());
     config.setTorControlPort(tor.getTorControlPort());
 
     connectionManager.start();
