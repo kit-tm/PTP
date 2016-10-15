@@ -11,7 +11,7 @@ import java.util.logging.Logger;
 
 
 /**
- * A manager which allows to set different timers for each Identifier.
+ * A class which allows to set/remove timers and be informed when they expire.
  *
  * @author Timon Hackenjos
  * @author Simeon Andreev
@@ -25,7 +25,7 @@ public class TimerManager implements Runnable  {
   private final HashMap<TimerKey, Integer> map = new HashMap<TimerKey, Integer>();
   /** The interval in milliseconds at which the values are updated. */
   private final int step;
-  private Thread thread = new Thread(this);
+  private final Thread thread = new Thread(this);
   
   private static final class TimerKey {
     public Identifier identifier;
@@ -84,12 +84,12 @@ public class TimerManager implements Runnable  {
   public TimerManager(ExpireListener listener, int step) {
     this.listener = listener;
     this.step = step;
-    logger.log(Level.INFO, "TTLManager object created.");
+    logger.log(Level.INFO, "TimerManager object created.");
   }
 
   @Override
   public void run() {
-    logger.log(Level.INFO, "TTLManager entering execution loop.");
+    logger.log(Level.INFO, "TimerManager entering execution loop.");
 
     while (!thread.isInterrupted()) {
       long start = System.currentTimeMillis();
@@ -113,16 +113,16 @@ public class TimerManager implements Runnable  {
         logger.log(Level.WARNING, "Received IOException while closing a socket: " + e.getMessage());
       }
     }
-    logger.log(Level.INFO, "TTLManager exiting execution loop.");
+    logger.log(Level.INFO, "TimerManager exiting execution loop.");
   }
   
   /**
    * Start the TimerManager.
    */
   public void start() {
-    logger.log(Level.INFO, "Starting TTLManager");
+    logger.log(Level.INFO, "Starting TimerManager");
     thread.start();
-    logger.log(Level.INFO, "TTLManager started");
+    logger.log(Level.INFO, "TimerManager started");
   }
 
   /**
@@ -130,18 +130,18 @@ public class TimerManager implements Runnable  {
    * Does nothing if the manager has been stopped before.
    */
   public void stop() {
-    logger.log(Level.INFO, "Stopping TTLManager.");
+    logger.log(Level.INFO, "Stopping TimerManager.");
     thread.interrupt();
 
     try {
       thread.join();
     } catch (InterruptedException e) {
-      logger.log(Level.INFO, "TTL manager was interrupted while waiting for the thread");
+      logger.log(Level.INFO, "TimerManager was interrupted while waiting for the thread");
     }
     
     clear();
 
-    logger.log(Level.INFO, "Stopped TTLManager.");
+    logger.log(Level.INFO, "Stopped TimerManager.");
   }
 
   /**
@@ -193,19 +193,17 @@ public class TimerManager implements Runnable  {
     LinkedList<TimerKey> closed = new LinkedList<TimerKey>();
     int timer;
 
-    // Iterate over the identifiers and substract the step from the socket TTLs.
+    // Iterate over the entries and substract the step
     for (Entry<TimerKey, Integer> entry : map.entrySet()) {      
       timer = entry.getValue() - step;
       entry.setValue(timer);
       
-      // Check if the TTL expired after the substraction.
+      // Check if the timer expired after the substraction.
       if (timer >= 0) {
         continue;
       }
 
-      // Disconnect the socket.
       listener.expired(entry.getKey().identifier, entry.getKey().timeoutClass);
-      // Add the identifier to be removed from the map.
       closed.add(entry.getKey());
     }
 

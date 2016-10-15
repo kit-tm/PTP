@@ -56,7 +56,7 @@ public class PTP {
   private volatile boolean queueMessages = false;
   private CryptHelper cryptHelper = new CryptHelper();
   private boolean sharedTorProcess;
-  private KeepaliveManager keepaliveManager = null;
+  private IsAliveManager isAliveManager = null;
 
   /**
    * Constructs a new PTP object. Manages an own Tor process.
@@ -228,8 +228,8 @@ public class PTP {
     hiddenServiceManager =
         new HiddenServiceManager(config, hiddenServiceDirectoryName, hiddenServicePort, tor);
 
-    keepaliveManager = new KeepaliveManager(this, config);
-    keepaliveManager.start();
+    isAliveManager = new IsAliveManager(this, config);
+    isAliveManager.start();
 
     initialized = true;
   }
@@ -529,8 +529,8 @@ public class PTP {
       connectionManager.stop();
     }
 
-    if (keepaliveManager != null) {
-      keepaliveManager.stop();
+    if (isAliveManager != null) {
+      isAliveManager.stop();
     }
 
     // Close the Tor process manager.
@@ -561,7 +561,7 @@ public class PTP {
     tor.changeNetwork(enable);
   }
   
-  protected void sendKeepAlive(Identifier destination, long timeout) {
+  protected void sendIsAlive(Identifier destination, long timeout) {
     connectionManager.send(new byte[0], destination, timeout, false);
   }
 
@@ -569,11 +569,11 @@ public class PTP {
     @Override
     public void messageReceived(byte[] data, Identifier source) {
       Object obj;
-      boolean isKeepalive = data.length == 0;
+      boolean isAliveMsg = data.length == 0;
       try {
-        keepaliveManager.messageReceived(source, isKeepalive);
+        isAliveManager.messageReceived(source, isAliveMsg);
         
-        if (isKeepalive) {
+        if (isAliveMsg) {
           return;
         }
         
@@ -617,7 +617,7 @@ public class PTP {
     @Override
     public void messageSent(long id, Identifier destination, State state) {
       if (state == State.SUCCESS) {
-        keepaliveManager.messageSent(destination);
+        isAliveManager.messageSent(destination);
       }
 
       sendListener.messageSent(id, destination, state);
