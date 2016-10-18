@@ -21,13 +21,13 @@ public class SharedTorManager extends TorManager {
   private static final Logger logger = Logger.getLogger(SharedTorManager.class.getName());
   private File lockFile;
 
-  public SharedTorManager(String workingDirectory) {
-    super(workingDirectory);
+  public SharedTorManager(String workingDirectory, Configuration config) {
+    super(workingDirectory, config);
     torrc = "config/testtorrc";
   }
   
-  public SharedTorManager(int controlPort) {
-    super(controlPort);
+  public SharedTorManager(int controlPort, Configuration config) {
+    super(controlPort, config);
     throw new IllegalStateException();
   }
 

@@ -178,6 +178,7 @@ public class PTP {
     // Create the logger after the configuration sets the logger properties file.
     logger = Logger.getLogger(PTP.class.getName());
 
+
     if (workingDirectory == null) {
       String ptphome = System.getenv(Constants.ptphome);
 
@@ -194,12 +195,12 @@ public class PTP {
 
     if (usePTPTor) {
       if (sharedTorProcess) {
-        tor = new SharedTorManager(workingDirectory);
+        tor = new SharedTorManager(workingDirectory, config);
       } else {
-        tor = new TorManager(workingDirectory);
+        tor = new TorManager(workingDirectory, config);
       }
     } else {
-      tor = new TorManager(controlPort);
+      tor = new TorManager(controlPort, config);
     }
 
     try {

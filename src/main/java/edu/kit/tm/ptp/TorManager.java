@@ -50,34 +50,37 @@ public class TorManager {
   private boolean torNetworkEnabled = false;
   private final File controlPortFile;
   private final TorEventHandler torEvent = new TorEventHandler(this);
-  private List<String> events =
-      Arrays.asList("circ", "stream", "orconn", "bw", "newdesc", "notice", "warn", "err");
   private List<SOCKSProxyListener> proxyPortListeners = new LinkedList<SOCKSProxyListener>();
+  private Configuration config;
 
   /**
    * Constructs a new TorManager object that uses an already running Tor process in the
    * workingDirectory or starts a new Tor process.
    *
    * @param workingDirectory The directory to run Tor in.
+   * @param config The PTP configuration.
    */
-  public TorManager(String workingDirectory) {
+  public TorManager(String workingDirectory, Configuration config) {
     this.workingDirectory = workingDirectory;
     this.externalTor = false;
 
     this.controlPortFile =
         new File(workingDirectory + File.separator + Constants.torControlPortFileName);
+    this.config = config;
   }
   
   /**
    * Constructs a new TorManager object using an already running Tor process.
    * 
    * @param controlPort The control port of the Tor process.
+   * @param config The PTP configuration.
    */
-  public TorManager(int controlPort) {
+  public TorManager(int controlPort, Configuration config) {
     this.workingDirectory = null;
     this.controlPortFile = null;
     this.torControlPort = controlPort;
     this.externalTor = true;
+    this.config = config;
   }
 
   /**
@@ -219,13 +222,13 @@ public class TorManager {
     try {
       List<String> commands = new LinkedList<String>();
       commands.add("stream-status");
-      Map<String, String> streamStatus = controlConn.getInfo(commands);
 
-      Collection<String> lines = streamStatus.values();
+      Map<String, String> response = controlConn.getInfo(commands);
+      String streamStatus = response.get("stream-status");
 
       List<String> circIds = new LinkedList<String>();
 
-      for (String line : lines) {
+      for (String line : streamStatus.split("\r\n")) {
         if (line.equals("")) {
           continue;
         }
@@ -244,8 +247,11 @@ public class TorManager {
       }
 
       for (String circId : circIds) {
-        logger.log(Level.INFO, "Closing circuit " + circId);
-        controlConn.closeCircuit(circId, false);
+        // CircuitID 0 is used when a circuit is being created. It can't be closed then
+        if (circId != "0") {
+          logger.log(Level.INFO, "Closing circuit " + circId);
+          controlConn.closeCircuit(circId, false);
+        }
       }
 
     } catch (IOException e) {
@@ -564,12 +570,16 @@ public class TorManager {
     controlSocket = new Socket(Constants.localhost, controlPort);
     controlConn = new TorControlConnection(controlSocket);
 
-    controlConn.authenticate(new byte[0]);
+    if (config == null) {
+     controlConn.authenticate(new byte[0]);
+    } else {
+      controlConn.authenticate(config.getAuthenticationBytes());
+    }
   }
   
   private void setUpEventHandler() throws IOException {
     controlConn.setEventHandler(torEvent);
-    controlConn.setEvents(events);
+    controlConn.setEvents(torEvent.getEvents());
   }
 
   private void getAndUpdateSOCKSProxy() {
