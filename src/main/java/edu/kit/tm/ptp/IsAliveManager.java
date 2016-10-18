@@ -17,12 +17,12 @@ import java.util.logging.Logger;
  *
  */
 public class IsAliveManager implements ExpireListener {
-  private final PTP ptp;
-  private static final int ISALIVETIMEOUT = 30 * 1000;
-  private static final int SENDTIME = 10 * 1000;
-  
   private static final int SENDTIMERCLASS = 0;
   private static final int RECEIVETIMERCLASS = 1;
+
+  private final PTP ptp;
+  private final int isAliveTimeout;
+  private final int isAliveSendTimeout;
 
   private TimerManager timerManager;
 
@@ -30,7 +30,9 @@ public class IsAliveManager implements ExpireListener {
 
   public IsAliveManager(PTP ptp, Configuration config) {
     this.ptp = ptp;
-    timerManager = new TimerManager(this, config.getTTLPoll());
+    timerManager = new TimerManager(this, config.getTimerUpdateInterval());
+    isAliveTimeout = config.getIsAliveTimeout();
+    isAliveSendTimeout = config.getIsAliveSendTimeout();
   }
   
   /**
@@ -45,7 +47,7 @@ public class IsAliveManager implements ExpireListener {
     
     if (!isAliveMsg) {
       // It's not a isAliveMessage so we have to answer it. Set timer
-      timerManager.setTimerIfNoneExists(source, ISALIVETIMEOUT - SENDTIME, SENDTIMERCLASS);
+      timerManager.setTimerIfNoneExists(source, isAliveSendTimeout, SENDTIMERCLASS);
     }
   }
   
@@ -59,7 +61,7 @@ public class IsAliveManager implements ExpireListener {
     timerManager.remove(destination, SENDTIMERCLASS);
 
     // We expect an answer. Set timer
-    timerManager.setTimerIfNoneExists(destination, ISALIVETIMEOUT, RECEIVETIMERCLASS);
+    timerManager.setTimerIfNoneExists(destination, isAliveTimeout, RECEIVETIMERCLASS);
   }
 
 
@@ -91,7 +93,7 @@ public class IsAliveManager implements ExpireListener {
     // The sent timer expired so we didn't send a regular message since we received the last message
     logger.log(Level.INFO, "Sending IsAliveMessage to " + identifier);
     // Send an IsAliveMessage
-    ptp.sendIsAlive(identifier, ISALIVETIMEOUT - SENDTIME);
+    ptp.sendIsAlive(identifier, isAliveSendTimeout);
   }
   
   private void receiveExpired(Identifier identifier) {

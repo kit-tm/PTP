@@ -25,15 +25,13 @@ public class ConfigurationFileReader {
   public static final String comment = "#";
 
   /** Configuration file property names. */
-  public static final String DefaultIdentifier = "DefaultIdentifier";
   public static final String HiddenServicePort = "HiddenServicePort";
   // TODO: eventually support authentication types
   // public static final String AuthenticationType = "AuthenticationType";
-  public static final String TorBootstrapTimeout = "TorBootstrapTimeout";
-  public static final String SocketTTL = "SocketTTL";
-  public static final String SocketTTLPoll = "TTLPoll";
+  public static final String TimerUpdateInterval = "TimerUpdateInterval";
   public static final String LoggerConfigFile = "LoggerConfigFile";
-
+  public static final String IsAliveTimeout = "IsAliveTimeout";
+  public static final String IsAliveSendTimeout = "IsAliveSendTimeout";
 
   /**
    * Constructor method.
@@ -107,18 +105,13 @@ public class ConfigurationFileReader {
     config.setLoggerConfiguration(loggerConfiguration);
 
     // Check if all the needed properties are in the configuration file.
-    check(properties, DefaultIdentifier);
     check(properties, HiddenServicePort);
-    check(properties, TorBootstrapTimeout);
-    check(properties, SocketTTL);
-    check(properties, SocketTTLPoll);
+    check(properties, TimerUpdateInterval);
+    check(properties, IsAliveTimeout);
+    check(properties, IsAliveSendTimeout);
 
 
     // Set the configuration parameters.
-    String defaultIdentifier = properties.get(DefaultIdentifier);
-    config.setDefaultIdentifier(defaultIdentifier);
-    logger.info("Read " + DefaultIdentifier + " = " + defaultIdentifier);
-
     int hiddenServicePort = parse(properties, HiddenServicePort);
     config.setHiddenServicePort(hiddenServicePort);
     logger.info("Read " + HiddenServicePort + " = " + hiddenServicePort);
@@ -126,17 +119,17 @@ public class ConfigurationFileReader {
     byte[] authenticationBytes = new byte[0];
     config.setAuthenticationBytes(authenticationBytes);
 
-    int bootstrapTimeout = parse(properties, TorBootstrapTimeout);
-    config.setBootstrapTimeout(bootstrapTimeout);
-    logger.info("Read " + TorBootstrapTimeout + " = " + bootstrapTimeout);
+    int isAliveTimeout = parse(properties, IsAliveTimeout);
+    config.setIsAliveTimeout(isAliveTimeout);
+    logger.info("Read " + IsAliveTimeout + " = " + isAliveTimeout);
 
-    int socketTtl = parse(properties, SocketTTL);
-    config.setSocketTtl(socketTtl);
-    logger.info("Read " + SocketTTL + " = " + socketTtl);
+    int isAliveSendTimeout = parse(properties, IsAliveSendTimeout);
+    config.setIsAliveSendTimeout(isAliveSendTimeout);
+    logger.info("Read " + IsAliveSendTimeout + " = " + isAliveSendTimeout);
 
-    int ttlPoll = parse(properties, SocketTTLPoll);
-    config.setTtlPoll(ttlPoll);
-    logger.info("Read " + SocketTTLPoll + " = " + ttlPoll);
+    int ttlPoll = parse(properties, TimerUpdateInterval);
+    config.setTimerUpdateInterval(ttlPoll);
+    logger.info("Read " + TimerUpdateInterval + " = " + ttlPoll);
 
     return config;
   }

@@ -5,11 +5,6 @@ import java.util.logging.Logger;
 
 /**
  * Holds the PeerTorPeer (PTP) configuration.
- * This includes: * hidden service port number * interval at which a connection to a hidden service
- * identifier is attempted * timeout for socket connections * socket poll for available data
- * interval * connection TTL * interval at which socket remaining TTL is checked * Tor bootstrapping
- * timeout * number of threads to use for message dispatching * number of threads to use for message
- * receiving * default hidden service identifier * logger configuration file
  *
  * @author Timon Hackenjos
  * @author Simeon Andreev
@@ -22,18 +17,12 @@ public class Configuration {
 
   /** The logger configuration file. */
   private String loggerConfiguration;
-  /** The default hidden service identifier. */
-  private String defaultIdentifier;
   /** The port on which the hidden service should be available. */
   private int hiddenServicePort;
   /** The authentication bytes needed by a control connection to Tor. */
   private byte[] authenticationBytes;
-  /** The timeout (in milliseconds) for the Tor bootstrapping. */
-  private int bootstrapTimeout;
-  /** The TTL (in milliseconds) for a socket connection to a hidden service identifier. */
-  private int socketTtl;
   /** The interval (in milliseconds) at each the TTL of all sockets is checked. */
-  private int ttlPoll;
+  private int timerUpdateInterval;
 
   /** The path of the working directory. */
   private String workingDirectory;
@@ -43,6 +32,8 @@ public class Configuration {
   private int torControlPort;
   /** The port number of the Tor SOCKS proxy. */
   private int torSocksProxyPort;
+  private int isAliveTimeout;
+  private int isAliveSendTimeout;
 
 
   protected Configuration() {
@@ -64,10 +55,6 @@ public class Configuration {
     sb.append(workingDirectory);
     sb.append("\n");
 
-    sb.append("\tdefault identifier = ");
-    sb.append(defaultIdentifier);
-    sb.append("\n");
-
     sb.append("\thidden services directory = ");
     sb.append(hiddenServicesDirectory);
     sb.append("\n");
@@ -76,31 +63,30 @@ public class Configuration {
     sb.append(hiddenServicePort);
     sb.append("\n");
 
-    sb.append("\tTor bootstrap timeout = ");
-    sb.append(bootstrapTimeout);
-    sb.append("\n");
-
     sb.append("\tTor control port number = ");
     sb.append(torControlPort);
     sb.append("\n");
 
-    sb.append("\tsocket connection TTL = ");
-    sb.append(socketTtl);
-    sb.append("\n");
-
-    sb.append("\tTTL poll = ");
-    sb.append(ttlPoll);
+    sb.append("\tTimer update interval = ");
+    sb.append(timerUpdateInterval);
     sb.append("\n");
 
     sb.append("\tlogger configuration file = ");
     sb.append(loggerConfiguration);
     sb.append("\n");
 
+    sb.append("\tIs alive timeout = ");
+    sb.append(isAliveTimeout);
+    sb.append("\n");
+
+    sb.append("\tIs alive send timeout = ");
+    sb.append(isAliveSendTimeout);
+    sb.append("\n");
+
     sb.append("</Configuration>");
 
     return sb.toString();
   }
-
 
   /**
    * Sets the logger configuration and creates a logger object if none exists.
@@ -113,24 +99,16 @@ public class Configuration {
     }
   }
 
-
-  public void setBootstrapTimeout(int bootstrapTimeout) {
-    this.bootstrapTimeout = bootstrapTimeout;
+  public void setIsAliveTimeout(int isAliveTimeout) {
+    this.isAliveTimeout = isAliveTimeout;
   }
 
-
-  public void setSocketTtl(int socketTtl) {
-    this.socketTtl = socketTtl;
+  public void setIsAliveSendTimeout(int isAliveSendTimeout) {
+    this.isAliveSendTimeout = isAliveSendTimeout;
   }
 
-
-  public void setTtlPoll(int ttlPoll) {
-    this.ttlPoll = ttlPoll;
-  }
-
-
-  public void setDefaultIdentifier(String defaultIdentifier) {
-    this.defaultIdentifier = defaultIdentifier;
+  public void setTimerUpdateInterval(int timerUpdateInterval) {
+    this.timerUpdateInterval = timerUpdateInterval;
   }
 
 
@@ -160,56 +138,30 @@ public class Configuration {
     this.torSocksProxyPort = torSocksProxyPort;
   }
 
-
   /**
-   * Returns the PTP working directory as specified.
-   *
-   * @return The PTP working directory.
+   * Returns the PTP working directory.
    */
   public String getWorkingDirectory() {
     return workingDirectory;
   }
 
   /**
-   * Returns the default Tor hidden service identifier.
-   *
-   * @return The default Tor hidden service identifier.
-   */
-  public String getDefaultIdentifier() {
-    return defaultIdentifier;
-  }
-
-  /**
-   * Returns the Tor hidden service directory as specified.
-   *
-   * @return The Tor hidden service directory.
+   * Returns the Tor hidden service directory.
    */
   public String getHiddenServicesDirectory() {
     return hiddenServicesDirectory;
   }
 
   /**
-   * Returns the Tor hidden service port as specified.
-   *
-   * @return The Tor hidden service port.
+   * Returns the Tor hidden service port.
    */
   public int getHiddenServicePort() {
     return hiddenServicePort;
   }
 
   /**
-   * Returns the Tor bootstrap timeout (in milliseconds).
+   * Returns the bytes to authenticate a Tor control connection.
    *
-   * @return The Tor bootstrap timeout.
-   */
-  public int getTorBootstrapTimeout() {
-    return bootstrapTimeout;
-  }
-
-  /**
-   * Returns the bytes needed by the Tor authentication message.
-   *
-   * @return The Tor authentication bytes.
    * @see <a href="https://gitweb.torproject.org/torspec.git/tree/control-spec.txt"> https://gitweb.
    *      torproject.org/torspec.git/tree/control-spec.txt</a>
    */
@@ -218,38 +170,41 @@ public class Configuration {
   }
 
   /**
-   * Returns the Tor control socket port as specified.
-   *
-   * @return The Tor control sockert port.
+   * Returns the Tor control socket port.
    */
   public int getTorControlPort() {
     return torControlPort;
   }
 
   /**
-   * Returns the Tor SOCKS proxy port as specified.
-   *
-   * @return The Tor control sockert port.
+   * Returns the Tor SOCKS proxy port.
    */
   public int getTorSOCKSProxyPort() {
     return torSocksProxyPort;
   }
 
   /**
-   * Returns the socket TTL (in milliseconds) of a connection to a hidden service identifier.
-   *
-   * @return The socket TTL of a connection to a hidden service identifier.
+   * Returns the interval (in milliseconds) at which timers are updated.
    */
-  public int getSocketTTL() {
-    return socketTtl;
+  public int getTimerUpdateInterval() {
+    return timerUpdateInterval;
+  }
+
+
+  /**
+   * Returns the time (in milliseconds) to wait for a regular message to be sent
+   * before an IsAliveMessage is sent as a response to a received message.
+   */
+  public int getIsAliveSendTimeout() {
+    return isAliveSendTimeout;
   }
 
   /**
-   * Returns the interval (in milliseconds) at which the TTL of all sockets is checked.
-   *
-   * @return The interval at which the TTL of all sockets is checked.
+   * Returns the time (in milliseconds) the sender of a message waits for a response
+   * before closing the connection.
    */
-  public int getTTLPoll() {
-    return ttlPoll;
+  public int getIsAliveTimeout() {
+    return isAliveTimeout;
   }
+
 }

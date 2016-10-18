@@ -39,15 +39,14 @@ public class ConfigurationTest {
   /** The configuration used for the test. */
   private Configuration configuration = null;
   /** The properties used for the test. */
-  private String defaultIdentifier = null;
   private String hiddenServicesDirectory = null;
   private int hiddenServicePort = -1;
   private byte[] authenticationBytes = null;
-  private int torBootstrapTimeout = -1;
   private int torControlPort = -1;
   private int torSocksProxyPort = -1;
-  private int socketTtl = -1;
-  private int ttlPoll;
+  private int timerUpdateInterval;
+  private int isAliveTimeout = -1;
+  private int isAliveSendTimeout = -1;
 
 
   /**
@@ -59,8 +58,6 @@ public class ConfigurationTest {
   public void setUp() throws IOException {
     file = File.createTempFile(prefix, suffix);
 
-    // Set the default identifier.
-    defaultIdentifier = "defid";
     // Set the hidden service directory.
     hiddenServicesDirectory =
         Paths.get("").toString() + File.separator + Constants.hiddenservicedir;
@@ -74,24 +71,19 @@ public class ConfigurationTest {
     torControlPort = random.nextInt();
     torSocksProxyPort = random.nextInt();
     hiddenServicePort = random.nextInt();
-    torBootstrapTimeout = random.nextInt();
-    socketTtl = random.nextInt();
-    ttlPoll = random.nextInt();
+    isAliveTimeout = random.nextInt();
+    isAliveSendTimeout = random.nextInt();
+    timerUpdateInterval = random.nextInt();
 
     // Write the properties to the input file.
     BufferedWriter writer = new BufferedWriter(
         new OutputStreamWriter(new FileOutputStream(file), Constants.charset));
 
-    System.out.println(ConfigurationFileReader.HiddenServicePort + " " + hiddenServicePort);
-    System.out.println(ConfigurationFileReader.SocketTTL + " " + socketTtl + newline);
-    System.out.println(ConfigurationFileReader.SocketTTLPoll + " " + ttlPoll + newline);
-
     BufferedWriter output = new BufferedWriter(writer);
-    output.write(ConfigurationFileReader.DefaultIdentifier + " " + defaultIdentifier + newline);
     output.write(ConfigurationFileReader.HiddenServicePort + " " + hiddenServicePort + newline);
-    output.write(ConfigurationFileReader.TorBootstrapTimeout + " " + torBootstrapTimeout + newline);
-    output.write(ConfigurationFileReader.SocketTTL + " " + socketTtl + newline);
-    output.write(ConfigurationFileReader.SocketTTLPoll + " " + ttlPoll + newline);
+    output.write(ConfigurationFileReader.IsAliveTimeout + " " + isAliveTimeout + newline);
+    output.write(ConfigurationFileReader.IsAliveSendTimeout + " " + isAliveSendTimeout + newline);
+    output.write(ConfigurationFileReader.TimerUpdateInterval + " " + timerUpdateInterval + newline);
 
     output.flush();
     output.close();
@@ -113,23 +105,6 @@ public class ConfigurationTest {
     // Delete the file containing the properties.
     assertTrue(file.delete());
     assertFalse(file.exists());
-  }
-
-
-  /**
-   * Test method for {@link edu.kit.tm.ptp.Configuration#getDefaultIdentifier()}.
-   *
-   * <p>
-   * Checks whether the configuration read the hidden service directory property correctly. Fails
-   * iff the read property is not equal to the written property.
-   */
-  @Test
-  public void testGetDefaultIdentifier() {
-    System.out.println(configuration.getDefaultIdentifier());
-    if (!defaultIdentifier.equals(configuration.getDefaultIdentifier())) {
-      fail("Default identifier property does not match: " + defaultIdentifier + " != "
-          + configuration.getDefaultIdentifier());
-    }
   }
 
   /**
@@ -160,21 +135,6 @@ public class ConfigurationTest {
     if (hiddenServicePort != configuration.getHiddenServicePort()) {
       fail("Hidden service port property does not match: " + hiddenServicePort + " != "
           + configuration.getHiddenServicePort());
-    }
-  }
-
-  /**
-   * Test method for {@link edu.kit.tm.ptp.Configuration#getTorBootstrapTimeout()}.
-   *
-   * <p>
-   * Checks whether the configuration read the Tor bootstrap timeout property correctly. Fails if
-   * the read property is not equal to the written property.
-   */
-  @Test
-  public void testGetTorBootstrapTimeout() {
-    if (torBootstrapTimeout != configuration.getTorBootstrapTimeout()) {
-      fail("Bootstrap timeout property does not match: " + torBootstrapTimeout + " != "
-          + configuration.getTorBootstrapTimeout());
     }
   }
 
@@ -224,31 +184,46 @@ public class ConfigurationTest {
   }
 
   /**
-   * Test method for {@link edu.kit.tm.ptp.Configuration#getSocketTTL()}.
+   * Test method for {@link Configuration#getIsAliveTimeout()}.
    *
    * <p>
-   * Checks whether the configuration read the socket TTL property correctly. Fails iff the read
+   * Checks whether the configuration read the IsAliveTimeout property correctly. Fails iff the read
    * property is not equal to the written property.
    */
   @Test
-  public void testGetSocketTTL() {
-    if (socketTtl != configuration.getSocketTTL()) {
-      fail("Socket TTL property does not match: " + socketTtl + " != "
-          + configuration.getSocketTTL());
+  public void testGetIsAliveTimeout() {
+    if (isAliveTimeout != configuration.getIsAliveTimeout()) {
+      fail("IsAliveTimeout property does not match: " + isAliveTimeout + " != "
+          + configuration.getIsAliveTimeout());
     }
   }
 
   /**
-   * Test method for {@link edu.kit.tm.ptp.Configuration#getTTLPoll()}.
+   * Test method for {@link Configuration#getIsAliveSendTimeout()}.
    *
    * <p>
-   * Checks whether the configuration read the TTL poll property correctly. Fails iff the read
+   * Checks whether the configuration read the IsAliveSendTimeout property correctly.
+   * Fails iff the read property is not equal to the written property.
+   */
+  @Test
+  public void testGetIsSendAliveTimeout() {
+    if (isAliveSendTimeout != configuration.getIsAliveSendTimeout()) {
+      fail("IsAliveSendTimeout property does not match: " + isAliveSendTimeout + " != "
+          + configuration.getIsAliveSendTimeout());
+    }
+  }
+
+  /**
+   * Test method for {@link edu.kit.tm.ptp.Configuration#getTimerUpdateInterval()}.
+   *
+   * <p>
+   * Checks whether the configuration read the timerUpdateInterval property correctly. Fails iff the read
    * property is not equal to the written property.
    */
   @Test
-  public void testGetTTLPoll() {
-    if (ttlPoll != configuration.getTTLPoll()) {
-      fail("TTL poll property does not match: " + ttlPoll + " != " + configuration.getTTLPoll());
+  public void testGetTimerUpdateInterval() {
+    if (timerUpdateInterval != configuration.getTimerUpdateInterval()) {
+      fail("TTL poll property does not match: " + timerUpdateInterval + " != " + configuration.getTimerUpdateInterval());
     }
   }
 
