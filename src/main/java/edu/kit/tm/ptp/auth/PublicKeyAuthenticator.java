@@ -37,12 +37,16 @@ public class PublicKeyAuthenticator extends Authenticator {
   private static final long TIMESTAMP_INTERVALL = 60 * 1000; // in ms
 
   private ChannelMessageListener oldListener;
-  private CryptHelper cryptHelper;
+  private final CryptHelper cryptHelper;
+  private final Serializer serializer;
 
   public PublicKeyAuthenticator(AuthenticationListener listener, MessageChannel channel,
-      Serializer serializer, CryptHelper cryptHelper) {
-    super(listener, channel, serializer);
+      CryptHelper cryptHelper) {
+    super(listener, channel);
     this.cryptHelper = cryptHelper;
+
+    this.serializer = new Serializer();
+    serializer.registerClass(AuthenticationMessage.class);
   }
 
   /**

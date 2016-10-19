@@ -44,7 +44,7 @@ public class PTP {
   private HiddenServiceManager hiddenServiceManager;
   protected ConnectionManager connectionManager;
   private int hiddenServicePort;
-  private final Serializer serializer = new Serializer();
+  private Serializer serializer;
   private final MessageQueueContainer messageTypes = new MessageQueueContainer();
   private volatile boolean initialized = false;
   private volatile boolean closed = false;
@@ -151,6 +151,10 @@ public class PTP {
     this.hiddenServicePort = hiddenServicePort;
     this.sharedTorProcess = sharedTorProcess;
 
+    this.serializer = new Serializer();
+    serializer.registerClass(byte[].class);
+    serializer.registerClass(ByteArrayMessage.class);
+
     clientThread = Thread.currentThread();
     messageTypes.addMessageQueue(byte[].class);
   }
@@ -210,7 +214,6 @@ public class PTP {
     }
 
     connectionManager = new ConnectionManager(cryptHelper, config.getHiddenServicePort());
-    connectionManager.setSerializer(serializer);
     connectionManager.setSendListener(new PTPSendListener());
     connectionManager.setReceiveListener(new PTPReceiveListener());
 
@@ -569,6 +572,9 @@ public class PTP {
   private class PTPReceiveListener implements ReceiveListener {
     @Override
     public void messageReceived(byte[] data, Identifier source) {
+      // Method might be called before we finished initialization
+      checkAndWaitForInitialization();
+
       Object obj;
       boolean isAliveMsg = data.length == 0;
       try {
@@ -617,6 +623,11 @@ public class PTP {
   private class PTPSendListener implements SendListener {
     @Override
     public void messageSent(long id, Identifier destination, State state) {
+      // PTP doesn't allow to send messages before initialization is finished
+      if (!initialized) {
+        throw new IllegalStateException();
+      }
+
       if (state == State.SUCCESS) {
         isAliveManager.messageSent(destination);
       }
@@ -660,5 +671,15 @@ public class PTP {
         exit();
       }
     });
+  }
+
+  private void checkAndWaitForInitialization() {
+    while (!initialized && !Thread.currentThread().isInterrupted()) {
+      try {
+        Thread.sleep(100);
+      } catch (InterruptedException e) {
+        return;
+      }
+    }
   }
 }

@@ -67,8 +67,8 @@ public class PublicKeyAuthenticatorTest {
 
   @Before
   public void setUp() throws Exception {
-    auth = new PublicKeyAuthenticator(null, null, null, cryptHelper);
-    auth2 = new PublicKeyAuthenticator(null, null, null, cryptHelper2);
+    auth = new PublicKeyAuthenticator(null, null, cryptHelper);
+    auth2 = new PublicKeyAuthenticator(null, null, cryptHelper2);
   }
 
   @After

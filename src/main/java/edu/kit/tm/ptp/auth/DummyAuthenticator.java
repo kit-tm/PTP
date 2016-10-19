@@ -24,17 +24,19 @@ public class DummyAuthenticator extends Authenticator implements ChannelMessageL
   private boolean received;
   private byte[] response;
   private static final Logger logger = Logger.getLogger(DummyAuthenticator.class.getName());
+  private final Serializer serializer;
 
   /**
    * Constructs a new DummyAuthenticator.
    * 
    * @param listener The listener to inform about the authentication.
    * @param channel The channel to authenticate.
-   * @param serializer To serialize the authentication messages.
    */
-  public DummyAuthenticator(AuthenticationListener listener, MessageChannel channel,
-      Serializer serializer) {
-    super(listener, channel, serializer);
+  public DummyAuthenticator(AuthenticationListener listener, MessageChannel channel) {
+    super(listener, channel);
+
+    serializer = new Serializer();
+    serializer.registerClass(AuthenticationMessage.class);
 
     sent = false;
     received = false;

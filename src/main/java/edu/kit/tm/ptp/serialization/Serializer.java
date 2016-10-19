@@ -23,10 +23,6 @@ public class Serializer {
   private Set<Class<?>> registeredClasses = new HashSet<>();
   
   public Serializer() {
-    registerClass(byte[].class);
-    registerClass(ByteArrayMessage.class);
-    registerClass(AuthenticationMessage.class);
-    registerClass(edu.kit.tm.ptp.auth.DummyAuthenticator.AuthenticationMessage.class);
   }
 
   /**
@@ -35,7 +31,7 @@ public class Serializer {
    * @param obj The object to serialize.
    * @return The bytes representing the object.
    */
-  public byte[] serialize(Object obj) {
+  public synchronized byte[] serialize(Object obj) {
     if (obj == null) {
       throw new IllegalArgumentException("Object to serialize is null");
     }
@@ -55,7 +51,7 @@ public class Serializer {
    * @return The deserialized object.
    * @throws IOException If an error occurs while deserializing.
    */
-  public Object deserialize(byte[] data) throws IOException {
+  public synchronized Object deserialize(byte[] data) throws IOException {
     if (data.length == 0) {
       throw new IOException("Can't deserialize empty byte array");
     }
@@ -78,7 +74,7 @@ public class Serializer {
    * 
    * @param type The class to register.
    */
-  public <T> void registerClass(Class<T> type) {
+  public synchronized <T> void registerClass(Class<T> type) {
     registeredClasses.add(type);
     kryo.register(type);
   }
@@ -86,7 +82,7 @@ public class Serializer {
   /**
    * Returns true if the supplied class type has already been registered.
    */
-  public <T> boolean isRegistered(Class<T> type) {
+  public synchronized <T> boolean isRegistered(Class<T> type) {
     return registeredClasses.contains(type);
   }
 }

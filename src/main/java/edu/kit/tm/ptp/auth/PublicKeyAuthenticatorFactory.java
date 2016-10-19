@@ -14,7 +14,7 @@ public class PublicKeyAuthenticatorFactory extends AuthenticatorFactory {
 
   @Override
   public Authenticator createInstance(ConnectionManager manager, AuthenticationListener listener,
-      MessageChannel channel, Serializer serializer) {
-    return new PublicKeyAuthenticator(listener, channel, serializer, manager.getCryptHelper());
+      MessageChannel channel) {
+    return new PublicKeyAuthenticator(listener, channel, manager.getCryptHelper());
   }
 }

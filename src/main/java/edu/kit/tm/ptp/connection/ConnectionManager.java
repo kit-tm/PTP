@@ -12,7 +12,6 @@ import edu.kit.tm.ptp.channels.ChannelListener;
 import edu.kit.tm.ptp.channels.ChannelManager;
 import edu.kit.tm.ptp.channels.MessageChannel;
 import edu.kit.tm.ptp.crypt.CryptHelper;
-import edu.kit.tm.ptp.serialization.Serializer;
 import edu.kit.tm.ptp.thread.Waker;
 import edu.kit.tm.ptp.utility.Constants;
 
@@ -42,7 +41,6 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
   protected volatile int socksPort = -1;
   protected int hsPort;
   private Thread thread = new Thread(this);
-  protected Serializer serializer;
   private SendListener sendListener = null;
   private ReceiveListener receiveListener = null;
   protected Identifier localIdentifier = null;
@@ -96,8 +94,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
 
   /**
    * Construct a new ConnectionManager.
-   * 
-   * @param socksHost The host the socks proxy is listening on.
+   *
    * @param hsPort The port to reach PTP hidden services from remote.
    */
   public ConnectionManager(CryptHelper cryptHelper, int hsPort) {
@@ -113,10 +110,6 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
 
     this.socksPort = socksProxyPort;
     this.socksHost = socksHost;
-  }
-
-  public void setSerializer(Serializer serializer) {
-    this.serializer = serializer;
   }
 
   public void setSendListener(SendListener listener) {
@@ -428,6 +421,8 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
 
       if (receiveListener != null) {
         receiveListener.messageReceived(message.data, identifier);
+      } else {
+        logger.log(Level.WARNING, "Dropped message because no listener is set.");
       }
     }
   }

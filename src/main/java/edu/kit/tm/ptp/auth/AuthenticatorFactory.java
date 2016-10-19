@@ -17,9 +17,8 @@ public abstract class AuthenticatorFactory {
    * @param manager The ConnectionManager.
    * @param listener The listener to inform about successful and failed authentication attempts.
    * @param channel The channel to authenticate.
-   * @param serializer Serializer to allow serialization of authentication messages.
    * @return The created object.
    */
   public abstract Authenticator createInstance(ConnectionManager manager,
-      AuthenticationListener listener, MessageChannel channel, Serializer serializer);
+      AuthenticationListener listener, MessageChannel channel);
 }

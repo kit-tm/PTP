@@ -14,8 +14,8 @@ public class DummyAuthenticatorFactory extends AuthenticatorFactory {
 
   @Override
   public Authenticator createInstance(ConnectionManager manager, AuthenticationListener listener,
-      MessageChannel channel, Serializer serializer) {
-    return new DummyAuthenticator(listener, channel, serializer);
+      MessageChannel channel) {
+    return new DummyAuthenticator(listener, channel);
   }
 
 }

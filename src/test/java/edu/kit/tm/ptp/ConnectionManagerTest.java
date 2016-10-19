@@ -69,7 +69,6 @@ public class ConnectionManagerTest {
     manager.updateSOCKSProxy(Constants.localhost, config.getTorSOCKSProxyPort());
     manager.setSendListener(listener);
     manager.setLocalIdentifier(new Identifier("aaaaaaaaaaaaaaaa.onion"));
-    manager.setSerializer(serializer);
     manager.setAuthenticatorFactory(new DummyAuthenticatorFactory());
     manager.start();
 

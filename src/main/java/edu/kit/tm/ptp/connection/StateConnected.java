@@ -62,7 +62,7 @@ public class StateConnected extends AbstractState {
     Identifier other = manager.channelMap.get(channel);
 
     Authenticator auth =
-        manager.authFactory.createInstance(manager, manager, channel, manager.serializer);
+        manager.authFactory.createInstance(manager, manager, channel);
     if (other != null) {
       auth.authenticate(manager.localIdentifier, other);
     } else {

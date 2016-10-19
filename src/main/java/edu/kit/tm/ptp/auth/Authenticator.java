@@ -14,7 +14,6 @@ import edu.kit.tm.ptp.serialization.Serializer;
 public abstract class Authenticator {
   protected AuthenticationListener authListener;
   protected MessageChannel channel;
-  protected Serializer serializer;
 
   /**
    * Constructs a new Authenticator.
@@ -22,11 +21,9 @@ public abstract class Authenticator {
    * @param listener The listener to inform about a successful or failed authentication.
    * @param channel The channel which should be authenticated.
    */
-  public Authenticator(AuthenticationListener listener, MessageChannel channel,
-      Serializer serializer) {
+  public Authenticator(AuthenticationListener listener, MessageChannel channel) {
     this.authListener = listener;
     this.channel = channel;
-    this.serializer = serializer;
   }
 
   /**
