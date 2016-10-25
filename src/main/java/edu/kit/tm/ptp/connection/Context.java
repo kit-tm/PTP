@@ -63,6 +63,14 @@ public class Context {
     return state.sendMessage(attempt);
   }
 
+  public void messageReceived(byte[] data, MessageChannel source) {
+    state.messageReceived(data, source);
+  }
+
+  public void messageSent(long id, MessageChannel destination) {
+    state.messageSent(id, destination);
+  }
+
   public ConnectionManager getConnectionManager() {
     return manager;
   }

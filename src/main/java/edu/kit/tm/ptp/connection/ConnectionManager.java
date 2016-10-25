@@ -41,8 +41,8 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
   protected volatile int socksPort = -1;
   protected int hsPort;
   private Thread thread = new Thread(this);
-  private SendListener sendListener = null;
-  private ReceiveListener receiveListener = null;
+  protected SendListener sendListener = null;
+  protected ReceiveListener receiveListener = null;
   protected Identifier localIdentifier = null;
   protected final Logger logger = Logger.getLogger(ConnectionManager.class.getName());
   protected ChannelManager channelManager = new ChannelManager(this);
@@ -55,14 +55,14 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
   protected Map<Identifier, Long> lastTry = new HashMap<>();
 
   /** Messages which have already been dispatched to a channel. */
-  protected List<MessageAttempt> dispatchedMessages = new LinkedList<>();
+  protected Map<Long, MessageAttempt> dispatchedMessages = new HashMap<>();
 
   private AtomicLong messageId = new AtomicLong(0);
 
   /** Messages which have to be dispatched to an appropriate channel. */
   protected Queue<MessageAttempt> messageQueue = new ConcurrentLinkedQueue<>();
 
-  private Queue<Long> sentMessageIds = new ConcurrentLinkedQueue<>();
+  private Queue<SentMessage> sentMessages = new ConcurrentLinkedQueue<>();
   private Queue<MessageChannel> newConnections = new ConcurrentLinkedQueue<>();
   protected Queue<MessageChannel> closedConnections = new ConcurrentLinkedQueue<>();
   private Queue<ReceivedMessage> receivedMessages = new ConcurrentLinkedQueue<>();
@@ -79,6 +79,16 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
     public ReceivedMessage(byte[] data, MessageChannel source) {
       this.data = data;
       this.source = source;
+    }
+  }
+
+  private static class SentMessage {
+    public long id;
+    public MessageChannel destination;
+
+    public SentMessage(long id, MessageChannel destination) {
+      this.id = id;
+      this.destination = destination;
     }
   }
 
@@ -231,7 +241,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
   @Override
   public void messageSent(long id, MessageChannel destination) {
     logger.log(Level.INFO, "Message with id " + id + " sent successfully");
-    sentMessageIds.add(id);
+    sentMessages.add(new SentMessage(id, destination));
     semaphore.release();
   }
 
@@ -335,6 +345,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
       context = channelContexts.get(channel);
 
       if (context == null) {
+        // No channel exists for the destination yet
         context = new Context(this);
       }
 
@@ -369,61 +380,34 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
   }
 
   private void processSentMessages() {
-    Long id;
-    MessageAttempt attempt;
+    SentMessage message;
+    Context context;
 
-    while ((id = sentMessageIds.poll()) != null) {
+    while ((message = sentMessages.poll()) != null) {
+      context = channelContexts.get(message.destination);
 
-      boolean found = false;
-
-      Iterator<MessageAttempt> it = dispatchedMessages.iterator();
-
-      while (it.hasNext() && !found) {
-        attempt = it.next();
-
-        if (attempt.getId() == id) {
-          it.remove();
-          if (sendListener != null && attempt.isInformSendListener()) {
-            sendListener.messageSent(id, attempt.getDestination(), State.SUCCESS);
-          }
-
-          if (attempt.getTimeout() != -1
-              && attempt.getSendTimestamp() + attempt.getTimeout() < System.currentTimeMillis()) {
-            logger.log(Level.WARNING,
-                "Message with id " + attempt.getId() + " was sent even though the timer expired");
-          }
-
-          found = true;
-        }
+      if (context == null) {
+        logger.log(Level.WARNING, "Message sent by channel without a context.");
+        continue;
       }
 
-      if (!found) {
-        logger.log(Level.WARNING, "Unknown message id of sent message " + id);
-        throw new IllegalStateException();
-      }
+      context.messageSent(message.id, message.destination);
     }
   }
 
   private void processReceivedMessages() {
     ReceivedMessage message;
+    Context context;
 
     while ((message = receivedMessages.poll()) != null) {
-      Identifier identifier = channelMap.get(message.source);
+      context = channelContexts.get(message.source);
 
-      if (identifier == null) {
-        logger.log(Level.WARNING,
-            "Received message with size " + message.data.length + " from unknown channel");
+      if (context == null) {
+        logger.log(Level.WARNING, "Message received by a channel without a context.");
         continue;
       }
 
-      logger.log(Level.INFO,
-          "Received message from " + identifier + " with size " + message.data.length);
-
-      if (receiveListener != null) {
-        receiveListener.messageReceived(message.data, identifier);
-      } else {
-        logger.log(Level.WARNING, "Dropped message because no listener is set.");
-      }
+      context.messageReceived(message.data, message.source);
     }
   }
 

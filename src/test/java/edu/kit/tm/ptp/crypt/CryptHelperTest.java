@@ -69,7 +69,7 @@ public class CryptHelperTest {
     
     CryptHelper helper = new CryptHelper();
     helper.init();
-    KeyPair pair = helper.readKeyPairFromFile(privateKey);
+    KeyPair pair = CryptHelper.readKeyPairFromFile(privateKey);
     
     Identifier ident = helper.calculateHiddenServiceIdentifier(pair.getPublic());
     

@@ -18,13 +18,12 @@ import java.util.logging.Logger;
  *
  */
 
-public class DummyAuthenticator extends Authenticator implements ChannelMessageListener {
-  private ChannelMessageListener oldListener;
+public class DummyAuthenticator extends Authenticator {
   private boolean sent;
   private boolean received;
   private byte[] response;
   private static final Logger logger = Logger.getLogger(DummyAuthenticator.class.getName());
-  private final Serializer serializer;
+  private static Serializer serializer = null;
 
   /**
    * Constructs a new DummyAuthenticator.
@@ -35,12 +34,18 @@ public class DummyAuthenticator extends Authenticator implements ChannelMessageL
   public DummyAuthenticator(AuthenticationListener listener, MessageChannel channel) {
     super(listener, channel);
 
-    serializer = new Serializer();
-    serializer.registerClass(AuthenticationMessage.class);
-
     sent = false;
     received = false;
     response = null;
+
+    initSerializer();
+  }
+
+  private static void initSerializer() {
+    if (serializer == null) {
+      serializer = new Serializer();
+      serializer.registerClass(AuthenticationMessage.class);
+    }
   }
 
   public static class AuthenticationMessage {
@@ -88,8 +93,6 @@ public class DummyAuthenticator extends Authenticator implements ChannelMessageL
   }
 
   private void finishAuth() {
-    channel.setChannelMessageListener(oldListener);
-
     try {
       Object message = serializer.deserialize(response);
 
@@ -110,8 +113,6 @@ public class DummyAuthenticator extends Authenticator implements ChannelMessageL
   public void authenticate(Identifier own) {
     AuthenticationMessage message = new AuthenticationMessage(own);
     byte[] data = serializer.serialize(message);
-    oldListener = channel.getChannelMessageListener();
-    channel.setChannelMessageListener(this);
     channel.addMessage(data, 0);
   }
 

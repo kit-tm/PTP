@@ -1,6 +1,7 @@
 package edu.kit.tm.ptp.connection;
 
 import edu.kit.tm.ptp.Identifier;
+import edu.kit.tm.ptp.ReceiveListener;
 import edu.kit.tm.ptp.channels.MessageChannel;
 
 import java.io.IOException;
@@ -76,7 +77,7 @@ public abstract class AbstractState {
     Identifier identifier = manager.channelMap.get(channel);
 
     if (identifier != null) {
-      for (MessageAttempt attempt : manager.dispatchedMessages) {
+      for (MessageAttempt attempt : manager.dispatchedMessages.values()) {
         if (identifier.equals(attempt.getDestination())) {
           manager.messageQueue.add(attempt);
         }
@@ -96,5 +97,25 @@ public abstract class AbstractState {
         + (identifier != null ? "to identifier " + identifier.toString() : ""));
     
     context.setState(context.getConcreteClosed());
+  }
+
+  /**
+   * Gets called when a message was received.
+   *
+   * @param data The message.
+   * @param source The channel that received the message.
+   */
+  public void messageReceived(byte[] data, MessageChannel source) {
+    throw new IllegalStateException();
+  }
+
+  /**
+   * Gets called when a message has been sent.
+   *
+   * @param id The id of the message.
+   * @param destination The channel that sent the message.
+   */
+  public void messageSent(long id, MessageChannel destination) {
+    throw new IllegalStateException();
   }
 }

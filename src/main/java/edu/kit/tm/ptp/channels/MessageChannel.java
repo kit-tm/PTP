@@ -226,14 +226,6 @@ public class MessageChannel {
     return channel;
   }
 
-  public void setChannelMessageListener(ChannelMessageListener listener) {
-    this.messageListener = listener;
-  }
-
-  public ChannelMessageListener getChannelMessageListener() {
-    return messageListener;
-  }
-
   public boolean isIdle() {
     return writeState == State.IDLE;
   }

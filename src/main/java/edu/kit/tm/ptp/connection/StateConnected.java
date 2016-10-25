@@ -4,6 +4,7 @@ import edu.kit.tm.ptp.Identifier;
 import edu.kit.tm.ptp.auth.Authenticator;
 import edu.kit.tm.ptp.channels.MessageChannel;
 
+import java.util.Iterator;
 import java.util.logging.Level;
 
 /**
@@ -15,6 +16,8 @@ import java.util.logging.Level;
  */
 
 public class StateConnected extends AbstractState {
+  private Authenticator auth = null;
+
   public StateConnected(Context context) {
     super(context);
   }
@@ -61,7 +64,7 @@ public class StateConnected extends AbstractState {
 
     Identifier other = manager.channelMap.get(channel);
 
-    Authenticator auth =
+    auth =
         manager.authFactory.createInstance(manager, manager, channel);
     if (other != null) {
       auth.authenticate(manager.localIdentifier, other);
@@ -71,6 +74,30 @@ public class StateConnected extends AbstractState {
 
     // Enable reading from channel
     manager.channelManager.registerRead(channel, true);
+  }
+
+  @Override
+  public void messageReceived(byte[] data, MessageChannel source) {
+    ConnectionManager manager = context.getConnectionManager();
+
+    if (auth == null) {
+      manager.logger.log(Level.WARNING, "Received auth message before authentication started.");
+      return;
+    }
+
+    auth.messageReceived(data, source);
+  }
+
+  @Override
+  public void messageSent(long id, MessageChannel destination) {
+    ConnectionManager manager = context.getConnectionManager();
+
+    if (auth == null) {
+      manager.logger.log(Level.WARNING, "Message sent before authentication started.");
+      return;
+    }
+
+    auth.messageSent(id, destination);
   }
 
 }

@@ -131,7 +131,7 @@ public class CryptHelper {
    * @throws IOException If an error occurs while reading the file.
    * @throws InvalidKeySpecException If the key isn't encoded in x509.
    */
-  public KeyPair readKeyPairFromFile(File file) throws IOException, InvalidKeySpecException {
+  public static KeyPair readKeyPairFromFile(File file) throws IOException, InvalidKeySpecException {
     PEMParser parser =
         new PEMParser(new InputStreamReader(new FileInputStream(file), Constants.charset));
 
@@ -170,7 +170,8 @@ public class CryptHelper {
    * 
    * @throws IOException If encoding the public key fails.
    */
-  public Identifier calculateHiddenServiceIdentifier(PublicKey pubKey) throws IOException {
+  public Identifier calculateHiddenServiceIdentifier(PublicKey pubKey)
+      throws IOException {
     if (sha1 == null) {
       throw new IllegalStateException("Call init first");
     }

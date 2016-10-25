@@ -650,7 +650,7 @@ public class PTP {
     }
 
     try {
-      cryptHelper.setKeyPair(cryptHelper.readKeyPairFromFile(privateKey));
+      cryptHelper.setKeyPair(CryptHelper.readKeyPairFromFile(privateKey));
     } catch (InvalidKeyException | InvalidKeySpecException e) {
       throw new IOException("Invalid private key");
     }

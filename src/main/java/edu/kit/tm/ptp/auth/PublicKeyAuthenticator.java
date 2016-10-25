@@ -36,17 +36,23 @@ public class PublicKeyAuthenticator extends Authenticator {
   private static final byte AUTHENTICATION_SUCCESS_MESSAGE = 0x0;
   private static final long TIMESTAMP_INTERVALL = 60 * 1000; // in ms
 
-  private ChannelMessageListener oldListener;
   private final CryptHelper cryptHelper;
-  private final Serializer serializer;
+  private static Serializer serializer = null;
+  private boolean initiator;
 
   public PublicKeyAuthenticator(AuthenticationListener listener, MessageChannel channel,
       CryptHelper cryptHelper) {
     super(listener, channel);
     this.cryptHelper = cryptHelper;
 
-    this.serializer = new Serializer();
-    serializer.registerClass(AuthenticationMessage.class);
+    initSerializer();
+  }
+
+  private static void initSerializer() {
+    if (serializer == null) {
+      serializer = new Serializer();
+      serializer.registerClass(AuthenticationMessage.class);
+    }
   }
 
   /**
@@ -93,45 +99,28 @@ public class PublicKeyAuthenticator extends Authenticator {
     }
   }
 
-  /**
-   * Contains the behavior if we are the initiator of the authentication.
-   */
-  public class InitiatorListener implements ChannelMessageListener {
-    @Override
-    public void messageSent(long id, MessageChannel destination) {
-      assert id == 0;
-      assert channel.equals(destination);
+  @Override
+  public void messageSent(long id, MessageChannel destination) {
+    assert id == 0;
+    assert channel.equals(destination);
+
+    if (!initiator) {
+      // Authentication success message has been sent successfully
+      authSuccess();
     }
+  }
 
-    @Override
-    public void messageReceived(byte[] data, MessageChannel source) {
-      assert channel.equals(source);
+  @Override
+  public void messageReceived(byte[] data, MessageChannel source) {
+    assert channel.equals(source);
 
+    if (initiator) {
       if (data.length == 1 && data[0] == AUTHENTICATION_SUCCESS_MESSAGE) {
         authSuccess();
       } else {
         authFailed();
       }
-    }
-  }
-
-  /**
-   * Contains the behavior if we are the target of the authentication.
-   */
-  public class TargetListener implements ChannelMessageListener {
-    @Override
-    public void messageSent(long id, MessageChannel destination) {
-      assert id == 0;
-      assert channel.equals(destination);
-
-      // Authentication success message has been sent successfully
-      authSuccess();
-    }
-
-    @Override
-    public void messageReceived(byte[] data, MessageChannel source) {
-      assert channel.equals(source);
-
+    } else {
       AuthenticationMessage authMessage;
 
       // deserialize received message
@@ -165,10 +154,7 @@ public class PublicKeyAuthenticator extends Authenticator {
 
     this.own = own;
 
-    oldListener = channel.getChannelMessageListener();
-
-    // Wait for the other end to send an authentication message
-    channel.setChannelMessageListener(new TargetListener());
+    this.initiator = false;
   }
 
   @Override
@@ -179,9 +165,7 @@ public class PublicKeyAuthenticator extends Authenticator {
 
     this.own = own;
     this.other = other;
-
-    oldListener = channel.getChannelMessageListener();
-    channel.setChannelMessageListener(new InitiatorListener());
+    this.initiator = true;
 
     // We initiated the authentication process and therefore send an authentication message
     try {
@@ -193,12 +177,10 @@ public class PublicKeyAuthenticator extends Authenticator {
   }
 
   private void authFailed() {
-    channel.setChannelMessageListener(oldListener);
     authListener.authenticationFailed(channel);
   }
 
   private void authSuccess() {
-    channel.setChannelMessageListener(oldListener);
     authListener.authenticationSuccess(channel, other);
   }
 

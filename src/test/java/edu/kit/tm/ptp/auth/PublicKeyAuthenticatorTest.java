@@ -52,11 +52,11 @@ public class PublicKeyAuthenticatorTest {
 
     cryptHelper = new CryptHelper();
     cryptHelper.init();
-    cryptHelper.setKeyPair(cryptHelper.readKeyPairFromFile(pk1));
+    cryptHelper.setKeyPair(CryptHelper.readKeyPairFromFile(pk1));
 
     cryptHelper2 = new CryptHelper();
     cryptHelper2.init();
-    cryptHelper2.setKeyPair(cryptHelper2.readKeyPairFromFile(pk2));
+    cryptHelper2.setKeyPair(CryptHelper.readKeyPairFromFile(pk2));
   }
 
   @AfterClass
