@@ -1,0 +1,32 @@
+package edu.kit.tm.ptp.connection;
+
+import java.util.logging.Level;
+
+import edu.kit.tm.ptp.channels.MessageChannel;
+
+/**
+ * Class for the event that a connection was closed.
+ */
+
+public class EventConnectionClosed extends Event {
+  private MessageChannel channel;
+
+  public EventConnectionClosed(ConnectionManager manager, MessageChannel channel) {
+    super(manager);
+
+    this.channel = channel;
+  }
+
+  @Override
+  public boolean process() {
+    Context context = manager.channelContexts.get(channel);
+
+    if (context == null) {
+      manager.logger.log(Level.WARNING, "Closing unregistered channel");
+    } else {
+      context.close(channel);
+    }
+
+    return true;
+  }
+}

@@ -1,7 +1,8 @@
 package edu.kit.tm.ptp;
 
+import edu.kit.tm.ptp.auth.AuthenticatorFactory;
+import edu.kit.tm.ptp.auth.PublicKeyAuthenticatorFactory;
 import edu.kit.tm.ptp.connection.ConnectionManager;
-import edu.kit.tm.ptp.crypt.CryptHelper;
 import edu.kit.tm.ptp.hiddenservice.HiddenServiceManager;
 import edu.kit.tm.ptp.serialization.ByteArrayMessage;
 import edu.kit.tm.ptp.serialization.Serializer;
@@ -9,10 +10,6 @@ import edu.kit.tm.ptp.utility.Constants;
 
 import java.io.File;
 import java.io.IOException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.spec.InvalidKeySpecException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -43,6 +40,7 @@ public class PTP {
 
   private HiddenServiceManager hiddenServiceManager;
   protected ConnectionManager connectionManager;
+  protected AuthenticatorFactory authFactory = new PublicKeyAuthenticatorFactory();
   private int hiddenServicePort;
   private Serializer serializer;
   private final MessageQueueContainer messageTypes = new MessageQueueContainer();
@@ -54,7 +52,6 @@ public class PTP {
   private boolean usePTPTor;
   private Thread clientThread = null;
   private volatile boolean queueMessages = false;
-  private CryptHelper cryptHelper = new CryptHelper();
   private boolean sharedTorProcess;
   private IsAliveManager isAliveManager = null;
 
@@ -207,15 +204,8 @@ public class PTP {
       tor = new TorManager(controlPort, config);
     }
 
-    try {
-      cryptHelper.init();
-    } catch (NoSuchAlgorithmException | NoSuchProviderException e) {
-      throw new IOException("Cryptographic algorithm or provider unavailable: " + e.getMessage());
-    }
-
-    connectionManager = new ConnectionManager(cryptHelper, config.getHiddenServicePort());
-    connectionManager.setSendListener(new PTPSendListener());
-    connectionManager.setReceiveListener(new PTPReceiveListener());
+    connectionManager = new ConnectionManager(config.getHiddenServicePort(),
+        new PTPReceiveListener(), new PTPSendListener(), authFactory);
 
     tor.addSOCKSProxyListener(new SOCKSProxyPortListener());
     tor.addSOCKSProxyListener(connectionManager);
@@ -287,9 +277,7 @@ public class PTP {
     }
 
     hiddenServiceManager.reuseHiddenService();
-    connectionManager.setLocalIdentifier(getIdentifier());
-
-    readPrivateKey(hiddenServiceManager.getPrivateKeyFile());
+    connectionManager.setIdentity(hiddenServiceManager.getPrivateKeyFile(), getIdentifier());
   }
 
   /**
@@ -302,9 +290,7 @@ public class PTP {
 
     // Create a fresh hidden service identifier.
     hiddenServiceManager.createHiddenService();
-    connectionManager.setLocalIdentifier(getIdentifier());
-
-    readPrivateKey(hiddenServiceManager.getPrivateKeyFile());
+    connectionManager.setIdentity(hiddenServiceManager.getPrivateKeyFile(), getIdentifier());
   }
 
 
@@ -641,18 +627,6 @@ public class PTP {
     @Override
     public void updateSOCKSProxy(String socksHost, int socksProxyPort) {
       config.setTorSocksProxyPort(socksProxyPort);
-    }
-  }
-
-  private void readPrivateKey(File privateKey) throws IOException {
-    if (privateKey == null) {
-      throw new IOException("Failed to get private key");
-    }
-
-    try {
-      cryptHelper.setKeyPair(CryptHelper.readKeyPairFromFile(privateKey));
-    } catch (InvalidKeyException | InvalidKeySpecException e) {
-      throw new IOException("Invalid private key");
     }
   }
 

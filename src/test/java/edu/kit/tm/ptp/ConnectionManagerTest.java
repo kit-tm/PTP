@@ -40,7 +40,9 @@ public class ConnectionManagerTest {
 
   @Test
   public void testStartBindServer() throws IOException {
-    manager = new ConnectionManager(new CryptHelper(), 1000);// Dummy port
+    SendReceiveListener listener = new SendReceiveListener();
+
+    manager = new ConnectionManager(1000, listener, listener);// Dummy port
     manager.start();
     int port = manager.startBindServer(Constants.anyport);
 
@@ -55,21 +57,19 @@ public class ConnectionManagerTest {
   @Test
   public void testSend() throws IOException {
     ptp = new PTP(true);
+    ptp.authFactory = new DummyAuthenticatorFactory();
     ptp.init();
     ptp.reuseHiddenService();
-
-    ptp.connectionManager.setAuthenticatorFactory(new DummyAuthenticatorFactory());
 
     Configuration config = ptp.getConfiguration();
     Serializer serializer = new Serializer();
     SendReceiveListener listener = new SendReceiveListener();
 
     ConnectionManager manager =
-        new ConnectionManager(new CryptHelper(), config.getHiddenServicePort());
+        new ConnectionManager(config.getHiddenServicePort(), listener, listener,
+            new DummyAuthenticatorFactory());
     manager.updateSOCKSProxy(Constants.localhost, config.getTorSOCKSProxyPort());
-    manager.setSendListener(listener);
     manager.setLocalIdentifier(new Identifier("aaaaaaaaaaaaaaaa.onion"));
-    manager.setAuthenticatorFactory(new DummyAuthenticatorFactory());
     manager.start();
 
     byte[] data = new byte[] {0x0, 0x1, 0x2, 0x3};
@@ -88,7 +88,9 @@ public class ConnectionManagerTest {
 
   @Test(expected = IllegalArgumentException.class)
   public void invalidLocalIdentifier() {
-    manager = new ConnectionManager(new CryptHelper(), 1000);// Dummy port
+    SendReceiveListener listener = new SendReceiveListener();
+
+    manager = new ConnectionManager(1000, listener, listener);// Dummy port
     manager.setLocalIdentifier(new Identifier("xyz.onion"));
   }
 

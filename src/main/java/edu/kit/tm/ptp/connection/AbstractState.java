@@ -79,7 +79,7 @@ public abstract class AbstractState {
     if (identifier != null) {
       for (MessageAttempt attempt : manager.dispatchedMessages.values()) {
         if (identifier.equals(attempt.getDestination())) {
-          manager.messageQueue.add(attempt);
+          manager.eventQueue.add(new EventSendMessage(manager, attempt));
         }
       }
       
