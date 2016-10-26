@@ -28,6 +28,8 @@ import java.util.logging.Logger;
  *
  */
 public class PTP {
+  private final MessageQueueContainer messageTypes = new MessageQueueContainer();
+
   /** The logger for this class. */
   private Logger logger;
   /** The configuration of the client. */
@@ -37,23 +39,23 @@ public class PTP {
   private TorManager tor;
   private ReceiveListener receiveListener = null;
   private SendListener sendListener = new SendListenerAdapter();
-
   private HiddenServiceManager hiddenServiceManager;
-  protected ConnectionManager connectionManager;
-  protected AuthenticatorFactory authFactory = new PublicKeyAuthenticatorFactory();
-  private int hiddenServicePort;
   private Serializer serializer;
-  private final MessageQueueContainer messageTypes = new MessageQueueContainer();
-  private volatile boolean initialized = false;
-  private volatile boolean closed = false;
   private String hiddenServiceDirectoryName;
   private String workingDirectory;
   private int controlPort;
   private boolean usePTPTor;
   private Thread clientThread = null;
-  private volatile boolean queueMessages = false;
   private boolean sharedTorProcess;
   private IsAliveManager isAliveManager = null;
+
+  private volatile boolean initialized = false;
+  private volatile boolean closed = false;
+  private volatile boolean queueMessages = false;
+  private volatile int hiddenServicePort;
+
+  protected ConnectionManager connectionManager;
+  protected AuthenticatorFactory authFactory = new PublicKeyAuthenticatorFactory();
 
   /**
    * Constructs a new PTP object. Manages an own Tor process.
@@ -162,7 +164,7 @@ public class PTP {
    * 
    * @throws IOException If starting Tor fails.
    */
-  public void init() throws IOException {
+  public synchronized void init() throws IOException {
     if (initialized) {
       throw new IllegalStateException("PTP is already initialized.");
     }
@@ -231,14 +233,14 @@ public class PTP {
   /**
    * Returns true if PTP was initialized successfully.
    */
-  public boolean isInitialized() {
+  public synchronized boolean isInitialized() {
     return initialized;
   }
 
   /**
    * Returns the currently used API configuration.
    */
-  public Configuration getConfiguration() {
+  public synchronized Configuration getConfiguration() {
     if (!initialized || closed) {
       throw new IllegalStateException();
     }
@@ -249,7 +251,7 @@ public class PTP {
   /**
    * Returns the currently used hidden service identifier.
    */
-  public Identifier getIdentifier() {
+  public synchronized Identifier getIdentifier() {
     if (!initialized || closed) {
       throw new IllegalStateException();
     }
@@ -260,7 +262,7 @@ public class PTP {
   /**
    * Returns the directory of the currently used hidden service.
    */
-  public String getHiddenServiceDirectory() {
+  public synchronized String getHiddenServiceDirectory() {
     if (!initialized || closed) {
       throw new IllegalStateException();
     }
@@ -271,7 +273,7 @@ public class PTP {
   /**
    * Reuses a hidden service or creates a new one if no hidden service to reuse exists.
    */
-  public void reuseHiddenService() throws IOException {
+  public synchronized void reuseHiddenService() throws IOException {
     if (!initialized || closed) {
       throw new IllegalStateException();
     }
@@ -283,7 +285,7 @@ public class PTP {
   /**
    * Creates a fresh hidden service.
    */
-  public void createHiddenService() throws IOException {
+  public synchronized void createHiddenService() throws IOException {
     if (!initialized || closed) {
       throw new IllegalStateException();
     }
@@ -303,7 +305,7 @@ public class PTP {
    * @param timeout How long to wait for a successful transmission.
    * @return Identifier of the message.
    */
-  public long sendMessage(byte[] data, Identifier destination, long timeout) {
+  public synchronized long sendMessage(byte[] data, Identifier destination, long timeout) {
     if (data == null || destination == null) {
       throw new IllegalArgumentException();
     }
@@ -318,7 +320,7 @@ public class PTP {
    * @param data The data to send.
    * @param destination The hidden service identifier of the destination.
    */
-  public long sendMessage(byte[] data, Identifier destination) {
+  public synchronized long sendMessage(byte[] data, Identifier destination) {
     if (data == null || destination == null) {
       throw new IllegalArgumentException();
     }
@@ -334,7 +336,7 @@ public class PTP {
    * @return Identifier of the message.
    * @see #enableMessageQueue(Class)
    */
-  public long sendMessage(Object message, Identifier destination) {
+  public synchronized long sendMessage(Object message, Identifier destination) {
     if (message == null || destination == null) {
       throw new IllegalArgumentException();
     }
@@ -351,7 +353,7 @@ public class PTP {
    * @return Identifier of the message.
    * @see #enableMessageQueue(Class)
    */
-  public long sendMessage(Object message, Identifier destination, long timeout) {
+  public synchronized long sendMessage(Object message, Identifier destination, long timeout) {
     if (!initialized || closed) {
       throw new IllegalStateException();
     }
@@ -368,7 +370,7 @@ public class PTP {
    * Register class to be able to send and receive instances of the class. Registering a class
    * several times has no effect.
    */
-  public <T> void registerClass(Class<T> type) {
+  public synchronized <T> void registerClass(Class<T> type) {
     if (closed) {
       throw new IllegalStateException();
     }
@@ -382,7 +384,8 @@ public class PTP {
    * @param listener Listener to be informed about received objects.
    * @see #registerClass(Class)
    */
-  public <T> void setReceiveListener(Class<T> type, MessageReceivedListener<T> listener) {
+  public synchronized <T> void setReceiveListener(Class<T> type,
+                                                  MessageReceivedListener<T> listener) {
     if (closed) {
       throw new IllegalStateException();
     }
@@ -399,7 +402,7 @@ public class PTP {
    * 
    * @param listener The listener to inform.
    */
-  public void setReceiveListener(ReceiveListener listener) {
+  public synchronized void setReceiveListener(ReceiveListener listener) {
     if (closed) {
       throw new IllegalStateException();
     }
@@ -414,7 +417,7 @@ public class PTP {
    * @param type The type of objects to queue.
    * @see #setReceiveListener(Class, MessageReceivedListener)
    */
-  public <T> void enableMessageQueue(Class<T> type) {
+  public synchronized <T> void enableMessageQueue(Class<T> type) {
     if (closed) {
       throw new IllegalStateException();
     }
@@ -429,7 +432,7 @@ public class PTP {
    * Enables queueing of byte[] messages. Objects can be received using {@link #getMessageQueue()
    * getMessageQueue()}
    */
-  public void enableMessageQueue() {
+  public synchronized void enableMessageQueue() {
     if (closed) {
       throw new IllegalStateException();
     }
@@ -442,7 +445,7 @@ public class PTP {
    *
    * @see #enableMessageQueue(Class)
    */
-  public <T> IMessageQueue<T> getMessageQueue(Class<T> type) {
+  public synchronized <T> IMessageQueue<T> getMessageQueue(Class<T> type) {
     if (closed) {
       throw new IllegalStateException();
     }
@@ -461,7 +464,7 @@ public class PTP {
   /**
    * Returns a IMessageQueue to poll received byte[] messages from.
    */
-  public IMessageQueue<byte[]> getMessageQueue() {
+  public synchronized IMessageQueue<byte[]> getMessageQueue() {
     return getMessageQueue(byte[].class);
   }
 
@@ -470,7 +473,7 @@ public class PTP {
    * 
    * @param listener The lister to inform.
    */
-  public void setSendListener(SendListener listener) {
+  public synchronized void setSendListener(SendListener listener) {
     if (closed) {
       throw new IllegalStateException();
     }
@@ -481,7 +484,7 @@ public class PTP {
   /**
    * Returns the local port on which the local hidden service is listening.
    */
-  public int getLocalPort() {
+  public synchronized int getLocalPort() {
     if (!initialized || closed) {
       throw new IllegalStateException();
     }
@@ -493,7 +496,7 @@ public class PTP {
    * Delete the currently used hidden service directory. The method is only allowed to be called
    * after {@link #exit() exit} has been called.
    */
-  public void deleteHiddenService() {
+  public synchronized void deleteHiddenService() {
     if (!(initialized && closed)) {
       throw new IllegalStateException();
     }
@@ -510,7 +513,7 @@ public class PTP {
    * Stops PTP. Only the method {@link #deleteHiddenService() deleteHiddenService()} may be called
    * afterwards. Calling this method several times has no effect.
    */
-  public void exit() {
+  public synchronized void exit() {
     if (closed) {
       return;
     }
@@ -535,7 +538,7 @@ public class PTP {
     closed = true;
   }
 
-  public void closeConnections(Identifier destination) {
+  public synchronized void closeConnections(Identifier destination) {
     if (!initialized || closed) {
       throw new IllegalStateException();
     }
@@ -543,7 +546,7 @@ public class PTP {
     tor.closeCircuits(destination);
   }
 
-  public void changeNetwork(boolean enable) {
+  public synchronized void changeNetwork(boolean enable) {
     if (!initialized || closed) {
       throw new IllegalStateException();
     }
@@ -551,57 +554,56 @@ public class PTP {
     tor.changeNetwork(enable);
   }
   
-  protected void sendIsAlive(Identifier destination, long timeout) {
+  protected synchronized void sendIsAlive(Identifier destination, long timeout) {
     connectionManager.send(new byte[0], destination, timeout, false);
   }
 
   private class PTPReceiveListener implements ReceiveListener {
     @Override
     public void messageReceived(byte[] data, Identifier source) {
-      // Method might be called before we finished initialization
-      checkAndWaitForInitialization();
+      synchronized (PTP.this) {
+        Object obj;
+        boolean isAliveMsg = data.length == 0;
+        try {
+          isAliveManager.messageReceived(source, isAliveMsg);
 
-      Object obj;
-      boolean isAliveMsg = data.length == 0;
-      try {
-        isAliveManager.messageReceived(source, isAliveMsg);
-        
-        if (isAliveMsg) {
-          return;
+          if (isAliveMsg) {
+            return;
+          }
+
+          obj = serializer.deserialize(data);
+
+          if (obj instanceof ByteArrayMessage) {
+            ByteArrayMessage message = (ByteArrayMessage) obj;
+
+            if (receiveListener != null) {
+              receiveListener.messageReceived(message.getData(), source);
+            }
+
+            if (queueMessages) {
+              messageTypes.addMessageToQueue(message.getData(), source, System.currentTimeMillis());
+            }
+
+            if (receiveListener == null && !queueMessages) {
+              logger.log(Level.WARNING,
+                  "Dropping received message because no receive listener ist set.");
+            }
+          } else {
+            if (messageTypes.hasListener(obj)) {
+              messageTypes.callReceiveListener(obj, source);
+            }
+            if (messageTypes.hasQueue(obj)) {
+              messageTypes.addMessageToQueue(obj, source, System.currentTimeMillis());
+            }
+
+            if (!messageTypes.hasListener(obj) && !messageTypes.hasQueue(obj)) {
+              logger.log(Level.WARNING,
+                  "Received message of unregistered type with length " + data.length);
+            }
+          }
+        } catch (IOException e) {
+          logger.log(Level.WARNING, "Error occurred while deserializing data: " + e.getMessage());
         }
-        
-        obj = serializer.deserialize(data);
-
-        if (obj instanceof ByteArrayMessage) {
-          ByteArrayMessage message = (ByteArrayMessage) obj;
-
-          if (receiveListener != null) {
-            receiveListener.messageReceived(message.getData(), source);
-          }
-
-          if (queueMessages) {
-            messageTypes.addMessageToQueue(message.getData(), source, System.currentTimeMillis());
-          }
-
-          if (receiveListener == null && !queueMessages) {
-            logger.log(Level.WARNING,
-                "Dropping received message because no receive listener ist set.");
-          }
-        } else {
-          if (messageTypes.hasListener(obj)) {
-            messageTypes.callReceiveListener(obj, source);
-          }
-          if (messageTypes.hasQueue(obj)) {
-            messageTypes.addMessageToQueue(obj, source, System.currentTimeMillis());
-          }
-
-          if (!messageTypes.hasListener(obj) && !messageTypes.hasQueue(obj)) {
-            logger.log(Level.WARNING,
-                "Received message of unregistered type with length " + data.length);
-          }
-        }
-      } catch (IOException e) {
-        logger.log(Level.WARNING, "Error occurred while deserializing data: " + e.getMessage());
       }
     }
   }
@@ -609,16 +611,18 @@ public class PTP {
   private class PTPSendListener implements SendListener {
     @Override
     public void messageSent(long id, Identifier destination, State state) {
-      // PTP doesn't allow to send messages before initialization is finished
-      if (!initialized) {
-        throw new IllegalStateException();
-      }
+      synchronized (PTP.this) {
+        // PTP doesn't allow to send messages before initialization is finished
+        if (!initialized) {
+          throw new IllegalStateException();
+        }
 
-      if (state == State.SUCCESS) {
-        isAliveManager.messageSent(destination);
-      }
+        if (state == State.SUCCESS) {
+          isAliveManager.messageSent(destination);
+        }
 
-      sendListener.messageSent(id, destination, state);
+        sendListener.messageSent(id, destination, state);
+      }
     }
   }
 
@@ -645,15 +649,5 @@ public class PTP {
         exit();
       }
     });
-  }
-
-  private void checkAndWaitForInitialization() {
-    while (!initialized && !Thread.currentThread().isInterrupted()) {
-      try {
-        Thread.sleep(100);
-      } catch (InterruptedException e) {
-        return;
-      }
-    }
   }
 }

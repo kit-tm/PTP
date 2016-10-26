@@ -24,30 +24,30 @@ import java.util.logging.Logger;
  */
 public class HiddenServiceManager {
   /** The logger for this class. */
-  private Logger logger = Logger.getLogger(HiddenServiceManager.class.getName());
+  private final Logger logger = Logger.getLogger(HiddenServiceManager.class.getName());
 
   /** The parameters of this client. */
   private final Configuration configuration;
 
+  /** The port the current hidden service is listening on. */
+  private final int port;
+
+  private final TorManager torManager;
+  /** The raw API lock file. */
+  private final LockFile apiLock;
+
   /** The current hidden service sub-currentDirectory. */
-  private String currentDirectory = null;
+  private volatile String currentDirectory = null;
 
   /** The currentDirectory to use as hiddenService. */
-  private String hiddenServiceDirectoryName;
+  private volatile String hiddenServiceDirectoryName;
 
   /** The currently used hidden service identifier. */
-  private Identifier currentIdentifier = null;
-
-  /** The port the current hidden service is listening on. */
-  private int port;
-
-  /** The raw API lock file. */
-  private LockFile apiLock = null;
+  private volatile Identifier currentIdentifier = null;
 
   /** Hidden service lock file. */
-  private File hiddenServiceLock = null;
-  
-  private TorManager torManager;
+  private volatile File hiddenServiceLock = null;
+
 
   /**
    * Constructs a new HiddenServiceManager.
