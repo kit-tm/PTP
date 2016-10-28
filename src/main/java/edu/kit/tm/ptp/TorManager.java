@@ -228,7 +228,7 @@ public class TorManager {
 
       List<String> circIds = new LinkedList<String>();
 
-      for (String line : streamStatus.split("\r\n")) {
+      for (String line : streamStatus.split("\n")) {
         if (line.equals("")) {
           continue;
         }
@@ -523,10 +523,12 @@ public class TorManager {
       String newFile = "";
       String line;
 
+      StringBuffer buf = new StringBuffer();
       while ((line = reader.readLine()) != null) {
-        newFile += line + "\n";
+        buf.append(line + "\n");
       }
       reader.close();
+      newFile = buf.toString();
 
       if (newFile.contains(property)) {
         return true;
