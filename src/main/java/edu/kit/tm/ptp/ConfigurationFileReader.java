@@ -108,31 +108,41 @@ public class ConfigurationFileReader {
     Configuration config = new Configuration();
     config.setLoggerConfiguration(loggerConfiguration);
 
-    // Set the configuration parameters.
-    int hiddenServicePort = parse(properties, HiddenServicePort);
-    config.setHiddenServicePort(hiddenServicePort);
-    logger.info("Read " + HiddenServicePort + " = " + hiddenServicePort);
+    if (check(properties, HiddenServicePort)) {
+      // Set the configuration parameters.
+      int hiddenServicePort = parse(properties, HiddenServicePort);
+      config.setHiddenServicePort(hiddenServicePort);
+      logger.info("Read " + HiddenServicePort + " = " + hiddenServicePort);
+    }
 
     byte[] authenticationBytes = new byte[0];
     config.setAuthenticationBytes(authenticationBytes);
 
-    int isAliveTimeout = parse(properties, IsAliveTimeout);
-    int isAliveSendTimeout = parse(properties, IsAliveSendTimeout);
-    config.setIsAliveValues(isAliveTimeout, isAliveSendTimeout);
-    logger.info("Read " + IsAliveTimeout + " = " + isAliveTimeout);
-    logger.info("Read " + IsAliveSendTimeout + " = " + isAliveSendTimeout);
+    if (check(properties, IsAliveTimeout) && check(properties, IsAliveSendTimeout)) {
+      int isAliveTimeout = parse(properties, IsAliveTimeout);
+      int isAliveSendTimeout = parse(properties, IsAliveSendTimeout);
+      config.setIsAliveValues(isAliveTimeout, isAliveSendTimeout);
+      logger.info("Read " + IsAliveTimeout + " = " + isAliveTimeout);
+      logger.info("Read " + IsAliveSendTimeout + " = " + isAliveSendTimeout);
+    }
 
-    int timerUpdateInterval = parse(properties, TimerUpdateInterval);
-    config.setTimerUpdateInterval(timerUpdateInterval);
-    logger.info("Read " + TimerUpdateInterval + " = " + timerUpdateInterval);
+    if (check(properties, TimerUpdateInterval)) {
+      int timerUpdateInterval = parse(properties, TimerUpdateInterval);
+      config.setTimerUpdateInterval(timerUpdateInterval);
+      logger.info("Read " + TimerUpdateInterval + " = " + timerUpdateInterval);
+    }
 
-    int connectRetryInterval = parse(properties, ConnectRetryInterval);
-    config.setConnectRetryInterval(connectRetryInterval);
-    logger.info("Read " + ConnectRetryInterval + " = " + connectRetryInterval);
+    if (check(properties, ConnectRetryInterval)) {
+      int connectRetryInterval = parse(properties, ConnectRetryInterval);
+      config.setConnectRetryInterval(connectRetryInterval);
+      logger.info("Read " + ConnectRetryInterval + " = " + connectRetryInterval);
+    }
 
-    int messageSendRetryInterval = parse(properties, MessageSendRetryInterval);
-    config.setMessageSendRetryInterval(messageSendRetryInterval);
-    logger.info("Read " + MessageSendRetryInterval + " = " + messageSendRetryInterval);
+    if (check(properties, MessageSendRetryInterval)) {
+      int messageSendRetryInterval = parse(properties, MessageSendRetryInterval);
+      config.setMessageSendRetryInterval(messageSendRetryInterval);
+      logger.info("Read " + MessageSendRetryInterval + " = " + messageSendRetryInterval);
+    }
 
     return config;
   }
@@ -143,12 +153,9 @@ public class ConfigurationFileReader {
    * @param map The hash map to be checked.
    * @param key The key to be looked for in the map.
    */
-  private void check(HashMap<String, String> map, String key) {
+  private boolean check(HashMap<String, String> map, String key) {
     logger.info("Checking if the configuration file contains the " + key + " property.");
-    if (!map.containsKey(key)) {
-      throw new IllegalArgumentException(
-          "Configuration file does not contain the " + key + " property.");
-    }
+    return map.containsKey(key);
   }
 
   /**
