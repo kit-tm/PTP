@@ -6,12 +6,16 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import edu.kit.tm.ptp.auth.DummyAuthenticatorFactory;
 import edu.kit.tm.ptp.connection.ConnectionManager;
+import edu.kit.tm.ptp.serialization.ByteArrayMessage;
+import edu.kit.tm.ptp.serialization.Serializer;
 import edu.kit.tm.ptp.utility.Constants;
 import edu.kit.tm.ptp.utility.RNG;
 import edu.kit.tm.ptp.utility.TestConstants;
 import edu.kit.tm.ptp.utility.TestHelper;
 
+import org.classpath.icedtea.Config;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -734,5 +738,46 @@ public class PTPTest {
     } finally {
       socket.close();
     }
+  }
+
+  @Test
+  public void testIsAlive() throws IOException {
+    ConfigurationFileReader configReader = new ConfigurationFileReader(Constants.configfile);
+    Configuration config =  configReader.readFromFile();
+
+    int isAliveTimeout = 10 * 1000;
+    int isAliveSendTimeout = 5 * 1000;
+
+    config.setIsAliveValues(isAliveTimeout, isAliveSendTimeout);
+
+    client1 = new PTP(true, config);
+    client1.authFactory = new DummyAuthenticatorFactory();
+    client1.init();
+    client1.reuseHiddenService();
+
+    Serializer serializer = new Serializer();
+    SendReceiveListener listener = new SendReceiveListener();
+
+    ConnectionManager manager =
+        new ConnectionManager(config.getHiddenServicePort(), listener, listener,
+            new DummyAuthenticatorFactory());
+    manager.updateSOCKSProxy(Constants.localhost, config.getTorSOCKSProxyPort());
+    manager.setLocalIdentifier(new Identifier("aaaaaaaaaaaaaaaa.onion"));
+    manager.start();
+
+    Identifier identifier = client1.getIdentifier();
+
+    byte[] data = new byte[] {0x0, 0x1, 0x2, 0x3};
+    ByteArrayMessage message = new ByteArrayMessage(data);
+    long id = manager.send(serializer.serialize(message), identifier,
+        TestConstants.hiddenServiceSetupTimeout);
+
+    TestHelper.wait(listener.sent, 1, TestConstants.hiddenServiceSetupTimeout);
+
+    assertEquals(1, listener.sent.get());
+
+    TestHelper.wait(listener.received, 1, isAliveSendTimeout + TestConstants.listenerTimeout);
+
+    assertEquals(1, listener.received.get());
   }
 }
