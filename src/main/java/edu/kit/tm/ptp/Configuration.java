@@ -48,7 +48,7 @@ public class Configuration {
    * @see Object
    */
   @Override
-  public String toString() {
+  public synchronized String toString() {
     StringBuilder sb = new StringBuilder("<Configuration>\n");
 
     sb.append("\tworking directory = ");
@@ -91,7 +91,7 @@ public class Configuration {
   /**
    * Sets the logger configuration and creates a logger object if none exists.
    */
-  public void setLoggerConfiguration(String loggerConfiguration) {
+  public synchronized void setLoggerConfiguration(String loggerConfiguration) {
     this.loggerConfiguration = loggerConfiguration;
     
     if (logger == null) {
@@ -99,63 +99,64 @@ public class Configuration {
     }
   }
 
-  public void setIsAliveTimeout(int isAliveTimeout) {
-    this.isAliveTimeout = isAliveTimeout;
-  }
+  public synchronized void setIsAliveValues(int isAliveTimeout, int isAliveSendTimeout) {
+    if (isAliveSendTimeout >= isAliveTimeout) {
+      throw new IllegalArgumentException();
+    }
 
-  public void setIsAliveSendTimeout(int isAliveSendTimeout) {
+    this.isAliveTimeout = isAliveTimeout;
     this.isAliveSendTimeout = isAliveSendTimeout;
   }
 
-  public void setTimerUpdateInterval(int timerUpdateInterval) {
+  public synchronized void setTimerUpdateInterval(int timerUpdateInterval) {
     this.timerUpdateInterval = timerUpdateInterval;
   }
 
 
-  public void setHiddenServicePort(int hiddenServicePort) {
+  public synchronized void setHiddenServicePort(int hiddenServicePort) {
     this.hiddenServicePort = hiddenServicePort;
   }
 
 
-  public void setAuthenticationBytes(byte[] authenticationBytes) {
+  public synchronized void setAuthenticationBytes(byte[] authenticationBytes) {
     this.authenticationBytes = (byte[]) authenticationBytes.clone();
   }
 
-  public void setWorkingDirectory(String workingDirectory) {
+  public synchronized void setWorkingDirectory(String workingDirectory) {
     this.workingDirectory = workingDirectory;
   }
 
-  public void setHiddenServicesDirectory(String hiddenServicesDirectory) {
+  public synchronized void setHiddenServicesDirectory(String hiddenServicesDirectory) {
     this.hiddenServicesDirectory = hiddenServicesDirectory;
   }
 
 
-  public void setTorControlPort(int torControlPort) {
+  public synchronized void setTorControlPort(int torControlPort) {
     this.torControlPort = torControlPort;
   }
   
-  public void setTorSocksProxyPort(int torSocksProxyPort) {
+  public synchronized void setTorSocksProxyPort(int torSocksProxyPort) {
     this.torSocksProxyPort = torSocksProxyPort;
   }
 
   /**
    * Returns the PTP working directory.
    */
-  public String getWorkingDirectory() {
+  public synchronized String getWorkingDirectory() {
     return workingDirectory;
   }
 
   /**
    * Returns the Tor hidden service directory.
    */
-  public String getHiddenServicesDirectory() {
+  public synchronized String getHiddenServicesDirectory() {
     return hiddenServicesDirectory;
   }
 
   /**
    * Returns the Tor hidden service port.
    */
-  public int getHiddenServicePort() {
+  public synchronized int getHiddenServicePort() {
     return hiddenServicePort;
   }
 
@@ -165,28 +166,28 @@ public class Configuration {
    * @see <a href="https://gitweb.torproject.org/torspec.git/tree/control-spec.txt"> https://gitweb.
    *      torproject.org/torspec.git/tree/control-spec.txt</a>
    */
-  public byte[] getAuthenticationBytes() {
+  public synchronized byte[] getAuthenticationBytes() {
     return (byte[]) authenticationBytes.clone();
   }
 
   /**
    * Returns the Tor control socket port.
    */
-  public int getTorControlPort() {
+  public synchronized int getTorControlPort() {
     return torControlPort;
   }
 
   /**
    * Returns the Tor SOCKS proxy port.
    */
-  public int getTorSOCKSProxyPort() {
+  public synchronized int getTorSOCKSProxyPort() {
     return torSocksProxyPort;
   }
 
   /**
    * Returns the interval (in milliseconds) at which timers are updated.
    */
-  public int getTimerUpdateInterval() {
+  public synchronized int getTimerUpdateInterval() {
     return timerUpdateInterval;
   }
 
@@ -195,7 +196,7 @@ public class Configuration {
    * Returns the time (in milliseconds) to wait for a regular message to be sent
    * before an IsAliveMessage is sent as a response to a received message.
    */
-  public int getIsAliveSendTimeout() {
+  public synchronized int getIsAliveSendTimeout() {
     return isAliveSendTimeout;
   }
 
@@ -203,7 +204,7 @@ public class Configuration {
    * Returns the time (in milliseconds) the sender of a message waits for a response
    * before closing the connection.
    */
-  public int getIsAliveTimeout() {
+  public synchronized int getIsAliveTimeout() {
     return isAliveTimeout;
   }
 

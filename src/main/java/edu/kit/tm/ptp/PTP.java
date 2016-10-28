@@ -33,7 +33,7 @@ public class PTP {
   /** The logger for this class. */
   private Logger logger;
   /** The configuration of the client. */
-  private Configuration config;
+  private Configuration config = null;
   private ConfigurationFileReader configReader;
   /** The Tor process manager. */
   private TorManager tor;
@@ -59,22 +59,9 @@ public class PTP {
 
   /**
    * Constructs a new PTP object. Manages an own Tor process.
-   *
-   * @throws IOException If an error occurs.
    */
   public PTP() {
     this(null);
-  }
-
-  /**
-   * Constructs a new PTP object. Manages an own Tor process.
-   * 
-   * @param sharedTorProcess If true the Tor process will be shared between PTP instances in the
-   *        same directory.
-   * @throws IOException If an error occurs.
-   */
-  public PTP(boolean sharedTorProcess) {
-    this(null, null, sharedTorProcess);
   }
 
   /**
@@ -82,7 +69,6 @@ public class PTP {
    *
    * @param workingDirectory The directory to start PTP in.
    * @param controlPort The control port of the Tor process.
-   * @throws IOException If an error occurs.
    */
   public PTP(String workingDirectory, int controlPort) {
     this(workingDirectory, controlPort, Constants.anyport, null);
@@ -95,12 +81,11 @@ public class PTP {
    * @param controlPort The control port of the Tor process.
    * @param localPort The port on which the local hidden service should run.
    * @param hiddenServiceDirectoryName The name of the hidden service directory.
-   * @throws IOException If an error occurs.
    *
    */
   public PTP(String workingDirectory, int controlPort, int localPort,
       String hiddenServiceDirectoryName) {
-    initPTP(workingDirectory, hiddenServiceDirectoryName, false, localPort, false);
+    initPTP(workingDirectory, hiddenServiceDirectoryName, false, localPort, false, null);
 
     this.controlPort = controlPort;
   }
@@ -122,7 +107,28 @@ public class PTP {
    * @param hiddenServiceDirectoryName The name of the directory of a hidden service to use.
    */
   public PTP(String workingDirectory, String hiddenServiceDirectoryName) {
-    this(workingDirectory, hiddenServiceDirectoryName, false);
+    this(workingDirectory, hiddenServiceDirectoryName, false, null);
+  }
+
+  /**
+   * Constructs a new PTP object. Manages an own Tor process.
+   *
+   * @param sharedTorProcess If true the Tor process will be shared between PTP instances in the
+   *        same directory.
+   */
+  public PTP(boolean sharedTorProcess) {
+    this(null, null, sharedTorProcess, null);
+  }
+
+  /**
+   * Constructs a new PTP object. Manages an own Tor process.
+   *
+   * @param sharedTorProcess If true the Tor process will be shared between PTP instances in the
+   *        same directory.
+   * @param config An initial configuration object used instead of reading a configuration file.
+   */
+  protected PTP(boolean sharedTorProcess, Configuration config) {
+    this(null, null, sharedTorProcess, config);
   }
 
   /**
@@ -133,14 +139,16 @@ public class PTP {
    * @param hiddenServiceDirectoryName The name of the directory of a hidden service to use.
    * @param sharedTorProcess If true the Tor process will be shared between PTP instances in the
    *        same directory.
+   * @param config An initial configuration object used instead of reading a configuration file
    */
-  public PTP(String workingDirectory, String hiddenServiceDirectoryName, boolean sharedTorProcess) {
+  protected PTP(String workingDirectory, String hiddenServiceDirectoryName, boolean sharedTorProcess,
+             Configuration config) {
     initPTP(workingDirectory, hiddenServiceDirectoryName, true, Constants.anyport,
-        sharedTorProcess);
+        sharedTorProcess, config);
   }
 
   private void initPTP(String workingDirectory, String hiddenServiceDirectoryName,
-      boolean usePTPTor, int hiddenServicePort, boolean sharedTorProcess) {
+      boolean usePTPTor, int hiddenServicePort, boolean sharedTorProcess, Configuration config) {
     configReader = new ConfigurationFileReader(
         (workingDirectory != null ? workingDirectory + File.separator : "") + Constants.configfile);
 
@@ -151,6 +159,7 @@ public class PTP {
     this.sharedTorProcess = sharedTorProcess;
 
     this.serializer = new Serializer();
+    this.config = config;
     serializer.registerClass(byte[].class);
     serializer.registerClass(ByteArrayMessage.class);
 
@@ -175,8 +184,10 @@ public class PTP {
 
     addShutdownHook();
 
-    // read the configuration file
-    config = configReader.readFromFile();
+    if (config == null) {
+      // read the configuration file
+      config = configReader.readFromFile();
+    }
 
     // Create the logger after the configuration sets the logger properties file.
     logger = Logger.getLogger(PTP.class.getName());

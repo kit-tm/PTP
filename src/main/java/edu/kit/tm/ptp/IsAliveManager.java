@@ -93,7 +93,7 @@ public class IsAliveManager implements ExpireListener {
     // The sent timer expired so we didn't send a regular message since we received the last message
     logger.log(Level.INFO, "Sending IsAliveMessage to " + identifier);
     // Send an IsAliveMessage
-    ptp.sendIsAlive(identifier, isAliveSendTimeout);
+    ptp.sendIsAlive(identifier, isAliveTimeout - isAliveSendTimeout);
   }
   
   private void receiveExpired(Identifier identifier) {

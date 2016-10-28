@@ -120,11 +120,9 @@ public class ConfigurationFileReader {
     config.setAuthenticationBytes(authenticationBytes);
 
     int isAliveTimeout = parse(properties, IsAliveTimeout);
-    config.setIsAliveTimeout(isAliveTimeout);
-    logger.info("Read " + IsAliveTimeout + " = " + isAliveTimeout);
-
     int isAliveSendTimeout = parse(properties, IsAliveSendTimeout);
-    config.setIsAliveSendTimeout(isAliveSendTimeout);
+    config.setIsAliveValues(isAliveTimeout, isAliveSendTimeout);
+    logger.info("Read " + IsAliveTimeout + " = " + isAliveTimeout);
     logger.info("Read " + IsAliveSendTimeout + " = " + isAliveSendTimeout);
 
     int ttlPoll = parse(properties, TimerUpdateInterval);
