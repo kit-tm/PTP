@@ -8,6 +8,7 @@ import static org.junit.Assert.assertTrue;
 
 import edu.kit.tm.ptp.utility.Constants;
 import edu.kit.tm.ptp.utility.TestConstants;
+import edu.kit.tm.ptp.utility.TestHelper;
 
 import org.junit.After;
 import org.junit.Before;
@@ -121,6 +122,9 @@ public class MessageQueueTest {
         && System.currentTimeMillis() - start < TestConstants.hiddenServiceSetupTimeout) {
       Thread.sleep(1000);
     }
+
+    // Wait for messages to arrive
+    TestHelper.sleep(TestConstants.listenerTimeout);
     
     int receiveCount = 0;
     
