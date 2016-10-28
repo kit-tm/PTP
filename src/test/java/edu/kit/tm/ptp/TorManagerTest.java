@@ -90,64 +90,6 @@ public class TorManagerTest {
     torManager.stopTor();
   }
   
-  // TODO fix
-  /*@Test
-  public void closeCircuit() throws IOException {
-    PTP ptp = new PTP();
-    ptp.init();
-    ptp.reuseHiddenService();
-    
-    Identifier ident = ptp.getIdentifier();
-    
-    assertNotNull(ident);
-    
-    assertTrue(torManager.startTor());
-    
-    int socksPort = torManager.getTorSOCKSPort();
-    assertNotEquals(-1, socksPort);
-    
-    // Connect to hs through socks
-    SocketAddress addr = new InetSocketAddress(Constants.localhost, socksPort);
-    Proxy proxy = new Proxy( Proxy.Type.SOCKS, addr);
-    
-    Socket sock = new Socket(proxy);
-    SocketAddress onion =
-        new InetSocketAddress(ident.getTorAddress(), ptp.getConfiguration().getHiddenServicePort());
-    
-    long start = System.currentTimeMillis(); 
-    
-    while (start - System.currentTimeMillis() < TestConstants.hiddenServiceSetupTimeout
-        && !sock.isConnected()) {
-      try {
-        sock.connect(onion, ((int) TestConstants.socketConnectTimeout));
-      } catch (SocketTimeoutException | SocketException e) {
-        // Retry
-      }
-    }
-    
-    assertTrue(sock.isConnected());
-    
-    // Close circuit
-    torManager.closeCircuits(ident);
-    
-    TestHelper.sleep(TestConstants.listenerTimeout);
-    
-    boolean closed = false;
-    
-    // Connection should be closed
-    try {
-      sock.getOutputStream().write(0x0);
-    } catch (SocketException e) {
-      // Connection is closed
-      closed = true;
-    }
-    
-    sock.close();
-    
-    assertTrue(closed);
-    torManager.stopTor();
-  }*/
-  
   @Test
   public void changeNetwork() {
     MySOCKSListener listener = new MySOCKSListener();
