@@ -71,8 +71,8 @@ public class ConfigurationTest {
     torControlPort = random.nextInt();
     torSocksProxyPort = random.nextInt();
     hiddenServicePort = random.nextInt();
-    isAliveTimeout = random.nextInt();
-    isAliveSendTimeout = random.nextInt();
+    isAliveSendTimeout = random.nextInt(10000);
+    isAliveTimeout = isAliveSendTimeout + random.nextInt(10000);
     timerUpdateInterval = random.nextInt();
 
     // Write the properties to the input file.
