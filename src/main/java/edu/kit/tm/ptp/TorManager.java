@@ -589,9 +589,8 @@ public class TorManager {
 
     if (torSocksProxyPort != -1) {
       logger.log(Level.INFO, "Got Tor SOCKS proxy port: " + torSocksProxyPort);
+      updateSOCKSProxy(Constants.localhost, torSocksProxyPort);
     }
-
-    updateSOCKSProxy(Constants.localhost, torSocksProxyPort);
   }
   
   private void updateSOCKSProxy(String socksHost, int socksProxyPort) {
