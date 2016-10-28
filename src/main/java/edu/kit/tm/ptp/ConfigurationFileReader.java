@@ -32,6 +32,8 @@ public class ConfigurationFileReader {
   public static final String LoggerConfigFile = "LoggerConfigFile";
   public static final String IsAliveTimeout = "IsAliveTimeout";
   public static final String IsAliveSendTimeout = "IsAliveSendTimeout";
+  public static final String ConnectRetryInterval = "ConnectRetryInterval";
+  public static final String MessageSendRetryInterval = "MessageSendRetryInterval";
 
   /**
    * Constructor method.
@@ -101,15 +103,10 @@ public class ConfigurationFileReader {
     logger = Logger.getLogger(ConfigurationFileReader.class.getName());
     logger.info("Set the logger properties file to: " + loggerConfiguration);
 
+    // Contains default values for HiddenServicePort, IsAliveTimeout,
+    // IsAliveSendTimeout, ConnectRetryInterval
     Configuration config = new Configuration();
     config.setLoggerConfiguration(loggerConfiguration);
-
-    // Check if all the needed properties are in the configuration file.
-    check(properties, HiddenServicePort);
-    check(properties, TimerUpdateInterval);
-    check(properties, IsAliveTimeout);
-    check(properties, IsAliveSendTimeout);
-
 
     // Set the configuration parameters.
     int hiddenServicePort = parse(properties, HiddenServicePort);
@@ -125,9 +122,17 @@ public class ConfigurationFileReader {
     logger.info("Read " + IsAliveTimeout + " = " + isAliveTimeout);
     logger.info("Read " + IsAliveSendTimeout + " = " + isAliveSendTimeout);
 
-    int ttlPoll = parse(properties, TimerUpdateInterval);
-    config.setTimerUpdateInterval(ttlPoll);
-    logger.info("Read " + TimerUpdateInterval + " = " + ttlPoll);
+    int timerUpdateInterval = parse(properties, TimerUpdateInterval);
+    config.setTimerUpdateInterval(timerUpdateInterval);
+    logger.info("Read " + TimerUpdateInterval + " = " + timerUpdateInterval);
+
+    int connectRetryInterval = parse(properties, ConnectRetryInterval);
+    config.setConnectRetryInterval(connectRetryInterval);
+    logger.info("Read " + ConnectRetryInterval + " = " + connectRetryInterval);
+
+    int messageSendRetryInterval = parse(properties, MessageSendRetryInterval);
+    config.setMessageSendRetryInterval(messageSendRetryInterval);
+    logger.info("Read " + MessageSendRetryInterval + " = " + messageSendRetryInterval);
 
     return config;
   }

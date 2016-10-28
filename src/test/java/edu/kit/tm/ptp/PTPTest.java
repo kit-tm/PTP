@@ -759,7 +759,7 @@ public class PTPTest {
     SendReceiveListener listener = new SendReceiveListener();
 
     ConnectionManager manager =
-        new ConnectionManager(config.getHiddenServicePort(), listener, listener,
+        new ConnectionManager(config.getHiddenServicePort(), listener, listener, null,
             new DummyAuthenticatorFactory());
     manager.updateSOCKSProxy(Constants.localhost, config.getTorSOCKSProxyPort());
     manager.setLocalIdentifier(new Identifier("aaaaaaaaaaaaaaaa.onion"));

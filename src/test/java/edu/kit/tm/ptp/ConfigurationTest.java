@@ -47,7 +47,8 @@ public class ConfigurationTest {
   private int timerUpdateInterval;
   private int isAliveTimeout = -1;
   private int isAliveSendTimeout = -1;
-
+  private int connectRetryInterval = -1;
+  private int messageSendRetryInterval = -1;
 
   /**
    * @throws IOException
@@ -68,12 +69,14 @@ public class ConfigurationTest {
     Random random = new Random();
 
     // Choose random property values.
-    torControlPort = random.nextInt();
-    torSocksProxyPort = random.nextInt();
-    hiddenServicePort = random.nextInt();
+    torControlPort = random.nextInt(Constants.maxport + 1);
+    torSocksProxyPort = random.nextInt(Constants.maxport + 1);
+    hiddenServicePort = random.nextInt(Constants.maxport + 1);
     isAliveSendTimeout = random.nextInt(10000);
     isAliveTimeout = isAliveSendTimeout + random.nextInt(10000);
-    timerUpdateInterval = random.nextInt();
+    timerUpdateInterval = random.nextInt(Integer.MAX_VALUE);
+    connectRetryInterval = random.nextInt(Integer.MAX_VALUE);
+    messageSendRetryInterval = random.nextInt(Integer.MAX_VALUE);
 
     // Write the properties to the input file.
     BufferedWriter writer = new BufferedWriter(
@@ -84,6 +87,8 @@ public class ConfigurationTest {
     output.write(ConfigurationFileReader.IsAliveTimeout + " " + isAliveTimeout + newline);
     output.write(ConfigurationFileReader.IsAliveSendTimeout + " " + isAliveSendTimeout + newline);
     output.write(ConfigurationFileReader.TimerUpdateInterval + " " + timerUpdateInterval + newline);
+    output.write(ConfigurationFileReader.ConnectRetryInterval + " " + connectRetryInterval + newline);
+    output.write(ConfigurationFileReader.MessageSendRetryInterval + " " + messageSendRetryInterval + newline);
 
     output.flush();
     output.close();
@@ -223,7 +228,38 @@ public class ConfigurationTest {
   @Test
   public void testGetTimerUpdateInterval() {
     if (timerUpdateInterval != configuration.getTimerUpdateInterval()) {
-      fail("TTL poll property does not match: " + timerUpdateInterval + " != " + configuration.getTimerUpdateInterval());
+      fail("TimerUpdateInterval property does not match: " + timerUpdateInterval + " != "
+          + configuration.getTimerUpdateInterval());
+    }
+  }
+
+  /**
+   * Test method for {@link Configuration#getConnectRetryInterval()}.
+   *
+   * <p>
+   * Checks whether the configuration read the connectRetryInterval property correctly.
+   * Fails iff the read property is not equal to the written property.
+   */
+  @Test
+  public void testGetConnectRetryInterval() {
+    if (connectRetryInterval != configuration.getConnectRetryInterval()) {
+      fail("ConnectRetryInterval property does not match: " + connectRetryInterval + " != "
+          + configuration.getConnectRetryInterval());
+    }
+  }
+
+  /**
+   * Test method for {@link Configuration#getMessageSendRetryInterval()}.
+   *
+   * <p>
+   * Checks whether the configuration read the messageSendRetryInterval property correctly.
+   * Fails iff the read property is not equal to the written property.
+   */
+  @Test
+  public void testGetMessageSendRetryInterval() {
+    if (messageSendRetryInterval != configuration.getMessageSendRetryInterval()) {
+      fail("MessageSendRetryInterval property does not match: " + messageSendRetryInterval + " != "
+          + configuration.getMessageSendRetryInterval());
     }
   }
 

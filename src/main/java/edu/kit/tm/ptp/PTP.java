@@ -218,7 +218,7 @@ public class PTP {
     }
 
     connectionManager = new ConnectionManager(config.getHiddenServicePort(),
-        new PTPReceiveListener(), new PTPSendListener(), authFactory);
+        new PTPReceiveListener(), new PTPSendListener(), config,  authFactory);
 
     tor.addSOCKSProxyListener(new SOCKSProxyPortListener());
     tor.addSOCKSProxyListener(connectionManager);

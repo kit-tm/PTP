@@ -67,7 +67,7 @@ public class StateInit extends AbstractState {
 
     manager.logger.log(Level.INFO, "Connection to destination " + identifier + " is closed");
     if (manager.lastTry.get(identifier) == null || System.currentTimeMillis()
-        - manager.lastTry.get(identifier) >= Constants.connectInterval) {
+        - manager.lastTry.get(identifier) >= manager.connectRetryInterval) {
       manager.logger.log(Level.INFO, "Opening new connection to destination " + identifier);
       manager.lastTry.put(identifier, System.currentTimeMillis());
       try {

@@ -42,7 +42,7 @@ public class ConnectionManagerTest {
   public void testStartBindServer() throws IOException {
     SendReceiveListener listener = new SendReceiveListener();
 
-    manager = new ConnectionManager(1000, listener, listener);// Dummy port
+    manager = new ConnectionManager(1000, listener, listener, null);// Dummy port
     manager.start();
     int port = manager.startBindServer(Constants.anyport);
 
@@ -66,7 +66,7 @@ public class ConnectionManagerTest {
     SendReceiveListener listener = new SendReceiveListener();
 
     ConnectionManager manager =
-        new ConnectionManager(config.getHiddenServicePort(), listener, listener,
+        new ConnectionManager(config.getHiddenServicePort(), listener, listener, null,
             new DummyAuthenticatorFactory());
     manager.updateSOCKSProxy(Constants.localhost, config.getTorSOCKSProxyPort());
     manager.setLocalIdentifier(new Identifier("aaaaaaaaaaaaaaaa.onion"));
@@ -90,7 +90,7 @@ public class ConnectionManagerTest {
   public void invalidLocalIdentifier() {
     SendReceiveListener listener = new SendReceiveListener();
 
-    manager = new ConnectionManager(1000, listener, listener);// Dummy port
+    manager = new ConnectionManager(1000, listener, listener, null);// Dummy port
     manager.setLocalIdentifier(new Identifier("xyz.onion"));
   }
 

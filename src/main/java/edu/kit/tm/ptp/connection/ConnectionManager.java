@@ -1,5 +1,6 @@
 package edu.kit.tm.ptp.connection;
 
+import edu.kit.tm.ptp.Configuration;
 import edu.kit.tm.ptp.Identifier;
 import edu.kit.tm.ptp.ReceiveListener;
 import edu.kit.tm.ptp.SendListener;
@@ -42,11 +43,13 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
   private final AtomicLong messageId = new AtomicLong(0);
   private final Semaphore semaphore = new Semaphore(0);
   private final Waker waker = new Waker(semaphore);
+  private final int sendMessageRetryInterval;
 
   protected final int hsPort;
   protected final SendListener sendListener;
   protected final ReceiveListener receiveListener;
   protected final Logger logger = Logger.getLogger(ConnectionManager.class.getName());
+  protected final int connectRetryInterval;
 
   protected final ChannelManager channelManager = new ChannelManager(this);
   protected final AuthenticatorFactory authFactory;
@@ -71,8 +74,9 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
    * @param receiveListener The listener to inform about received messages.
    * @param sendListener The listener to inform about sent messages.
    */
-  public ConnectionManager(int hsPort, ReceiveListener receiveListener, SendListener sendListener) {
-    this (hsPort, receiveListener, sendListener, new PublicKeyAuthenticatorFactory());
+  public ConnectionManager(int hsPort, ReceiveListener receiveListener, SendListener sendListener,
+                           Configuration config) {
+    this (hsPort, receiveListener, sendListener, config, new PublicKeyAuthenticatorFactory());
   }
 
   /**
@@ -80,7 +84,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
    * to create authenticator objects.
    */
   public ConnectionManager(int hsPort, ReceiveListener receiveListener, SendListener sendListener,
-                           AuthenticatorFactory authFactory) {
+                           Configuration config, AuthenticatorFactory authFactory) {
     if (receiveListener == null || sendListener == null || authFactory == null) {
       throw new IllegalArgumentException();
     }
@@ -89,6 +93,14 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
     this.receiveListener = receiveListener;
     this.sendListener = sendListener;
     this.authFactory = authFactory;
+
+    if (config == null) {
+      this.connectRetryInterval = Configuration.DEFAULT_CONNECTRETRYINTERVAL;
+      this.sendMessageRetryInterval = Configuration.DEFAULT_MESSAGESENDRETRYINTERVAL;
+    } else {
+      this.connectRetryInterval = config.getConnectRetryInterval();
+      this.sendMessageRetryInterval = config.getMessageSendRetryInterval();
+    }
   }
   
   @Override
@@ -317,7 +329,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
         if (unprocessed > 0) {
           logger.log(Level.INFO, unprocessed + " unsent message(s) in queue");
           // Wake thread after some time
-          waker.wake(5 * 1000);
+          waker.wake(sendMessageRetryInterval);
         }
 
       } catch (InterruptedException ie) {

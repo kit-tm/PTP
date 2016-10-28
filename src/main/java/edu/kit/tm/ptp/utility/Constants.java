@@ -22,12 +22,8 @@ public class Constants {
   public static final String hsdirkeyword = "HiddenServiceDir";
   /** The Tor configuration keyword for the hidden service port property. */
   public static final String hsportkeyword = "HiddenServicePort";
-  /** The Tor configuration keyword for the SOCKS proxy port property. */
-  public static final String torsocksportkeyword = "SocksPort";
   /** The .onion extension of Tor addresses. */
   public static final String onion = ".onion";
-  /** The port delimiter in the Tor control port output file. */
-  public static final String portdelimiter = ":";
 
 
   /* Tor executable constants. */
@@ -42,12 +38,6 @@ public class Constants {
   public static final String datadiroption = "--DataDirectory";
   /** The Tor configuration option for the working directory property. */
   public static final String ctlportoutoption = "--ControlPortWriteToFile";
-  /** A part of the Tor executable log message, logged when the bootstrapping is complete. */
-  public static final String bootstrapdone = "Bootstrapped 100%";
-  /** A part of the Tor executable log message, logged when the Tor control port is open. */
-  public static final String controlportopen = "Control listener listening on port";
-  /** A part of the Tor executable log message, logged when the Tor SOCKS proxy port is open. */
-  public static final String socksportopen = "Socks listener listening on port";
   /** The shutdown signal used when shutting down Tor with JTorCtl. */
   public static final String shutdownsignal = "SHUTDOWN";
 
@@ -68,18 +58,12 @@ public class Constants {
   public static final String ptphome = "PTP_HOME";
   /** The path of the default PeerTorPeer home directory. */
   public static final String ptphomedefault = "./ptp-data";
-  /** The name of the Tor manager ports file. */
-  public static final String tormanagerportsfile = "PTPTorManagerPorts";
   /** The name of the Tor manager lock file. */
   public static final String tormanagerlockfile = "PTPTorManagerLock";
   /** The name of the raw API lock file. */
   public static final String rawapilockfile = "PTPRawAPILock";
   /** The name of the lock file for a hidden service.*/
   public static final String hiddenservicelockfile = "PTPHSLock";
-  /** The Tor hidden service origin identifier placeholder when no information is available. */
-  public static final String niaorigin = "N/A";
-  /** The time in milliseconds to wait between two connection attempts to the same identifier. */
-  public static final long connectInterval = 30 * 1000;
   /** The time to wait for Tor to start.*/
   public static final long torStartTimeout = 10 * 1000;
 
@@ -97,10 +81,9 @@ public class Constants {
 
   /** The port number which tells the JVM to pick any available port for a server socket. */
   public static final int anyport = 0;
+  public static final int maxport = 65535;
   /** The localhost address. */
   public static final String localhost = "127.0.0.1";
-  /** The working directory Java system property keyword. */
-  public static final String userdir = "user.dir";
   /** File read+write rights. */
   public static final String readwriterights = "rw";
   /** Newline symbol. */
