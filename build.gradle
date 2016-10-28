@@ -84,3 +84,11 @@ names.each { fileName ->
 jar.dependsOn {
 	tasks.findAll { task -> task.name.contains('Example') }
 }
+
+test.testLogging { 
+  showExceptions = true
+  showCauses = true
+  showStackTraces = true
+  events = ['started', 'failed', 'passed', 'skipped']
+  exceptionFormat = 'full'
+} 
