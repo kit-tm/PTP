@@ -8,8 +8,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Class to detect broken connections. The sender of a message expects to receive an arbitrary
- * message back from the receiver in the time interval configured by ...
+ * Class to detect broken connections. The sender of a message expects
+ * to receive an arbitrary  * message back from the receiver in the time interval
+ * configured by Configuration.getIsAliveTimeout().
  * If the receiver has no regular message to send it can send an IsAliveMessage.
  * IsAliveMessages must NOT be replied to by another IsAliveMessage.
  * 
