@@ -26,12 +26,12 @@ public class TorEventHandler implements EventHandler {
 
   @Override
   public void circuitStatus(String arg0, String arg1, String arg2) {
-    //logger.log(Level.INFO, arg0 + ";" +  arg1 + ";" + arg2);
+    //logger.log(Level.FINE, arg0 + ";" +  arg1 + ";" + arg2);
   }
 
   @Override
   public void message(String arg0, String arg1) {
-    logger.log(Level.INFO, arg0 + " " + arg1);
+    logger.log(Level.FINE, arg0 + " " + arg1);
   }
 
   @Override
@@ -48,7 +48,7 @@ public class TorEventHandler implements EventHandler {
 
   @Override
   public void unrecognized(String arg0, String arg1) {
-    //logger.log(Level.INFO, arg0 + " " + arg1);
+    //logger.log(Level.FINE, arg0 + " " + arg1);
   }
 
   /**
