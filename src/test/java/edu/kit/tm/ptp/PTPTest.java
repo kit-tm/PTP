@@ -756,6 +756,9 @@ public class PTPTest {
     client1.reuseHiddenService();
 
     Serializer serializer = new Serializer();
+    serializer.registerClass(byte[].class);
+    serializer.registerClass(ByteArrayMessage.class);
+
     SendReceiveListener listener = new SendReceiveListener();
 
     ConnectionManager manager =

@@ -63,6 +63,9 @@ public class ConnectionManagerTest {
 
     Configuration config = ptp.getConfiguration();
     Serializer serializer = new Serializer();
+    serializer.registerClass(byte[].class);
+    serializer.registerClass(ByteArrayMessage.class);
+
     SendReceiveListener listener = new SendReceiveListener();
 
     ConnectionManager manager =
