@@ -46,7 +46,6 @@ public class TorManager {
   private static final Logger logger = Logger.getLogger(TorManager.class.getName());
   private volatile boolean torRunning = false;
   private boolean externalTor;
-  protected String torrc = "config/torrc";
   private boolean torNetworkEnabled = false;
   private final File controlPortFile;
   private final TorEventHandler torEvent = new TorEventHandler(this);
@@ -417,11 +416,11 @@ public class TorManager {
     String torFile = useAbsolutePath ? workingDirectory + File.separator : "";
     torFile += Constants.torfile;
     String torrcFile = useAbsolutePath ? workingDirectory + File.separator : "";
-    torrcFile += torrc;
+    torrcFile += Constants.torrcfile;
     
-    if (!updateTorRc(torrcFile)) {
-      return false;
-    }
+    //if (!updateTorRc(torrcFile)) {
+    //  return false;
+    //}
 
     try {
       /** The parameters for the Tor execution command. */
@@ -430,12 +429,14 @@ public class TorManager {
           torFile,
           /** The Tor configuration file option. */
           Constants.torrcoption,
-          /** The Tor configuration file. */
           torrcFile,
           /** The Tor working directory option. */
           Constants.datadiroption,
-          /** The Tor working directory path. */
-          workingDirectory};
+          workingDirectory,
+          // The option to write the port to a file.
+          Constants.ctlportwriteoption,
+          controlPortFile.getAbsolutePath()
+      };
 
       logger.log(Level.INFO, "Executing Tor.");
       logger.log(Level.INFO,
@@ -507,64 +508,6 @@ public class TorManager {
       }
     }
 
-    return false;
-  }
-
-  private boolean updateTorRc(String torrc) {
-    BufferedReader reader = null;
-    BufferedWriter writer = null;
-    String property = Constants.torControlPortWriteToFile + " " + controlPortFile.getAbsolutePath();
-
-    try {
-      reader = new BufferedReader(
-          new InputStreamReader(new FileInputStream(torrc), Constants.charset));
-
-
-      String newFile = "";
-      String line;
-
-      StringBuffer buf = new StringBuffer();
-      while ((line = reader.readLine()) != null) {
-        buf.append(line + "\n");
-      }
-      reader.close();
-      newFile = buf.toString();
-
-      if (newFile.contains(property)) {
-        return true;
-      }
-
-      if (newFile.contains(Constants.torControlPortWriteToFile)) {
-        newFile = newFile.replace(Constants.torControlPortWriteToFile + ".*\n", property);
-      } else {
-        newFile +=
-            Constants.torControlPortWriteToFile + " " + controlPortFile.getAbsolutePath() + "\n";
-      }
-
-      writer = new BufferedWriter(
-          new OutputStreamWriter(new FileOutputStream(torrc), Constants.charset));
-
-      writer.write(newFile);
-
-      writer.close();
-
-      return true;
-
-    } catch (IOException e) {
-      logger.log(Level.WARNING ,"Failed to update " + torrc);
-    } finally {
-      try {
-        if (reader != null) {
-          reader.close();
-        }
-
-        if (writer != null) {
-          writer.close();
-        }
-      } catch (IOException e) {
-        logger.log(Level.WARNING, "Failed to close BufferedReader/Writer");
-      }
-    }
     return false;
   }
 

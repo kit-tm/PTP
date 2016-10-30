@@ -37,7 +37,7 @@ public class Constants {
   /** The Tor configuration option for the working directory property. */
   public static final String datadiroption = "--DataDirectory";
   /** The Tor configuration option for the working directory property. */
-  public static final String ctlportoutoption = "--ControlPortWriteToFile";
+  public static final String ctlportwriteoption = "--ControlPortWriteToFile";
   /** The shutdown signal used when shutting down Tor with JTorCtl. */
   public static final String shutdownsignal = "SHUTDOWN";
 
