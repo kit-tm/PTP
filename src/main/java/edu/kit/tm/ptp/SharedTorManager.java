@@ -23,7 +23,7 @@ public class SharedTorManager extends TorManager {
 
   public SharedTorManager(String workingDirectory, Configuration config) {
     super(workingDirectory, config);
-    torrc = "config/testtorrc";
+    torrc = Constants.testtorrcfile;
   }
   
   public SharedTorManager(int controlPort, Configuration config) {

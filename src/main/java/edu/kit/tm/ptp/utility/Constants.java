@@ -32,6 +32,7 @@ public class Constants {
   public static final String torfile = "tor";
   /** The path to and the name of the Tor configuration file. */
   public static final String torrcfile = "config/torrc";
+  public static final String testtorrcfile = "config/testtorrc";
   /** The Tor executable option for a custom input torrc file. */
   public static final String torrcoption = "-f";
   /** The Tor configuration option for the working directory property. */

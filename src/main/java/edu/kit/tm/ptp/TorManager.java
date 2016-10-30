@@ -45,6 +45,7 @@ public class TorManager {
 
   private static final Logger logger = Logger.getLogger(TorManager.class.getName());
   private volatile boolean torRunning = false;
+  protected String torrc = Constants.torrcfile;
   private boolean externalTor;
   private boolean torNetworkEnabled = false;
   private final File controlPortFile;
@@ -416,7 +417,7 @@ public class TorManager {
     String torFile = useAbsolutePath ? workingDirectory + File.separator : "";
     torFile += Constants.torfile;
     String torrcFile = useAbsolutePath ? workingDirectory + File.separator : "";
-    torrcFile += Constants.torrcfile;
+    torrcFile += torrc;
     
     //if (!updateTorRc(torrcFile)) {
     //  return false;
