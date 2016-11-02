@@ -51,6 +51,8 @@ public class PublicKeyAuthenticator extends Authenticator {
   private static void initSerializer() {
     if (serializer == null) {
       serializer = new Serializer();
+      serializer.registerClass(Identifier.class);
+      serializer.registerClass(byte[].class);
       serializer.registerClass(AuthenticationMessage.class);
     }
   }

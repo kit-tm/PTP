@@ -26,6 +26,7 @@ public class SerializerTest {
   @Test
   public void testSerializeByteArrayMessage() throws IOException {    
     final Charset charset = Charset.forName(Constants.charset);
+    serializer.registerClass(byte[].class);
     serializer.registerClass(ByteArrayMessage.class);
     
     byte[] bytes = "Hallo".getBytes(charset);

@@ -44,6 +44,7 @@ public class DummyAuthenticator extends Authenticator {
   private static void initSerializer() {
     if (serializer == null) {
       serializer = new Serializer();
+      serializer.registerClass(Identifier.class);
       serializer.registerClass(AuthenticationMessage.class);
     }
   }
