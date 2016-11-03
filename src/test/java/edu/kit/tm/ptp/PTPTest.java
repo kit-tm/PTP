@@ -35,6 +35,8 @@ import java.nio.charset.Charset;
 import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -50,6 +52,8 @@ public class PTPTest {
   private static final int minMessageLength = 10;
   /** The maximum length of the message used in the tests. */
   private static final int maxMessageLength = 50;
+
+  private static final int numThreads = 10;
 
   /** The first API wrapper object used in the self send test and in the ping-pong test. */
   private PTP client1 = null;
@@ -738,5 +742,72 @@ public class PTPTest {
     } finally {
       socket.close();
     }
+  }
+
+  @Test
+  public void testParallelSend() throws IOException {
+    client1.init();
+    client1.reuseHiddenService();
+    client2.init();
+    client2.reuseHiddenService();
+
+    client1.registerClass(Message.class);
+    client2.registerClass(Message.class);
+
+    SendReceiveListener listener = new SendReceiveListener();
+
+    final AtomicInteger received = new AtomicInteger(0);
+
+    client1.setSendListener(listener);
+    client2.setReceiveListener(Message.class, new MessageReceivedListener<Message>() {
+      @Override
+      public void messageReceived(Message message, Identifier source) {
+        received.incrementAndGet();
+      }
+    });
+
+    final AtomicInteger id = new AtomicInteger(0);
+    final Identifier destination = client2.getIdentifier();
+    final CyclicBarrier barrier = new CyclicBarrier(numThreads);
+
+    Runnable r = new Runnable() {
+      @Override
+      public void run() {
+        Message m = new Message(id.getAndIncrement());
+
+        try {
+          barrier.await();
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        } catch (BrokenBarrierException e) {
+          e.printStackTrace();
+        }
+
+        client1.sendMessage(m, destination, TestConstants.hiddenServiceSetupTimeout);
+      }
+    };
+
+    Thread[] threads = new Thread[numThreads];
+
+    for (int i = 0; i< numThreads; i++) {
+      threads[i] = new Thread(r);
+      threads[i].start();
+    }
+
+    TestHelper.wait(listener.sent, numThreads, TestConstants.hiddenServiceSetupTimeout);
+
+    for (int i = 0; i < numThreads; i++) {
+      try {
+        threads[i].join();
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      }
+    }
+
+    assertEquals(numThreads, listener.sent.get());
+
+    TestHelper.sleep(TestConstants.listenerTimeout);
+
+    assertEquals(numThreads, received.get());
   }
 }
