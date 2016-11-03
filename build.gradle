@@ -81,8 +81,12 @@ names.each { fileName ->
 	}
 }
 
-jar.dependsOn {
-	tasks.findAll { task -> task.name.contains('Example') }
+// Pack all dependencies into the jar
+jar {
+  dependsOn = tasks.findAll { task -> task.name.contains('Example') }
+	from sourceSets.main.output
+	from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+	exclude 'META-INF/*.RSA', 'META-INF/*.SF','META-INF/*.DSA'
 }
 
 test.testLogging { 
