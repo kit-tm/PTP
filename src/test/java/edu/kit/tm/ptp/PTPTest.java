@@ -739,48 +739,4 @@ public class PTPTest {
       socket.close();
     }
   }
-
-  @Test
-  public void testIsAlive() throws IOException {
-    ConfigurationFileReader configReader = new ConfigurationFileReader(Constants.configfile);
-    Configuration config =  configReader.readFromFile();
-
-    int isAliveTimeout = 10 * 1000;
-    int isAliveSendTimeout = 5 * 1000;
-
-    config.setIsAliveValues(isAliveTimeout, isAliveSendTimeout);
-
-    client1 = new PTP(true, config);
-    client1.authFactory = new DummyAuthenticatorFactory();
-    client1.init();
-    client1.reuseHiddenService();
-
-    Serializer serializer = new Serializer();
-    serializer.registerClass(byte[].class);
-    serializer.registerClass(ByteArrayMessage.class);
-
-    SendReceiveListener listener = new SendReceiveListener();
-
-    ConnectionManager manager =
-        new ConnectionManager(config.getHiddenServicePort(), listener, listener, null,
-            new DummyAuthenticatorFactory());
-    manager.updateSOCKSProxy(Constants.localhost, config.getTorSOCKSProxyPort());
-    manager.setLocalIdentifier(new Identifier("aaaaaaaaaaaaaaaa.onion"));
-    manager.start();
-
-    Identifier identifier = client1.getIdentifier();
-
-    byte[] data = new byte[] {0x0, 0x1, 0x2, 0x3};
-    ByteArrayMessage message = new ByteArrayMessage(data);
-    long id = manager.send(serializer.serialize(message), identifier,
-        TestConstants.hiddenServiceSetupTimeout);
-
-    TestHelper.wait(listener.sent, 1, TestConstants.hiddenServiceSetupTimeout);
-
-    assertEquals(1, listener.sent.get());
-
-    TestHelper.wait(listener.received, 1, isAliveSendTimeout + TestConstants.listenerTimeout);
-
-    assertEquals(1, listener.received.get());
-  }
 }
