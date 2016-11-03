@@ -1,6 +1,7 @@
 package edu.kit.tm.ptp.serialization;
 
 import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.KryoException;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 
@@ -55,13 +56,19 @@ public class Serializer {
     if (data.length == 0) {
       throw new IOException("Can't deserialize empty byte array");
     }
-    
-    Input input = new Input(data);
 
-    Object obj = kryo.readClassAndObject(input);
+    Object obj = null;
+
+    try {
+      Input input = new Input(data);
+
+      obj = kryo.readClassAndObject(input);
+    } catch (KryoException e) { // Handling an unchecked exception
+      throw new IOException(e.getMessage());
+    }
 
     if (obj == null) {
-      throw new IOException("Error while deserializing data");
+      throw new IOException("Kryo returned null");
     }
 
     return obj;
