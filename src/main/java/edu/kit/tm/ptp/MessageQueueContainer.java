@@ -18,7 +18,7 @@ public class MessageQueueContainer extends ListenerContainer {
   /**
    * Adds a queue for messages of Type type.
    */
-  protected <T> void addMessageQueue(Class<T> type) {
+  protected synchronized <T> void addMessageQueue(Class<T> type) {
     if (queues.get(type) != null) {
       throw new IllegalArgumentException();
     }
@@ -30,7 +30,7 @@ public class MessageQueueContainer extends ListenerContainer {
   /**
    * Returns a message of the supplied type or null if the queue is empty.
    */
-  protected <T> QueuedMessage<T> pollMessage(Class<T> type) {
+  protected synchronized <T> QueuedMessage<T> pollMessage(Class<T> type) {
     Queue<Object> queue = queues.get(type);
     
     if (queue == null) {
@@ -52,7 +52,7 @@ public class MessageQueueContainer extends ListenerContainer {
   /**
    * Returns true if the queue of the specified type contains a message.
    */
-  protected <T> boolean hasMessage(Class<T> type) {
+  protected synchronized <T> boolean hasMessage(Class<T> type) {
     Queue<Object> queue = queues.get(type);
     
     if (queue == null) {
@@ -69,14 +69,14 @@ public class MessageQueueContainer extends ListenerContainer {
    * @param message The message to add.
    * @param source The source of the message.
    */
-  protected void addMessageToQueue(Object message, Identifier source, long receiveTime) {
+  protected synchronized void addMessageToQueue(Object message, Identifier source, long receiveTime) {
     addMessage(getType(message).cast(message), source, receiveTime);
   }
   
   /**
    * Returns true if it exists a queue for the supplied message.
    */
-  protected boolean hasQueue(Object message) {
+  protected synchronized boolean hasQueue(Object message) {
     Class<?> type = getTypeOrNull(message);
     if (type == null) {
       return false;
@@ -88,7 +88,7 @@ public class MessageQueueContainer extends ListenerContainer {
   /**
    * Returns true if queuing has been enabled for the type.
    */
-  protected <T> boolean queueEnabled(Class<T> type) {
+  protected synchronized <T> boolean queueEnabled(Class<T> type) {
     return queues.get(type) != null;
   }
   
