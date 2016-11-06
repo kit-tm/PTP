@@ -29,24 +29,24 @@ import java.util.logging.Logger;
  */
 public class PTP {
   private final MessageQueueContainer messageTypes = new MessageQueueContainer();
+  private final ConfigurationFileReader configReader;
+  private final Serializer serializer;
+  private final String hiddenServiceDirectoryName;
+  private final boolean usePTPTor;
+  private final Thread clientThread;
+  private final boolean sharedTorProcess;
 
   /** The logger for this class. */
   private Logger logger;
   /** The configuration of the client. */
   private Configuration config = null;
-  private ConfigurationFileReader configReader;
   /** The Tor process manager. */
   private TorManager tor;
   private ReceiveListener receiveListener = null;
   private SendListener sendListener = new SendListenerAdapter();
   private HiddenServiceManager hiddenServiceManager;
-  private Serializer serializer;
-  private String hiddenServiceDirectoryName;
   private String workingDirectory;
   private int controlPort;
-  private boolean usePTPTor;
-  private Thread clientThread = null;
-  private boolean sharedTorProcess;
   private IsAliveManager isAliveManager = null;
 
   private volatile boolean initialized = false;
@@ -61,7 +61,8 @@ public class PTP {
    * Constructs a new PTP object. Manages an own Tor process.
    */
   public PTP() {
-    this(null);
+    // Default constructor
+    this(null, null);
   }
 
   /**
@@ -71,6 +72,7 @@ public class PTP {
    * @param controlPort The control port of the Tor process.
    */
   public PTP(String workingDirectory, int controlPort) {
+    // Constructor using an external Tor process
     this(workingDirectory, controlPort, Constants.anyport, null);
   }
 
@@ -85,18 +87,10 @@ public class PTP {
    */
   public PTP(String workingDirectory, int controlPort, int localPort,
       String hiddenServiceDirectoryName) {
-    initPTP(workingDirectory, hiddenServiceDirectoryName, false, localPort, false, null);
+    // Constructor using an external Tor process
+    this(workingDirectory, hiddenServiceDirectoryName, false, localPort, false, null);
 
     this.controlPort = controlPort;
-  }
-
-  /**
-   * Constructs a new PTP object using the supplied working directory.
-   * 
-   * @param workingDirectory The directory to start PTP in.
-   */
-  public PTP(String workingDirectory) {
-    this(workingDirectory, null);
   }
 
   /**
@@ -107,6 +101,7 @@ public class PTP {
    * @param hiddenServiceDirectoryName The name of the directory of a hidden service to use.
    */
   public PTP(String workingDirectory, String hiddenServiceDirectoryName) {
+    // Used by PTPAndroid
     this(workingDirectory, hiddenServiceDirectoryName, false, null);
   }
 
@@ -117,6 +112,7 @@ public class PTP {
    *        same directory.
    */
   public PTP(boolean sharedTorProcess) {
+    // Used by tests
     this(null, null, sharedTorProcess, null);
   }
 
@@ -128,6 +124,7 @@ public class PTP {
    * @param config An initial configuration object used instead of reading a configuration file.
    */
   protected PTP(boolean sharedTorProcess, Configuration config) {
+    // Used by tests
     this(null, null, sharedTorProcess, config);
   }
 
@@ -141,13 +138,13 @@ public class PTP {
    *        same directory.
    * @param config An initial configuration object used instead of reading a configuration file
    */
-  protected PTP(String workingDirectory, String hiddenServiceDirectoryName, boolean sharedTorProcess,
+  private PTP(String workingDirectory, String hiddenServiceDirectoryName, boolean sharedTorProcess,
              Configuration config) {
-    initPTP(workingDirectory, hiddenServiceDirectoryName, true, Constants.anyport,
+    this(workingDirectory, hiddenServiceDirectoryName, true, Constants.anyport,
         sharedTorProcess, config);
   }
 
-  private void initPTP(String workingDirectory, String hiddenServiceDirectoryName,
+  private PTP(String workingDirectory, String hiddenServiceDirectoryName,
       boolean usePTPTor, int hiddenServicePort, boolean sharedTorProcess, Configuration config) {
     configReader = new ConfigurationFileReader(
         (workingDirectory != null ? workingDirectory + File.separator : "") + Constants.configfile);
