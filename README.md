@@ -14,14 +14,14 @@ Good starting points:
 ## How to build
 
 PeerTorPeer uses the gradle build system.
-Run `gradle assemble` to compile the code.
+Run `./gradlew assemble` to compile the code.
 
-If you want to use eclipse run `gradle eclipse` to create proper
+If you want to use eclipse run `./gradlew eclipse` to create proper
 `.classpath` and `.project` files.
 
 ## Tests
 
-Start `gradle test` to run the tests.
+Start `./gradlew test` to run the tests.
 
 You can also set up your own tor network for testing purposes and run the tests there.
 For this to work you need chutney (https://git.torproject.org/chutney.git).

@@ -16,7 +16,7 @@ sed -i "s/DirAuthority test000a.*$/$(grep "DirAuthority test000a" $CHUTNEY_DIR/n
 sed -i "s/DirAuthority test001a.*$/$(grep "DirAuthority test001a" $CHUTNEY_DIR/net/nodes/009h/torrc)/" config/testtorrc
 sed -i "s/DirAuthority test002a.*$/$(grep "DirAuthority test002a" $CHUTNEY_DIR/net/nodes/009h/torrc)/" config/testtorrc
 
-gradle test
+./gradlew test
 
 rm config/testtorrc
 ln -s torrc config/testtorrc
