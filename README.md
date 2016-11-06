@@ -34,6 +34,13 @@ Run `./chutneyTests.sh` to set up a local tor network and start the tests.
 
 - https://git.scc.kit.edu/TM/ptp-androidexample
 
+## Using PTP in a Java Application
+
+To use PTP in your Java application build PTP and add `build/libs/PTP.jar` to your classpath.
+For example: `javac -cp .:pathtojar/PTP.jar ...` and `java -cp .:pathtojar/PTP.jar ...` 
+where pathtojar is the path to the folder containing PTP.jar.
+To be able to use PTP you also have to copy the `config` folder to the folder from where you run your application. 
+
 ## Projects using PTP
 
 [AluShare](https://github.com/weichweich/AluShare)
