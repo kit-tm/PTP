@@ -5,8 +5,6 @@ import com.esotericsoftware.kryo.KryoException;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 
-import edu.kit.tm.ptp.auth.PublicKeyAuthenticator.AuthenticationMessage;
-
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
