@@ -7,7 +7,7 @@ Good starting points:
 
 * the examples, especially `edu.kit.tm.ptp.examples.PTPSendExample`
 * the JUnit tests, especially `edu.kit.tm.ptp.test.PTPTest`
-* javadoc (generate it yourself please)
+* javadoc (see [Javadoc](README.md#javadoc))
 
 *WORK IN PROGRESS*
 
@@ -18,6 +18,10 @@ Run `./gradlew assemble` to compile the code.
 
 If you want to use eclipse run `./gradlew eclipse` to create proper
 `.classpath` and `.project` files.
+
+## Javadoc
+
+Run `./gradlew javadoc` to create the Javadoc in `build/docs/javadoc/`.
 
 ## Tests
 
