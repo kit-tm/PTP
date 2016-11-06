@@ -81,13 +81,19 @@ names.each { fileName ->
 	}
 }
 
-// Pack all dependencies into the jar
 jar {
   dependsOn = tasks.findAll { task -> task.name.contains('Example') }
-	from sourceSets.main.output
-	from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
-	exclude 'META-INF/*.RSA', 'META-INF/*.SF','META-INF/*.DSA'
 }
+
+// Pack all dependencies into the fat jar
+task fatjar (type: Jar) {
+ from sourceSets.main.output
+ from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+ exclude 'META-INF/*.RSA', 'META-INF/*.SF','META-INF/*.DSA'
+ baseName = 'PTP-full'
+}
+
+jar.dependsOn fatjar
 
 test.testLogging { 
   showExceptions = true

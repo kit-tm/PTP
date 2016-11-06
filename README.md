@@ -40,8 +40,8 @@ Run `./chutneyTests.sh` to set up a local tor network and start the tests.
 
 ## Using PTP in a Java Application
 
-To use PTP in your Java application build PTP and add `build/libs/PTP.jar` to your classpath.
-For example: `javac -cp .:pathtojar/PTP.jar ...` and `java -cp .:pathtojar/PTP.jar ...` 
+To use PTP in your Java application build PTP and add `build/libs/PTP-full.jar` to your classpath.
+For example: `javac -cp .:pathtojar/PTP-full.jar ...` and `java -cp .:pathtojar/PTP-full.jar ...` 
 where pathtojar is the path to the folder containing PTP.jar.
 To be able to use PTP you also have to copy the `config` folder to the folder from where you run your application. 
 
