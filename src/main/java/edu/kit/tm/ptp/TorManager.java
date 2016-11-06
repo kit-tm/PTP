@@ -114,7 +114,7 @@ public class TorManager {
         }
       } else {
         // Check if a Tor process is already running
-        torRunning = readControlPortFile() && checkTorRunning(torControlPort);
+        torRunning = readControlPortFile(false) && checkTorRunning(torControlPort);
 
         if (!torRunning) {
           if (controlPortFile.exists() && !controlPortFile.delete()) {
@@ -123,7 +123,7 @@ public class TorManager {
           // Run the Tor process.
           torRunning = runTor();
           
-          if (!torRunning || !readControlPortFile()) {
+          if (!torRunning || !readControlPortFile(true)) {
             return false;
           }
 
@@ -478,7 +478,9 @@ public class TorManager {
     return controlPortFile.exists();
   }
 
-  private boolean readControlPortFile() {
+  private boolean readControlPortFile(boolean failureCritical) {
+    Level logLevel = failureCritical ? Level.WARNING : Level.INFO;
+
     BufferedReader reader = null;
     try {
       reader = new BufferedReader(
@@ -494,10 +496,10 @@ public class TorManager {
         }
       }
     } catch (FileNotFoundException e) {
-      logger.log(Level.WARNING,
+      logger.log(logLevel,
           "ControlPortFile " + controlPortFile.getAbsolutePath() + " doesn't exist");
     } catch (IOException e) {
-      logger.log(Level.WARNING,
+      logger.log(logLevel,
           "Failed to read ControlPortFile " + controlPortFile.getAbsolutePath());
     } finally {
       if (reader != null) {
