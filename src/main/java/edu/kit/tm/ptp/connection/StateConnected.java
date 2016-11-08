@@ -4,7 +4,6 @@ import edu.kit.tm.ptp.Identifier;
 import edu.kit.tm.ptp.auth.Authenticator;
 import edu.kit.tm.ptp.channels.MessageChannel;
 
-import java.util.Iterator;
 import java.util.logging.Level;
 
 /**

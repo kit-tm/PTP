@@ -1,8 +1,8 @@
 package edu.kit.tm.ptp.connection;
 
-import java.util.logging.Level;
-
 import edu.kit.tm.ptp.channels.MessageChannel;
+
+import java.util.logging.Level;
 
 /**
  * Class for the event that a message was sent successfully.

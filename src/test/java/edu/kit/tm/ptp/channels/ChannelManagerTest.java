@@ -132,7 +132,7 @@ public class ChannelManagerTest {
     channelManager.start();
 
     SocketChannel client = SocketChannel.open();
-    MessageChannel clientChannel = channelManager.connect(client);
+    final MessageChannel clientChannel = channelManager.connect(client);
     client.connect(
         new InetSocketAddress(InetAddress.getLoopbackAddress(), server.socket().getLocalPort()));
 

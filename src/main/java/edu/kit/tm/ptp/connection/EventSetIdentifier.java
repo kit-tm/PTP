@@ -1,8 +1,9 @@
 package edu.kit.tm.ptp.connection;
 
+import edu.kit.tm.ptp.Identifier;
+
 import java.util.logging.Level;
 
-import edu.kit.tm.ptp.Identifier;
 
 /**
  * Class for the event of setting an hidden service identifier.

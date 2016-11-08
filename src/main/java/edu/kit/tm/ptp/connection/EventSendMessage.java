@@ -23,7 +23,8 @@ public class EventSendMessage extends Event {
 
     // Check if identifier is valid
     if (!identifier.isValid()) {
-      manager.sendListener.messageSent(attempt.getId(), identifier, SendListener.State.INVALID_DESTINATION);
+      manager.sendListener.messageSent(attempt.getId(), identifier,
+          SendListener.State.INVALID_DESTINATION);
       return true;
     }
 
@@ -31,7 +32,8 @@ public class EventSendMessage extends Event {
     if (attempt.getTimeout() != -1
         && System.currentTimeMillis() - attempt.getSendTimestamp() >= attempt.getTimeout()) {
       if (attempt.isInformSendListener()) {
-        manager.sendListener.messageSent(attempt.getId(), attempt.getDestination(), SendListener.State.TIMEOUT);
+        manager.sendListener.messageSent(attempt.getId(), attempt.getDestination(),
+            SendListener.State.TIMEOUT);
       }
       return true;
     }

@@ -6,16 +6,12 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import edu.kit.tm.ptp.auth.DummyAuthenticatorFactory;
 import edu.kit.tm.ptp.connection.ConnectionManager;
-import edu.kit.tm.ptp.serialization.ByteArrayMessage;
-import edu.kit.tm.ptp.serialization.Serializer;
 import edu.kit.tm.ptp.utility.Constants;
 import edu.kit.tm.ptp.utility.RNG;
 import edu.kit.tm.ptp.utility.TestConstants;
 import edu.kit.tm.ptp.utility.TestHelper;
 
-import org.classpath.icedtea.Config;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -730,7 +726,7 @@ public class PTPTest {
       buffer.put((byte) 0x0);
       buffer.flip();
 
-      InputStream is = socket.getInputStream();
+      final InputStream is = socket.getInputStream();
       OutputStream os = socket.getOutputStream();
       os.write(buffer.array());
       os.flush();
@@ -770,10 +766,10 @@ public class PTPTest {
     final Identifier destination = client2.getIdentifier();
     final CyclicBarrier barrier = new CyclicBarrier(numThreads);
 
-    Runnable r = new Runnable() {
+    Runnable run = new Runnable() {
       @Override
       public void run() {
-        Message m = new Message(id.getAndIncrement());
+        Message msg = new Message(id.getAndIncrement());
 
         try {
           barrier.await();
@@ -783,14 +779,14 @@ public class PTPTest {
           e.printStackTrace();
         }
 
-        client1.sendMessage(m, destination, TestConstants.hiddenServiceSetupTimeout);
+        client1.sendMessage(msg, destination, TestConstants.hiddenServiceSetupTimeout);
       }
     };
 
     Thread[] threads = new Thread[numThreads];
 
-    for (int i = 0; i< numThreads; i++) {
-      threads[i] = new Thread(r);
+    for (int i = 0; i < numThreads; i++) {
+      threads[i] = new Thread(run);
       threads[i].start();
     }
 

@@ -1,9 +1,6 @@
 package edu.kit.tm.ptp;
 
-import org.junit.After;
-import org.junit.Test;
-
-import java.io.IOException;
+import static org.junit.Assert.assertEquals;
 
 import edu.kit.tm.ptp.auth.DummyAuthenticatorFactory;
 import edu.kit.tm.ptp.connection.ConnectionManager;
@@ -13,7 +10,10 @@ import edu.kit.tm.ptp.utility.Constants;
 import edu.kit.tm.ptp.utility.TestConstants;
 import edu.kit.tm.ptp.utility.TestHelper;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.After;
+import org.junit.Test;
+
+import java.io.IOException;
 
 /**
  * Test class for IsAliveManager.

@@ -1,7 +1,6 @@
 package edu.kit.tm.ptp.auth;
 
 import edu.kit.tm.ptp.Identifier;
-import edu.kit.tm.ptp.channels.ChannelMessageListener;
 import edu.kit.tm.ptp.channels.MessageChannel;
 import edu.kit.tm.ptp.serialization.Serializer;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;

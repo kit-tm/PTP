@@ -1,8 +1,9 @@
 package edu.kit.tm.ptp.connection;
 
+import edu.kit.tm.ptp.channels.MessageChannel;
+
 import java.util.logging.Level;
 
-import edu.kit.tm.ptp.channels.MessageChannel;
 
 /**
  * Class for the event that a connection was closed.

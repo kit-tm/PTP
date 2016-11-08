@@ -1,6 +1,18 @@
 package edu.kit.tm.ptp.auth;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+
+import edu.kit.tm.ptp.Identifier;
+import edu.kit.tm.ptp.PTP;
+import edu.kit.tm.ptp.auth.PublicKeyAuthenticator.AuthenticationMessage;
+import edu.kit.tm.ptp.crypt.CryptHelper;
+import edu.kit.tm.ptp.utility.Constants;
+
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
@@ -10,17 +22,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.spec.InvalidKeySpecException;
 
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
 
-import edu.kit.tm.ptp.Identifier;
-import edu.kit.tm.ptp.PTP;
-import edu.kit.tm.ptp.auth.PublicKeyAuthenticator.AuthenticationMessage;
-import edu.kit.tm.ptp.crypt.CryptHelper;
-import edu.kit.tm.ptp.utility.Constants;
 
 public class PublicKeyAuthenticatorTest {
   private PublicKeyAuthenticator auth;
@@ -78,12 +80,7 @@ public class PublicKeyAuthenticatorTest {
   public void testAuthenticator() throws IOException, GeneralSecurityException {
     testAuthenticator(false);
   }
-
-  @Test
-  public void testAuthenticatorUnknown() throws IOException, GeneralSecurityException {
-    testAuthenticator(true);
-  }
-
+  
   private void testAuthenticator(boolean unknown) throws IOException, GeneralSecurityException {
     auth.own = ptp1.getIdentifier();
     auth.other = ptp2.getIdentifier();
@@ -93,6 +90,11 @@ public class PublicKeyAuthenticatorTest {
     auth2.other = unknown ? null : ptp1.getIdentifier();
 
     assertEquals(true, auth2.authenticationMessageValid(authMessage));
+  }
+
+  @Test
+  public void testAuthenticatorUnknown() throws IOException, GeneralSecurityException {
+    testAuthenticator(true);
   }
 
   @Test

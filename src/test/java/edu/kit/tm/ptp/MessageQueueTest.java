@@ -152,7 +152,7 @@ public class MessageQueueTest {
     assertNotEquals(null, ptp2.getIdentifier());
 
     byte[] message = "Test123".getBytes(Constants.charset);
-    long sent = System.currentTimeMillis();
+    final long sent = System.currentTimeMillis();
     ptp.sendMessage(message, ptp2.getIdentifier());
     
     IMessageQueue<byte[]> receiveQueue = ptp2.getMessageQueue();

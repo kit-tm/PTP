@@ -1,13 +1,13 @@
 package edu.kit.tm.ptp.connection;
 
+import edu.kit.tm.ptp.Identifier;
+import edu.kit.tm.ptp.crypt.CryptHelper;
+
 import java.io.File;
 import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.logging.Level;
-
-import edu.kit.tm.ptp.Identifier;
-import edu.kit.tm.ptp.crypt.CryptHelper;
 
 /**
  * Class for the event of setting a file containing the private key.

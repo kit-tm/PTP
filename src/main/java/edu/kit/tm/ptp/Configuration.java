@@ -1,9 +1,8 @@
 package edu.kit.tm.ptp;
 
-import java.io.File;
-import java.util.logging.Logger;
-
 import edu.kit.tm.ptp.utility.Constants;
+
+import java.util.logging.Logger;
 
 
 /**

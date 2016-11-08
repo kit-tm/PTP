@@ -8,7 +8,6 @@ import edu.kit.tm.ptp.PTP;
 import edu.kit.tm.ptp.SendListener;
 import edu.kit.tm.ptp.auth.DummyAuthenticatorFactory;
 import edu.kit.tm.ptp.connection.ConnectionManager;
-import edu.kit.tm.ptp.crypt.CryptHelper;
 import edu.kit.tm.ptp.serialization.ByteArrayMessage;
 import edu.kit.tm.ptp.serialization.Serializer;
 import edu.kit.tm.ptp.utility.Constants;

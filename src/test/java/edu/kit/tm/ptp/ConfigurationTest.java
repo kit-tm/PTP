@@ -87,8 +87,10 @@ public class ConfigurationTest {
     output.write(ConfigurationFileReader.IsAliveTimeout + " " + isAliveTimeout + newline);
     output.write(ConfigurationFileReader.IsAliveSendTimeout + " " + isAliveSendTimeout + newline);
     output.write(ConfigurationFileReader.TimerUpdateInterval + " " + timerUpdateInterval + newline);
-    output.write(ConfigurationFileReader.ConnectRetryInterval + " " + connectRetryInterval + newline);
-    output.write(ConfigurationFileReader.MessageSendRetryInterval + " " + messageSendRetryInterval + newline);
+    output.write(ConfigurationFileReader.ConnectRetryInterval + " " + connectRetryInterval 
+        + newline);
+    output.write(ConfigurationFileReader.MessageSendRetryInterval + " " + messageSendRetryInterval 
+        + newline);
 
     output.flush();
     output.close();
@@ -115,9 +117,8 @@ public class ConfigurationTest {
   /**
    * Test method for {@link edu.kit.tm.ptp.Configuration#getHiddenServicesDirectory()}.
    *
-   * <p>
-   * Checks whether the configuration read the hidden service directory property correctly. Fails if
-   * the read property is not equal to the written property.
+   * <p>Checks whether the configuration read the hidden service directory property correctly.
+   * Fails if the read property is not equal to the written property.
    */
   @Test
   public void testGetHiddenServicesDirectory() {
@@ -131,9 +132,8 @@ public class ConfigurationTest {
   /**
    * Test method for {@link edu.kit.tm.ptp.Configuration#getHiddenServicePort()}.
    *
-   * <p>
-   * Checks whether the configuration read the hidden service port number property correctly. Fails
-   * if the read property is not equal to the written property.
+   * <p>Checks whether the configuration read the hidden service port number property correctly.
+   * Fails if the read property is not equal to the written property.
    */
   @Test
   public void testGetHiddenServicePort() {
@@ -146,9 +146,8 @@ public class ConfigurationTest {
   /**
    * Test method for {@link edu.kit.tm.ptp.Configuration#getAuthenticationBytes()}.
    *
-   * <p>
-   * Checks whether the configuration read the authentication bytes property correctly. Fails if the
-   * read property is not equal to the written property.
+   * <p>Checks whether the configuration read the authentication bytes property correctly.
+   * Fails if the read property is not equal to the written property.
    */
   @Test
   public void testGetAuthenticationBytes() {
@@ -161,9 +160,8 @@ public class ConfigurationTest {
   /**
    * Test method for {@link edu.kit.tm.ptp.Configuration#getTorControlPort()}.
    *
-   * <p>
-   * Checks whether the configuration read the Tor control port number property correctly. Fails if
-   * the read property is not equal to the written property.
+   * <p>Checks whether the configuration read the Tor control port number property correctly.
+   * Fails if the read property is not equal to the written property.
    */
   @Test
   public void testGetTorControlPort() {
@@ -176,9 +174,8 @@ public class ConfigurationTest {
   /**
    * Test method for {@link edu.kit.tm.ptp.Configuration#getTorSOCKSProxyPort()}.
    *
-   * <p>
-   * Checks whether the configuration read the SOCKS proxy port number property correctly. Fails iff
-   * the read property is not equal to the written property.
+   * <p>Checks whether the configuration read the SOCKS proxy port number property correctly.
+   * Fails if the read property is not equal to the written property.
    */
   @Test
   public void testGetTorSOCKSProxyPort() {
@@ -191,9 +188,8 @@ public class ConfigurationTest {
   /**
    * Test method for {@link Configuration#getIsAliveTimeout()}.
    *
-   * <p>
-   * Checks whether the configuration read the IsAliveTimeout property correctly. Fails iff the read
-   * property is not equal to the written property.
+   * <p>Checks whether the configuration read the IsAliveTimeout property correctly.
+   * Fails if the read property is not equal to the written property.
    */
   @Test
   public void testGetIsAliveTimeout() {
@@ -206,9 +202,8 @@ public class ConfigurationTest {
   /**
    * Test method for {@link Configuration#getIsAliveSendTimeout()}.
    *
-   * <p>
-   * Checks whether the configuration read the IsAliveSendTimeout property correctly.
-   * Fails iff the read property is not equal to the written property.
+   * <p>Checks whether the configuration read the IsAliveSendTimeout property correctly.
+   * Fails if the read property is not equal to the written property.
    */
   @Test
   public void testGetIsSendAliveTimeout() {
@@ -221,9 +216,8 @@ public class ConfigurationTest {
   /**
    * Test method for {@link edu.kit.tm.ptp.Configuration#getTimerUpdateInterval()}.
    *
-   * <p>
-   * Checks whether the configuration read the timerUpdateInterval property correctly. Fails iff the read
-   * property is not equal to the written property.
+   * <p>Checks whether the configuration read the timerUpdateInterval property correctly.
+   * Fails if the read property is not equal to the written property.
    */
   @Test
   public void testGetTimerUpdateInterval() {
@@ -236,9 +230,8 @@ public class ConfigurationTest {
   /**
    * Test method for {@link Configuration#getConnectRetryInterval()}.
    *
-   * <p>
-   * Checks whether the configuration read the connectRetryInterval property correctly.
-   * Fails iff the read property is not equal to the written property.
+   * <p>Checks whether the configuration read the connectRetryInterval property correctly.
+   * Fails if the read property is not equal to the written property.
    */
   @Test
   public void testGetConnectRetryInterval() {
@@ -251,9 +244,8 @@ public class ConfigurationTest {
   /**
    * Test method for {@link Configuration#getMessageSendRetryInterval()}.
    *
-   * <p>
-   * Checks whether the configuration read the messageSendRetryInterval property correctly.
-   * Fails iff the read property is not equal to the written property.
+   * <p>Checks whether the configuration read the messageSendRetryInterval property correctly.
+   * Fails if the read property is not equal to the written property.
    */
   @Test
   public void testGetMessageSendRetryInterval() {

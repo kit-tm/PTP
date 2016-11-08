@@ -69,7 +69,8 @@ public class MessageQueueContainer extends ListenerContainer {
    * @param message The message to add.
    * @param source The source of the message.
    */
-  protected synchronized void addMessageToQueue(Object message, Identifier source, long receiveTime) {
+  protected synchronized void addMessageToQueue(Object message, Identifier source,
+                                                long receiveTime) {
     addMessage(getType(message).cast(message), source, receiveTime);
   }
   

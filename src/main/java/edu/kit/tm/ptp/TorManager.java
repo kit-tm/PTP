@@ -6,16 +6,12 @@ import net.freehaven.tor.control.ConfigEntry;
 import net.freehaven.tor.control.TorControlConnection;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.net.Socket;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
@@ -519,7 +515,7 @@ public class TorManager {
     controlConn = new TorControlConnection(controlSocket);
 
     if (config == null) {
-     controlConn.authenticate(new byte[0]);
+      controlConn.authenticate(new byte[0]);
     } else {
       controlConn.authenticate(config.getAuthenticationBytes());
     }

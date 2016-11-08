@@ -12,9 +12,12 @@ public class TorEventHandler implements EventHandler {
   private TorManager torManager;
 
   //private List<String> events =
-  //    Arrays.asList("circ", "stream", "orconn", "bw", "newdesc", "info", "notice", "warn", "err", "NETWORK_LIVENESS", "DESCCHANGED", "STATUS_GENERAL", "STATUS_CLIENT", "STATUS_SERVER", "GUARD", "HS_DESC");
+  //    Arrays.asList("circ", "stream", "orconn", "bw", "newdesc", "info", "notice", "warn", "err",
+  // "NETWORK_LIVENESS", "DESCCHANGED", "STATUS_GENERAL", "STATUS_CLIENT", "STATUS_SERVER", "GUARD",
+  // "HS_DESC");
   private List<String> events =
-      Arrays.asList("circ", "stream", "orconn", "bw", "newdesc", "info", "notice", "warn", "err", "DESCCHANGED", "STATUS_GENERAL", "STATUS_CLIENT", "STATUS_SERVER", "GUARD", "HS_DESC");
+      Arrays.asList("circ", "stream", "orconn", "bw", "newdesc", "info", "notice", "warn", "err",
+          "DESCCHANGED", "STATUS_GENERAL", "STATUS_CLIENT", "STATUS_SERVER", "GUARD", "HS_DESC");
   
   public TorEventHandler(TorManager torManager) {
     this.torManager = torManager;

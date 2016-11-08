@@ -2,7 +2,6 @@ package edu.kit.tm.ptp.connection;
 
 import edu.kit.tm.ptp.Identifier;
 import edu.kit.tm.ptp.channels.MessageChannel;
-import edu.kit.tm.ptp.utility.Constants;
 
 import java.io.IOException;
 import java.util.logging.Level;

@@ -9,7 +9,6 @@ import edu.kit.tm.ptp.connection.ExpireListener;
 import edu.kit.tm.ptp.connection.TimerManager;
 import edu.kit.tm.ptp.utility.Constants;
 import edu.kit.tm.ptp.utility.RNG;
-import edu.kit.tm.ptp.utility.TestHelper;
 
 import org.junit.After;
 import org.junit.Before;

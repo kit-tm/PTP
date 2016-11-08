@@ -546,20 +546,26 @@ public class PTP {
     closed = true;
   }
 
-  public synchronized void closeConnections(Identifier destination) {
-    if (!initialized || closed) {
-      throw new IllegalStateException();
-    }
-
-    tor.closeCircuits(destination);
-  }
-
+  /**
+   * Gives a hint to PTP if a network connection is currently up and internet access
+   * should be working.
+   *
+   * @param enable True if network connectivity is up.
+   */
   public synchronized void changeNetwork(boolean enable) {
     if (!initialized || closed) {
       throw new IllegalStateException();
     }
 
     tor.changeNetwork(enable);
+  }
+
+  protected synchronized void closeConnections(Identifier destination) {
+    if (!initialized || closed) {
+      throw new IllegalStateException();
+    }
+
+    tor.closeCircuits(destination);
   }
   
   protected synchronized void sendIsAlive(Identifier destination, long timeout) {

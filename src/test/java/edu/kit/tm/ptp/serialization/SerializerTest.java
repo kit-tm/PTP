@@ -3,11 +3,11 @@ package edu.kit.tm.ptp.serialization;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
+import edu.kit.tm.ptp.utility.Constants;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
-import edu.kit.tm.ptp.utility.Constants;
 
 import java.io.IOException;
 import java.nio.charset.Charset;

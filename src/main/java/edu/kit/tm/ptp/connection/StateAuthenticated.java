@@ -5,7 +5,6 @@ import edu.kit.tm.ptp.ReceiveListener;
 import edu.kit.tm.ptp.SendListener;
 import edu.kit.tm.ptp.channels.MessageChannel;
 
-import java.util.Iterator;
 import java.util.logging.Level;
 
 /**
