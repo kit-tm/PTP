@@ -37,7 +37,7 @@ public class PTPSendExample {
       System.out.println(" done.");
 
       // Setup Identifier
-      ptp.reuseHiddenService();
+      ptp.createHiddenService();
       System.out.println("Own identifier: " + ptp.getIdentifier().toString());
 
       // Setup ReceiveListener
@@ -52,8 +52,6 @@ public class PTPSendExample {
           }
         }
       });
-
-      ptp.closeConnections(new Identifier("aaaaaaaaaaaaaaaa.onion"));
 
       // Create a reader for the console input
       BufferedReader br = new BufferedReader(new InputStreamReader(System.in, charset));
@@ -87,11 +85,8 @@ public class PTPSendExample {
         String content = br.readLine();
         if (content == null || content.equals("exit")) {
           break;
-        } else if (content.equals("dis")) {
-          ptp.closeConnections(destination);
-        } else {
-          ptp.sendMessage(content.getBytes(charset), destination);
         }
+        ptp.sendMessage(content.getBytes(charset), destination);
       }
     } catch (IOException e) {
       e.printStackTrace();
