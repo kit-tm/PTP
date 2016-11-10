@@ -320,9 +320,7 @@ public class TorManager {
       }
 
       // Delete ControlPortFile
-      if (controlPortFile.delete()) {
-        logger.log(Level.INFO, "Deleted ControlPortFile.");
-      } else {
+      if (controlPortFile.exists() && !controlPortFile.delete()) {
         logger.log(Level.WARNING,
             "Failed to delete ControlPortFile " + controlPortFile.getAbsolutePath());
       }
