@@ -18,13 +18,14 @@ import java.util.logging.Logger;
  * Class that provides the PTP API. The method {@link #init() init()} needs to be called to to use
  * PTP. Before calling {@link #init() init()} only the following methods may be called:
  * {@link #setReceiveListener(ReceiveListener) setReceiveListener(ReceiveListener)},
+ * {@link #setSendListener(SendListener) setSendListener(SendListener)},
  * {@link #setReceiveListener(Class, MessageReceivedListener) setReceiveListener(Class,
  * MessageReceivedListener)}, {@link #registerClass(Class) registerClass(Class)},
  * {@link #enableMessageQueue() enableMessageQueue()}, {@link #enableMessageQueue(Class)
  * enableMessageQueue(Class)}.
  *
- * @author Simeon Andreev
  * @author Timon Hackenjos
+ * @author Simeon Andreev
  *
  */
 public class PTP {
