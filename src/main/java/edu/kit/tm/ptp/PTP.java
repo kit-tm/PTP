@@ -96,48 +96,38 @@ public class PTP {
   /**
    * Constructs a new PTP object using the supplied hidden service directory name and working
    * directory. Manages an own Tor process.
+   * Used by PTPAndroid.
    * 
    * @param workingDirectory The directory to start PTP in.
    * @param hiddenServiceDirectoryName The name of the directory of a hidden service to use.
    */
   public PTP(String workingDirectory, String hiddenServiceDirectoryName) {
-    // Used by PTPAndroid
     this(workingDirectory, hiddenServiceDirectoryName, false, null);
   }
 
   /**
    * Constructs a new PTP object. Manages an own Tor process.
+   * Only used for testing.
    *
    * @param sharedTorProcess If true the Tor process will be shared between PTP instances in the
    *        same directory.
    */
   public PTP(boolean sharedTorProcess) {
-    // Used by tests
     this(null, null, sharedTorProcess, null);
   }
 
   /**
    * Constructs a new PTP object. Manages an own Tor process.
+   * Only used for testing.
    *
    * @param sharedTorProcess If true the Tor process will be shared between PTP instances in the
    *        same directory.
    * @param config An initial configuration object used instead of reading a configuration file.
    */
   protected PTP(boolean sharedTorProcess, Configuration config) {
-    // Used by tests
     this(null, null, sharedTorProcess, config);
   }
 
-  /**
-   * Constructs a new PTP object using the supplied hidden service directory name and working
-   * directory. Manages an own Tor process.
-   * 
-   * @param workingDirectory The directory to start PTP in.
-   * @param hiddenServiceDirectoryName The name of the directory of a hidden service to use.
-   * @param sharedTorProcess If true the Tor process will be shared between PTP instances in the
-   *        same directory.
-   * @param config An initial configuration object used instead of reading a configuration file
-   */
   private PTP(String workingDirectory, String hiddenServiceDirectoryName, boolean sharedTorProcess,
              Configuration config) {
     this(workingDirectory, hiddenServiceDirectoryName, true, Constants.anyport,
