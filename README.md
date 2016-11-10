@@ -5,7 +5,7 @@ apps using Tor and Tor hidden services for connectivity.
 
 Good starting points:
 
-* [Usage](README.md#Usage)
+* [Usage](README.md#usage)
 * javadoc (see [Javadoc](README.md#javadoc))
 * the examples, especially `edu.kit.tm.ptp.examples.PTPSendExample`
 * the JUnit tests, especially `edu.kit.tm.ptp.test.PTPTest`
