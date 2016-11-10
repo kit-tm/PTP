@@ -5,9 +5,10 @@ apps using Tor and Tor hidden services for connectivity.
 
 Good starting points:
 
+* [Usage](README.md#Usage)
+* javadoc (see [Javadoc](README.md#javadoc))
 * the examples, especially `edu.kit.tm.ptp.examples.PTPSendExample`
 * the JUnit tests, especially `edu.kit.tm.ptp.test.PTPTest`
-* javadoc (see [Javadoc](README.md#javadoc))
 
 *WORK IN PROGRESS*
 
@@ -22,6 +23,25 @@ If you want to use eclipse run `./gradlew eclipse` to create proper
 ## Javadoc
 
 Run `./gradlew javadoc` to create the Javadoc in `build/docs/javadoc/`.
+
+## Adding PTP to a Java Application
+
+To use PTP in your Java application build PTP and add `build/libs/PTP-full.jar` to your classpath.
+For example: `javac -cp .:pathtojar/PTP-full.jar ...` and `java -cp .:pathtojar/PTP-full.jar ...` 
+where pathtojar is the path to the folder containing PTP-full.jar.
+To be able to use PTP you also have to copy the `config` folder to the folder from where you run your application. 
+
+## Usage
+
+First a new PTP object has to be constructed: `PTP ptp = new PTP();`.
+After that you should register all classes you want to be able to send and receive using `ptp.registerClass(Class)`.
+Notice that the order of registrations is important and has to be the same both at the sender and receiver.
+PTP uses [Kryo](https://github.com/EsotericSoftware/kryo) to serialize objects.
+You can also set listeners for sent and received messages.
+After that `ptp.init()` should be called which sets up PTP and starts Tor.
+Next call `ptp.reuseHiddenService()` or `ptp.createHiddenService()` to use an existing hidden service or create a new one.
+You can now send and receive messages. Keep in mind that it can take some time for a hidden service to be reachable (about 1-2 minutes). 
+To close PTP cleanly call `ptp.exit()`. If you want to delete your hidden service you can call `ptp.deleteHiddenService()` after `ptp.exit()`.
 
 ## Tests
 
@@ -38,12 +58,6 @@ Run `./chutneyTests.sh` to set up a local tor network and start the tests.
 
 - https://git.scc.kit.edu/TM/ptp-androidexample
 
-## Using PTP in a Java Application
-
-To use PTP in your Java application build PTP and add `build/libs/PTP-full.jar` to your classpath.
-For example: `javac -cp .:pathtojar/PTP-full.jar ...` and `java -cp .:pathtojar/PTP-full.jar ...` 
-where pathtojar is the path to the folder containing PTP-full.jar.
-To be able to use PTP you also have to copy the `config` folder to the folder from where you run your application. 
 
 ## Projects using PTP
 
