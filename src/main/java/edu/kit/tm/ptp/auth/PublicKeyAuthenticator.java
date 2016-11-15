@@ -38,6 +38,8 @@ public class PublicKeyAuthenticator extends Authenticator {
   private final CryptHelper cryptHelper;
   private static Serializer serializer = null;
   private boolean initiator;
+  private boolean messageSent = false;
+  private boolean okReceived = false;
 
   public PublicKeyAuthenticator(AuthenticationListener listener, MessageChannel channel,
       CryptHelper cryptHelper) {
@@ -108,6 +110,12 @@ public class PublicKeyAuthenticator extends Authenticator {
     if (!initiator) {
       // Authentication success message has been sent successfully
       authSuccess();
+    } else {
+      messageSent = true;
+      
+      if (okReceived) {
+        authSuccess();
+      }
     }
   }
 
@@ -117,7 +125,11 @@ public class PublicKeyAuthenticator extends Authenticator {
 
     if (initiator) {
       if (data.length == 1 && data[0] == AUTHENTICATION_SUCCESS_MESSAGE) {
-        authSuccess();
+        if (messageSent) {
+          authSuccess();
+        } else {
+          okReceived = true;
+        }
       } else {
         authFailed();
       }
