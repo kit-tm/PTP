@@ -276,14 +276,22 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
 
   @Override
   public void authenticationSuccess(MessageChannel channel, Identifier identifier) {
-    eventQueue.add(new EventAuthentication(this, channel, identifier));
-    semaphore.release();
+    authenticationFinished(channel, identifier);
   }
 
   @Override
   public void authenticationFailed(MessageChannel channel) {
-    eventQueue.add(new EventAuthentication(this, channel, null));
-    semaphore.release();
+    authenticationFinished(channel, null);
+  }
+  
+  private void authenticationFinished(MessageChannel channel, Identifier identifier) {
+    Context context = channelContexts.get(channel);
+    
+    if (context == null) {
+      logger.log(Level.WARNING, "Authentication on unregistered channel");
+    } else {
+      context.authenticated(channel, identifier);
+    }    
   }
 
   protected MessageChannel connect(Identifier destination) throws IOException {
