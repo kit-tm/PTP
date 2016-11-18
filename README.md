@@ -2,6 +2,8 @@
 
 A proof-of-concept prototyping library for peer-to-peer
 apps using Tor and Tor hidden services for connectivity.
+PTP is a library for Java only. Interoperability with
+applications not using PTP is not planned.
 
 Good starting points:
 
@@ -42,6 +44,8 @@ PTP uses [Kryo](https://github.com/EsotericSoftware/kryo) to serialize objects.
 
 
 You can set listeners for sent and received messages.
+Please notice that executing long-running operations in a listener impacts
+the overall performance of PTP and should be avoided.
 After that `ptp.init()` should be called which sets up PTP and starts Tor.
 Next call `ptp.reuseHiddenService()` or `ptp.createHiddenService()` to use an existing hidden service or create a new one.
 You can now send and receive messages. Keep in mind that it can take some time for a hidden service to be reachable (about 1-2 minutes). 
