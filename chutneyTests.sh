@@ -7,7 +7,9 @@ rm config/testtorrc
 ln -s chutneytorrc config/testtorrc
 
 cd $CHUTNEY_DIR
-./chutney configure networks/hs
+if [ ! -d "net/nodes/009h" ]; then
+  ./chutney configure networks/hs
+fi
 ./chutney start networks/hs
 
 cd $CWD
