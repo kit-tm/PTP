@@ -7,6 +7,7 @@ import edu.kit.tm.ptp.hiddenservice.HiddenServiceManager;
 import edu.kit.tm.ptp.serialization.ByteArrayMessage;
 import edu.kit.tm.ptp.serialization.Serializer;
 import edu.kit.tm.ptp.utility.Constants;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.File;
 import java.io.IOException;
@@ -180,6 +181,7 @@ public class PTP {
     // Create the logger after the configuration sets the logger properties file.
     logger = Logger.getLogger(PTP.class.getName());
 
+    Thread.setDefaultUncaughtExceptionHandler(new UncaughtExceptionHandler());
 
     if (workingDirectory == null) {
       String ptphome = System.getenv(Constants.ptphome);
@@ -639,10 +641,24 @@ public class PTP {
     }
   }
 
+  private class UncaughtExceptionHandler implements Thread.UncaughtExceptionHandler {
+
+    @Override
+    @SuppressFBWarnings(value = "DM_EXIT", justification = "Uncaught exception is critical")
+    public void uncaughtException(Thread thread, Throwable exception) {
+      synchronized (PTP.this) {
+        logger.log(Level.SEVERE, "Thread " + thread.getName()
+                + " threw Exception: " + exception.getMessage());
+        logger.log(Level.SEVERE, "Shutting down");
+      }
+      System.exit(1);
+    }
+  }
+
   private void addShutdownHook() {
     Runtime.getRuntime().addShutdownHook(new Thread() {
       public void run() {
-        if (clientThread != null) {
+        if (clientThread != null && !initialized) {
           clientThread.interrupt();
           try {
             clientThread.join();
