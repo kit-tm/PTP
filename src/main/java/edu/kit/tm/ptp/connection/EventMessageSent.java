@@ -23,7 +23,7 @@ public class EventMessageSent extends Event {
     Context context = manager.channelContexts.get(destination);
 
     if (context == null) {
-      manager.logger.log(Level.WARNING, "Message sent by channel without a context.");
+      manager.logger.log(Level.INFO, "Message sent successfully but channel is already closed.");
     } else {
       context.messageSent(id, destination);
     }

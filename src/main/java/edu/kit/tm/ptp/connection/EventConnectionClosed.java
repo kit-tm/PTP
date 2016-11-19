@@ -23,7 +23,7 @@ public class EventConnectionClosed extends Event {
     Context context = manager.channelContexts.get(channel);
 
     if (context == null) {
-      manager.logger.log(Level.WARNING, "Closing unregistered channel");
+      manager.logger.log(Level.INFO, "Channel has been closed already.");
     } else {
       context.close(channel);
     }

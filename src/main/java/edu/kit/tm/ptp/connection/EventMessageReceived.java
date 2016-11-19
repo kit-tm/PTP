@@ -30,7 +30,8 @@ public class EventMessageReceived extends Event {
     Context context = manager.channelContexts.get(source);
 
     if (context == null) {
-      manager.logger.log(Level.WARNING, "Message received by a channel without a context.");
+      manager.logger.log(Level.INFO, "Message received but channel is already closed."
+          + "Dropping message.");
     } else {
       context.messageReceived(data, source);
     }
