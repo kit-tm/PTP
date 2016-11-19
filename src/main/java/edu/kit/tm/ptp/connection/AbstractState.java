@@ -77,7 +77,8 @@ public abstract class AbstractState {
 
     if (identifier != null) {
       for (MessageAttempt attempt : manager.dispatchedMessages.values()) {
-        if (identifier.equals(attempt.getDestination())) {
+        if (channel.equals(attempt.getDispatchedChannel())) {
+          attempt.setDispatchedChannel(null);
           manager.eventQueue.add(new EventSendMessage(manager, attempt));
         }
       }

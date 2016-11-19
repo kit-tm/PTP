@@ -1,6 +1,7 @@
 package edu.kit.tm.ptp.connection;
 
 import edu.kit.tm.ptp.Identifier;
+import edu.kit.tm.ptp.channels.MessageChannel;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
@@ -17,6 +18,7 @@ public class MessageAttempt {
   private long timeout;
   private Identifier destination;
   private boolean informSendListener;
+  private MessageChannel dispatchedChannel = null;
 
   /**
    * Constructs a new MessageAttempt.
@@ -90,6 +92,14 @@ public class MessageAttempt {
 
   public void setInformSendListener(boolean informSendListener) {
     this.informSendListener = informSendListener;
+  }
+  
+  public MessageChannel getDispatchedChannel() {
+    return dispatchedChannel;
+  }
+
+  public void setDispatchedChannel(MessageChannel dispatchedChannel) {
+    this.dispatchedChannel = dispatchedChannel;
   }
 
   @Override

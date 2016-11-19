@@ -37,6 +37,7 @@ public class StateAuthenticated extends StateConnected {
     if (channel.isIdle()) {
       channel.addMessage(attempt.getData(), attempt.getId());
       manager.dispatchedMessages.put(attempt.getId(), attempt);
+      attempt.setDispatchedChannel(channel);
       return true;
     } else {
       return false;

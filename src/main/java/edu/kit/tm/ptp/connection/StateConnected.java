@@ -47,9 +47,9 @@ public class StateConnected extends AbstractState {
       MessageChannel other = manager.identifierMap.get(identifier);
 
       if (other != null && !other.equals(channel) && !identifier.equals(manager.localIdentifier)) {
-        manager.channelClosed(other);
         manager.logger.log(Level.WARNING,
-            "Another connection to identifier is open. Overwriting entry in identifierMap");
+            "Another connection to identifier is already open. Closing the old connection.");
+        manager.channelClosed(other);
       }
 
       manager.identifierMap.put(identifier, channel);
