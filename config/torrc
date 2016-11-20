@@ -4,9 +4,6 @@ ControlPort auto
 ## Set the Tor SOCKs proxy port to any available port, read the port from Tors propertiies later on.
 SocksPort auto
 
-## Allow only local connections to the Tor SOCKs proxy.
-SocksPolicy accept 192.168.0.0/16
-
 ## Set the Tor authentication method. Ignore this for now.
 #HashedControlPassword 16:872860B76453A77D60CA2BB8C1A7042072093276A3D701AD684053EC4C
 #CookieAuthentication 1
