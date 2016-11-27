@@ -60,11 +60,11 @@ public class MessageQueueTest {
     ptp.registerClass(TestMessage.class);
     ptp2.registerClass(TestMessage.class);
 
-    ptp.reuseHiddenService();
-    ptp2.reuseHiddenService();
-
     ptp.enableMessageQueue(TestMessage.class);
     ptp2.enableMessageQueue(TestMessage.class);
+
+    ptp.reuseHiddenService();
+    ptp2.reuseHiddenService();
 
     assertNotEquals(null, ptp2.getIdentifier());
 
@@ -101,10 +101,10 @@ public class MessageQueueTest {
   
   @Test
   public void testPollByteArrayMessages() throws IOException, InterruptedException {
+    ptp2.enableMessageQueue();
+
     ptp.reuseHiddenService();
     ptp2.reuseHiddenService();
-    
-    ptp2.enableMessageQueue();
     
     assertNotEquals(null, ptp2.getIdentifier());
     
@@ -143,11 +143,11 @@ public class MessageQueueTest {
   
   @Test
   public void testByteArrayMessageQueue() throws IOException, InterruptedException {
-    ptp.reuseHiddenService();
-    ptp2.reuseHiddenService();
-
     ptp.enableMessageQueue();
     ptp2.enableMessageQueue();
+
+    ptp.reuseHiddenService();
+    ptp2.reuseHiddenService();
 
     assertNotEquals(null, ptp2.getIdentifier());
 
