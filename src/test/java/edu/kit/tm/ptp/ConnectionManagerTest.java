@@ -57,6 +57,8 @@ public class ConnectionManagerTest {
   public void testSend() throws IOException {
     ptp = new PTP(true);
     ptp.authFactory = new DummyAuthenticatorFactory();
+    // Avoid warning about dropped message
+    ptp.setReceiveListener(new ReceiveListenerAdapter());
     ptp.init();
     ptp.reuseHiddenService();
 

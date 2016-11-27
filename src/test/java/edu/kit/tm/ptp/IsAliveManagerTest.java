@@ -43,6 +43,8 @@ public class IsAliveManagerTest {
 
     ptp = new PTP(true, config);
     ptp.authFactory = new DummyAuthenticatorFactory();
+    // Avoid warning about dropped message
+    ptp.setReceiveListener(new ReceiveListenerAdapter());
     ptp.init();
     ptp.reuseHiddenService();
 
