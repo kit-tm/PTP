@@ -179,14 +179,35 @@ public class HiddenServiceManager {
 
       registerHiddenServices();
 
+      if (!waitForHiddenService(Constants.torCreateHiddenServiceTimeout)) {
+        throw new IOException("Waiting for hidden service creation timed out.");
+      }
+
       currentIdentifier = new Identifier(readIdentifier(currentDirectory));
 
     } finally {
       // Release the lock, if acquired.
       logger.log(Level.INFO, "Client releasing the lock on the raw API lock file.");
       apiLock.release();
-
     }
+  }
+
+  private boolean waitForHiddenService(long timeout) {
+    long start = System.currentTimeMillis();
+
+    File key = getPrivateKeyFile();
+    File host = getHostFile(currentDirectory);
+
+    while (!(key.exists() && host.exists()) && System.currentTimeMillis() - start < timeout) {
+      try {
+        Thread.sleep(100);
+      } catch (InterruptedException e) {
+        logger.log(Level.WARNING, "Interrupted while waiting for hidden service.");
+        return false;
+      }
+    }
+
+    return key.exists() && host.exists();
   }
 
 
@@ -373,7 +394,7 @@ public class HiddenServiceManager {
   }
 
   private String readIdentifier(String hsDir) throws IOException {
-    File hostname = new File(hsDir + File.separator + Constants.hostname);
+    File hostname = getHostFile(hsDir);
 
     logger.log(Level.INFO, "Reading identifier from file: " + hostname);
 
@@ -389,5 +410,9 @@ public class HiddenServiceManager {
     logger.log(Level.INFO, "Read identifier: " + identifier);
 
     return identifier;
+  }
+
+  private File getHostFile(String hsDir) {
+    return new File(hsDir + File.separator + Constants.hostname);
   }
 }

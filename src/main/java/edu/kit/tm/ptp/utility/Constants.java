@@ -67,6 +67,8 @@ public class Constants {
   public static final String hiddenservicelockfile = "PTPHSLock";
   /** The time to wait for Tor to start.*/
   public static final long torStartTimeout = 10 * 1000;
+  /** The time to wait for Tor to create a hidden service. */
+  public static final long torCreateHiddenServiceTimeout = 5 * 1000;
 
   public static final String torDisableNetwork = "DisableNetwork";
   public static final String torControlPortFileName = "control";
