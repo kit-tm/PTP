@@ -304,29 +304,35 @@ public class TorManager {
     }
 
     if (controlConn == null) {
-      logger.log(Level.WARNING, "No control connection open. Can't shutdown Tor.");
+      logger.log(Level.WARNING, "No control connection open");
+      killTor();
       return;
     }
 
+    logger.log(Level.INFO, "TorManager stopping Tor process.");
+
     try {
-      logger.log(Level.INFO, "TorManager stopping Tor process.");
-      if (process != null) {
-        logger.log(Level.INFO, "Killing own Tor process");
-        process.destroy();
-      } else {
-        controlConn.shutdownTor(Constants.shutdownsignal);
+      controlConn.shutdownTor(Constants.shutdownsignal);
+      logger.log(Level.INFO, "TorManager sent shutdown signal.");
 
-        logger.log(Level.INFO, "TorManager sent shutdown signal.");
-      }
-
-      // Delete ControlPortFile
-      if (controlPortFile.exists() && !controlPortFile.delete()) {
-        logger.log(Level.WARNING,
-            "Failed to delete ControlPortFile " + controlPortFile.getAbsolutePath());
-      }
     } catch (IOException e) {
       logger.log(Level.WARNING,
-          "TorManager caught an IOException while closing Tor process: " + e.getMessage());
+          "Error while shuting down Tor process: " + e.getMessage());
+
+      killTor();
+    }
+  }
+
+  private void killTor() {
+    if (process != null) {
+      logger.log(Level.INFO, "Killing own Tor process");
+      process.destroy();
+    }
+
+    // Delete ControlPortFile (deleted by Tor on shutdown)
+    if (controlPortFile.exists() && controlPortFile.delete()) {
+      logger.log(Level.INFO,
+          "Deleted ControlPortFile " + controlPortFile.getAbsolutePath());
     }
   }
 
@@ -412,10 +418,6 @@ public class TorManager {
     torFile += Constants.torfile;
     String torrcFile = useAbsolutePath ? workingDirectory + File.separator : "";
     torrcFile += torrc;
-    
-    //if (!updateTorRc(torrcFile)) {
-    //  return false;
-    //}
 
     try {
       /** The parameters for the Tor execution command. */
