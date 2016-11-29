@@ -103,7 +103,7 @@ public class ChannelManagerTest {
 
     SOCKSChannel socksChannel = new SOCKSChannel(listener.passedChannel, channelManager);
     channelManager.addChannel(socksChannel);
-    socksChannel.connetThroughSOCKS(ptp.getIdentifier().toString(),
+    socksChannel.connectThroughSOCKS(ptp.getIdentifier().toString(),
         ptp.getConfiguration().getHiddenServicePort());
 
     // hidden service should be immediately available

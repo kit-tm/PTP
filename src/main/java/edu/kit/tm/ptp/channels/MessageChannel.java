@@ -21,24 +21,25 @@ public class MessageChannel {
     IDLE, LENGTH, DATA, CLOSED
   }
 
+  private static final Logger logger = Logger.getLogger(MessageChannel.class.getName());
+  private static final int bufferLength = 1024;
+  private static final int maxBufferLength = 1024 * 1024 * 100; // 100MB
+
+  private final ByteBuffer sendLengthBuffer;
+  private final ByteBuffer receiveLengthBuffer;
+  private final int lenLength = 4;
+
   private ByteBuffer sendBuffer;
-  private ByteBuffer sendLengthBuffer;
   private ByteBuffer receiveBuffer;
-  private ByteBuffer receiveLengthBuffer;
-  protected SocketChannel channel;
-  private int bufferLength = 1024;
-  private int maxBufferLength = 1024 * 1024 * 100; // 100MB
-  protected ChannelChangeListener changeListener;
-  protected ChannelMessageListener messageListener;
   private State readState = State.LENGTH;
   private State writeState = State.IDLE;
-
   private int readLength;
-  private final int lenLength = 4;
   private long currentId;
-  private Lock writeLock = new ReentrantLock();
-  protected ChannelManager manager;
-  private static final Logger logger = Logger.getLogger(MessageChannel.class.getName());
+
+  protected final SocketChannel channel;
+  protected final ChannelChangeListener changeListener;
+  protected final ChannelMessageListener messageListener;
+  protected final ChannelManager manager;
 
   /**
    * Initializes a new MessageChannel.
@@ -65,10 +66,10 @@ public class MessageChannel {
 
   /**
    * Reads data from the channel.
-   * Needs possibly to be called several times to read a whole message.
+   * Possibly needs to be called several times to read a whole message.
    * Informs the ChannelListener when a whole message has been read.
    */
-  public void read() {
+  public synchronized void read() {
     try {
       int read;
       switch (readState) {
@@ -134,12 +135,9 @@ public class MessageChannel {
   /**
    * Closes the channel.
    */
-  protected void closeChannel() {
+  protected synchronized void closeChannel() {
     readState = State.CLOSED;
-
-    writeLock.lock();
     writeState = State.CLOSED;
-    writeLock.unlock();
 
     try {
       channel.close();
@@ -155,9 +153,7 @@ public class MessageChannel {
    * Needs possibly to be called several times to write a whole message.
    * Informs the ChannelListener when a whole message has been written.
    */
-  public void write() {
-    writeLock.lock();
-
+  public synchronized void write() {
     try {
       switch (writeState) {
         case LENGTH:
@@ -187,8 +183,6 @@ public class MessageChannel {
     } catch (IOException ioe) {
       logger.log(Level.WARNING, "Caught exception while writing: " + ioe.getMessage());
       closeChannel();
-    } finally {
-      writeLock.unlock();
     }
   }
 
@@ -201,32 +195,25 @@ public class MessageChannel {
    * 
    * @param data The bytes to send.
    * @param id The id to use when informing the ChannelListener about a sent message.
+   * @return True if the channel was idle and the message has been added successfully.
    */
-  public void addMessage(byte[] data, long id) {
-    writeLock.lock();
-
-    try {
-      if (writeState != State.IDLE) {
-        logger.log(Level.SEVERE, "Tried to add message to busy channel");
-        throw new IllegalStateException();
-      }
-      sendLengthBuffer.putInt(data.length);
-      sendLengthBuffer.flip();
-      sendBuffer = ByteBuffer.wrap(data);
-
-      currentId = id;
-      writeState = State.LENGTH;
-      manager.registerWrite(this, true);
-    } finally {
-      writeLock.unlock();
+  public synchronized boolean addMessage(byte[] data, long id) {
+    if (writeState != State.IDLE) {
+      logger.log(Level.INFO, "MessageChannel is busy. Can't add message " + id + ".");
+      return false;
     }
+
+    sendLengthBuffer.putInt(data.length);
+    sendLengthBuffer.flip();
+    sendBuffer = ByteBuffer.wrap(data);
+
+    currentId = id;
+    writeState = State.LENGTH;
+    manager.registerWrite(this, true);
+    return true;
   }
 
   public SocketChannel getChannel() {
     return channel;
-  }
-
-  public boolean isIdle() {
-    return writeState == State.IDLE;
   }
 }

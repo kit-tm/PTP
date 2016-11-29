@@ -16,10 +16,10 @@ import java.util.logging.Logger;
  *
  */
 public class SOCKSChannel extends MessageChannel {
+  private static final Logger logger = Logger.getLogger(SOCKSChannel.class.getName());
   private boolean connected;
   private ByteBuffer socksReceiveBuffer;
   private ByteBuffer socksWriteBuffer;
-  private static final Logger logger = Logger.getLogger(SOCKSChannel.class.getName());
 
   public SOCKSChannel(MessageChannel messageChannel, ChannelManager manager) {
     super(messageChannel.getChannel(), manager);
@@ -39,7 +39,7 @@ public class SOCKSChannel extends MessageChannel {
    * @param host The host to connect to.
    * @param port The port to connect to.
    */
-  public void connetThroughSOCKS(String host, int port) {
+  public synchronized void connectThroughSOCKS(String host, int port) {
     if (connected) {
       logger.log(Level.SEVERE, "A connection through the proxy has already been established.");
       throw new IllegalStateException();
@@ -74,7 +74,7 @@ public class SOCKSChannel extends MessageChannel {
   }
 
   @Override
-  public void read() {
+  public synchronized void read() {
     if (connected) {
       super.read();
     } else {
@@ -111,7 +111,7 @@ public class SOCKSChannel extends MessageChannel {
   }
 
   @Override
-  public void write() {
+  public synchronized void write() {
     if (connected) {
       super.write();
     } else {
@@ -132,12 +132,12 @@ public class SOCKSChannel extends MessageChannel {
    * It's not allowed to call this method while it establishes a connection through the SOCKS proxy.
    */
   @Override
-  public void addMessage(byte[] data, long id) {
+  public synchronized boolean addMessage(byte[] data, long id) {
     if (!connected) {
-      logger.log(Level.SEVERE, "Tried to add message to an unconnected SOCKSChannel.");
-      throw new IllegalStateException();
+      logger.log(Level.WARNING, "Tried to add message to an unconnected SOCKSChannel.");
+      return false;
     }
 
-    super.addMessage(data, id);
+    return super.addMessage(data, id);
   }
 }

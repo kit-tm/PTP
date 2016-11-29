@@ -47,7 +47,7 @@ public class StateConnect extends AbstractState {
       
       context.setState(context.getConcreteConnectSOCKS());
 
-      socks.connetThroughSOCKS(identifier.getTorAddress(), manager.hsPort);
+      socks.connectThroughSOCKS(identifier.getTorAddress(), manager.hsPort);
     } catch (ClosedChannelException e) {
       manager.logger.log(Level.WARNING, "Channel was closed while adding channel to ChannelManager",
           e);

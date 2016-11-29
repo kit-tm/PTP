@@ -34,10 +34,9 @@ public class StateAuthenticated extends StateConnected {
       throw new IllegalStateException();
     }
 
-    if (channel.isIdle()) {
-      channel.addMessage(attempt.getData(), attempt.getId());
-      manager.dispatchedMessages.put(attempt.getId(), attempt);
+    if (channel.addMessage(attempt.getData(), attempt.getId())) {
       attempt.setDispatchedChannel(channel);
+      manager.dispatchedMessages.put(attempt.getId(), attempt);
       return true;
     } else {
       return false;
