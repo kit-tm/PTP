@@ -8,9 +8,9 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
+import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -22,11 +22,12 @@ import java.util.logging.Logger;
  */
 
 public class ChannelManager implements Runnable {
-  private Selector selector = null;
-  private ChannelListener listener;
-  private Thread thread;
   private static final Logger logger = Logger.getLogger(ChannelManager.class.getName());
-  private Lock lock = new ReentrantLock();
+  private final ChannelListener listener;
+  private final Thread thread;
+  private final Queue<ChannelEvent> eventQueue = new ConcurrentLinkedQueue<>();
+
+  private Selector selector = null;
 
   /**
    * Initializes a new ChannelManager.
@@ -64,41 +65,26 @@ public class ChannelManager implements Runnable {
     }
 
     try {
-      if (selector != null) {
-        // Close all connections
-        for (SelectionKey key : selector.keys()) {
-          SelectableChannel channel = key.channel();
-          try {
-            if (channel instanceof SocketChannel) {
-              logger.log(Level.INFO, "Closing SocketChannel");
-              ((SocketChannel) channel).close();
-            }
-
-            if (channel instanceof ServerSocketChannel) {
-              logger.log(Level.INFO, "Closing ServerSocketChannel");
-              ((ServerSocketChannel) channel).close();
-            }
-          } catch (IOException ioe) {
-            logger.log(Level.INFO, "Failed to close channel");
-          }
-        }
-
-        selector.close();
-      }
+      closeChannels();
     } catch (IOException e) {
       logger.log(Level.WARNING, "Failed to close selector: " + e.getMessage());
     }
   }
 
+
+
   @Override
   public void run() {
-
     int readyChannels = 0;
     long timeout = 100;
+    ChannelEvent event;
 
     while (!thread.isInterrupted()) {
-      lock.lock();
-      lock.unlock();
+
+      while ((event = eventQueue.poll()) != null) {
+        event.process(selector);
+      }
+
       try {
         readyChannels = selector.select(timeout);
       } catch (IOException e) {
@@ -167,17 +153,6 @@ public class ChannelManager implements Runnable {
 
   }
 
-  private void registerChannel(Selector selector, int interestOps, SelectableChannel channel,
-                               Object attachement) throws ClosedChannelException {
-    lock.lock();
-    try {
-      selector.wakeup();
-      channel.register(selector, interestOps, attachement);
-    } finally {
-      lock.unlock();
-    }
-  }
-
   /**
    * Adds a ServerSocketChannel to accept connections from. The server has to be listening already.
    * Calls channelOpened() on the ChannelListener when a connection is received.
@@ -188,7 +163,7 @@ public class ChannelManager implements Runnable {
    */
   public void addServerSocket(ServerSocketChannel server) throws IOException {
     server.configureBlocking(false);
-    registerChannel(selector, SelectionKey.OP_ACCEPT, server, server);
+    eventQueue.add(new ChannelEventRegister(SelectionKey.OP_ACCEPT, server, server));
   }
 
   /**
@@ -203,7 +178,7 @@ public class ChannelManager implements Runnable {
   public MessageChannel connect(SocketChannel socket) throws IOException {
     socket.configureBlocking(false);
     MessageChannel channel = new MessageChannel(socket, this);
-    registerChannel(selector, SelectionKey.OP_CONNECT, socket, channel);
+    eventQueue.add(new ChannelEventRegister(SelectionKey.OP_CONNECT, socket, channel));
     return channel;
   }
 
@@ -214,18 +189,14 @@ public class ChannelManager implements Runnable {
    * @throws ClosedChannelException If the channel is closed.
    */
   public void addChannel(MessageChannel channel) throws ClosedChannelException {
-    registerChannel(selector, 0, channel.getChannel(), channel);
+    eventQueue.add(new ChannelEventRegister(0, channel.getChannel(), channel));
   }
 
   /**
    * Stops to read from and write messages to the supplied MessageChannel.
    */
   public void removeChannel(MessageChannel channel) {
-    SelectionKey key = channel.getChannel().keyFor(selector);
-
-    if (key != null) {
-      key.cancel();
-    }
+    eventQueue.add(new ChannelEventRemove(channel));
   }
 
   /**
@@ -250,23 +221,30 @@ public class ChannelManager implements Runnable {
   }
 
   private void setInterestOps(MessageChannel channel, boolean enable, int operation) {
-    SelectionKey key = channel.getChannel().keyFor(selector);
+    eventQueue.add(new ChannelEventSetInterestOps(channel, enable, operation));
+  }
 
-    if (key == null) {
-      // Can happen for incoming connections
-      logger.log(Level.INFO, "Unregistered channel tries to register operation.");
-      return;
-    }
+  private void closeChannels() throws IOException {
+    if (selector != null) {
+      // Close all connections
+      for (SelectionKey key : selector.keys()) {
+        SelectableChannel channel = key.channel();
+        try {
+          if (channel instanceof SocketChannel) {
+            logger.log(Level.INFO, "Closing SocketChannel");
+            ((SocketChannel) channel).close();
+          }
 
-    if (!key.isValid()) {
-      logger.log(Level.INFO, "Closed or unregistered channel tries to register operation.");
-      return;
-    }
+          if (channel instanceof ServerSocketChannel) {
+            logger.log(Level.INFO, "Closing ServerSocketChannel");
+            ((ServerSocketChannel) channel).close();
+          }
+        } catch (IOException ioe) {
+          logger.log(Level.INFO, "Failed to close channel");
+        }
+      }
 
-    if (enable) {
-      key.interestOps(key.interestOps() | operation);
-    } else {
-      key.interestOps(key.interestOps() & (~operation));
+      selector.close();
     }
   }
 }
