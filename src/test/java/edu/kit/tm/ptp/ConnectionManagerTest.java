@@ -85,9 +85,9 @@ public class ConnectionManagerTest {
 
     assertEquals(1, listener.sent.get());
 
-    assertEquals(id, listener.id);
-    assertEquals(SendListener.State.SUCCESS, listener.state);
-    assertEquals(ptp.getIdentifier(), listener.destination);
+    assertEquals(id, listener.getId());
+    assertEquals(SendListener.State.SUCCESS, listener.getState());
+    assertEquals(ptp.getIdentifier(), listener.getDestination());
   }
 
   @Test(expected = IllegalArgumentException.class)

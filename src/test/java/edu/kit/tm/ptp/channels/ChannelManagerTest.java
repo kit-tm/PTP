@@ -101,7 +101,7 @@ public class ChannelManagerTest {
     assertEquals(0, listener.read.get());
     assertEquals(0, listener.write.get());
 
-    SOCKSChannel socksChannel = new SOCKSChannel(listener.passedChannel, channelManager);
+    SOCKSChannel socksChannel = new SOCKSChannel(listener.getPassedChannel(), channelManager);
     channelManager.addChannel(socksChannel);
     socksChannel.connectThroughSOCKS(ptp.getIdentifier().toString(),
         ptp.getConfiguration().getHiddenServicePort());
@@ -111,7 +111,7 @@ public class ChannelManagerTest {
 
     assertEquals(2, listener.conOpen.get());
     assertEquals(0, listener.write.get());
-    assertEquals(socksChannel, listener.passedChannel);
+    assertEquals(socksChannel, listener.getPassedChannel());
     assertEquals(0, listener.conClosed.get());
     
     // SOCKSChannel disabled reading, enable it
@@ -123,7 +123,7 @@ public class ChannelManagerTest {
     TestHelper.wait(listener.conClosed, 1, TestConstants.listenerTimeout);
 
     assertEquals(1, listener.conClosed.get());
-    assertEquals(socksChannel, listener.passedChannel);
+    assertEquals(socksChannel, listener.getPassedChannel());
 
   }
 

@@ -77,11 +77,6 @@ public class PTPTest {
   @Rule
   public ExpectedException thrown = ExpectedException.none();
 
-  /**
-   * @throws IOException Propagates any IOException thrown by the API wrapper during construction.
-   *
-   * @see JUnit
-   */
   @Before
   public void setUp() throws IOException {
     // Create a RNG.
@@ -97,9 +92,6 @@ public class PTPTest {
     client2 = new PTP(true);
   }
 
-  /**
-   * @see JUnit
-   */
   @After
   public void tearDown() {
     // Clean up the APIs.
@@ -179,7 +171,6 @@ public class PTPTest {
         }
 
         assertEquals("Received send success notification.", false, sendSuccess.get());
-        // FIXME fails? mafl
         assertEquals("No failure notification received", true, sendFail.get());
         assertEquals(msgId, returnedId);
       }

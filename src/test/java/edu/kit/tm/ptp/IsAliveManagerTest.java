@@ -65,12 +65,14 @@ public class IsAliveManagerTest {
 
     byte[] data = new byte[] {0x0, 0x1, 0x2, 0x3};
     ByteArrayMessage message = new ByteArrayMessage(data);
-    manager.send(serializer.serialize(message), identifier,
+    long id = manager.send(serializer.serialize(message), identifier,
         TestConstants.hiddenServiceSetupTimeout);
 
     TestHelper.wait(listener.sent, 1, TestConstants.hiddenServiceSetupTimeout);
 
     assertEquals(1, listener.sent.get());
+    assertEquals(SendListener.State.SUCCESS, listener.getState());
+    assertEquals(id, listener.getId());
 
     TestHelper.wait(listener.received, 1, isAliveSendTimeout + TestConstants.listenerTimeout);
 

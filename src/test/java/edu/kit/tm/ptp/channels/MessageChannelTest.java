@@ -88,17 +88,17 @@ public class MessageChannelTest {
     assertEquals(1, listener.read.get());
     assertEquals(1, listener.write.get());
 
-    assertArrayEquals(data, listener.passedBytes);
-    assertEquals(id, listener.passedId);
-    assertEquals(c1, listener.destination);
-    assertEquals(c2, listener.source);
+    assertArrayEquals(data, listener.getPassedBytes());
+    assertEquals(id, listener.getPassedId());
+    assertEquals(c1, listener.getDestination());
+    assertEquals(c2, listener.getSource());
 
     client.close();
     c2.read();
     assertEquals(1, listener.read.get());
     assertEquals(1, listener.write.get());
     assertEquals(1, listener.conClosed.get());
-    assertEquals(c2, listener.passedChannel);
+    assertEquals(c2, listener.getPassedChannel());
   }
 
   @Test
