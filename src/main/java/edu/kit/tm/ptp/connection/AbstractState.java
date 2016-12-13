@@ -80,6 +80,7 @@ public abstract class AbstractState {
         if (channel.equals(attempt.getDispatchedChannel())) {
           attempt.setDispatchedChannel(null);
           manager.eventQueue.add(new EventSendMessage(manager, attempt));
+          manager.semaphore.release();
         }
       }
       

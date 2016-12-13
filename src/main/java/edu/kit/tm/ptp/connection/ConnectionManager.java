@@ -41,9 +41,10 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
     TorManager.SOCKSProxyListener {
   private final Thread thread = new Thread(this);
   private final AtomicLong messageId = new AtomicLong(0);
-  private final Semaphore semaphore = new Semaphore(0);
-  private final Waker waker = new Waker(semaphore);
   private final int sendMessageRetryInterval;
+
+  protected final Semaphore semaphore = new Semaphore(0);
+  private final Waker waker = new Waker(semaphore);
 
   protected final int hsPort;
   protected final SendListener sendListener;
