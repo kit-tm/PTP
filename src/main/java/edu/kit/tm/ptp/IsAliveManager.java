@@ -30,6 +30,10 @@ public class IsAliveManager implements ExpireListener {
   private static final Logger logger = Logger.getLogger(IsAliveManager.class.getName());
 
   public IsAliveManager(PTP ptp, Configuration config) {
+    this(ptp, config, null);
+  }
+
+  public IsAliveManager(PTP ptp, Configuration config, ThreadGroup group) {
     this.ptp = ptp;
     timerManager = new TimerManager(this, config.getTimerUpdateInterval());
     isAliveTimeout = config.getIsAliveTimeout();

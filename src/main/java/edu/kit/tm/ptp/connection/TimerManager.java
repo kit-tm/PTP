@@ -25,7 +25,7 @@ public class TimerManager implements Runnable  {
   private final HashMap<TimerKey, Integer> map = new HashMap<TimerKey, Integer>();
   /** The interval in milliseconds at which the values are updated. */
   private final int step;
-  private final Thread thread = new Thread(this);
+  private final Thread thread;
   
   private static final class TimerKey {
     public Identifier identifier;
@@ -74,7 +74,6 @@ public class TimerManager implements Runnable  {
     }
   }
 
-
   /**
    * Constructor method.
    *
@@ -82,8 +81,20 @@ public class TimerManager implements Runnable  {
    * @param step The interval in milliseconds at which the timer values are updated.
    */
   public TimerManager(ExpireListener listener, int step) {
+    this(listener, step, null);
+  }
+
+
+  /**
+   * Constructor method.
+   *
+   * @param listener The listener that should be notified of expired connection timers.
+   * @param step The interval in milliseconds at which the timer values are updated.
+   */
+  public TimerManager(ExpireListener listener, int step, ThreadGroup group) {
     this.listener = listener;
     this.step = step;
+    this.thread = new Thread(group, this);
     logger.log(Level.INFO, "TimerManager object created.");
   }
 

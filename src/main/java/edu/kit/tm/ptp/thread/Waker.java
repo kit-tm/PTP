@@ -9,14 +9,19 @@ import java.util.concurrent.Semaphore;
  *
  */
 public class Waker implements Runnable {
-  private Semaphore semaphore = new Semaphore(0);
-  private Thread thread = new Thread(this);
-  private Semaphore release;
+  private final Semaphore semaphore = new Semaphore(0);
+  private final Thread thread;
+  private final Semaphore release;
   private Long sleep;
   private volatile boolean sleeping = false;
 
   public Waker(Semaphore release) {
+    this(release, null);
+  }
+
+  public Waker(Semaphore release, ThreadGroup group) {
     this.release = release;
+    this.thread = new Thread(group, this);
   }
 
   public void start() {
@@ -42,7 +47,6 @@ public class Waker implements Runnable {
 
         // wake
         release.release();
-
       } catch (InterruptedException e) {
         sleeping = false;
         thread.interrupt();

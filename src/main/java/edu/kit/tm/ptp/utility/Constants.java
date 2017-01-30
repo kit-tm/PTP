@@ -74,6 +74,7 @@ public class Constants {
   public static final String torControlPortFileName = "control";
   public static final String torControlPortWriteToFile = "ControlPortWriteToFile";
   public static final String torGetInfoSOCKSProxy = "net/listeners/socks";
+  public static final String threadGroupName = "PTPThreadGroup";
 
   /* Logger constants */
 

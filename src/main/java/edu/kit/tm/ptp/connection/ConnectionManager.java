@@ -39,12 +39,12 @@ import java.util.logging.Logger;
  */
 public class ConnectionManager implements Runnable, ChannelListener, AuthenticationListener,
     TorManager.SOCKSProxyListener {
-  private final Thread thread = new Thread(this);
+  private final Thread thread;
   private final AtomicLong messageId = new AtomicLong(0);
   private final int sendMessageRetryInterval;
 
   protected final Semaphore semaphore = new Semaphore(0);
-  private final Waker waker = new Waker(semaphore);
+  private final Waker waker;
 
   protected final int hsPort;
   protected final SendListener sendListener;
@@ -52,7 +52,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
   protected final Logger logger = Logger.getLogger(ConnectionManager.class.getName());
   protected final int connectRetryInterval;
 
-  protected final ChannelManager channelManager = new ChannelManager(this);
+  protected final ChannelManager channelManager;
   protected final AuthenticatorFactory authFactory;
   protected final CryptHelper cryptHelper = new CryptHelper();
 
@@ -77,7 +77,32 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
    */
   public ConnectionManager(int hsPort, ReceiveListener receiveListener, SendListener sendListener,
                            Configuration config) {
-    this (hsPort, receiveListener, sendListener, config, new PublicKeyAuthenticatorFactory());
+    this (hsPort, receiveListener, sendListener, config, null, new PublicKeyAuthenticatorFactory());
+  }
+
+  /**
+   * Construct a new ConnectionManager.
+   *
+   * @param hsPort The port to reach PTP hidden services from remote.
+   * @param receiveListener The listener to inform about received messages.
+   * @param sendListener The listener to inform about sent messages.
+   * @param group The ThreadGroup to start threads in or null.
+   */
+  public ConnectionManager(int hsPort, ReceiveListener receiveListener, SendListener sendListener,
+                           Configuration config, ThreadGroup group) {
+    this (hsPort, receiveListener, sendListener, config, group, new PublicKeyAuthenticatorFactory());
+  }
+
+  /**
+   * Construct a new ConnectionManager.
+   *
+   * @param hsPort The port to reach PTP hidden services from remote.
+   * @param receiveListener The listener to inform about received messages.
+   * @param sendListener The listener to inform about sent messages.
+   */
+  public ConnectionManager(int hsPort, ReceiveListener receiveListener, SendListener sendListener,
+                           Configuration config, AuthenticatorFactory authFactory) {
+    this (hsPort, receiveListener, sendListener, config, null, authFactory);
   }
 
   /**
@@ -85,7 +110,7 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
    * to create authenticator objects.
    */
   public ConnectionManager(int hsPort, ReceiveListener receiveListener, SendListener sendListener,
-                           Configuration config, AuthenticatorFactory authFactory) {
+                           Configuration config, ThreadGroup group, AuthenticatorFactory authFactory) {
     if (receiveListener == null || sendListener == null || authFactory == null) {
       throw new IllegalArgumentException();
     }
@@ -94,6 +119,9 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
     this.receiveListener = receiveListener;
     this.sendListener = sendListener;
     this.authFactory = authFactory;
+    this.channelManager = new ChannelManager(this, group);
+    this.waker = new Waker(semaphore, group);
+    this.thread = new Thread(group, this);
 
     if (config == null) {
       this.connectRetryInterval = Configuration.DEFAULT_CONNECTRETRYINTERVAL;

@@ -35,12 +35,21 @@ public class ChannelManager implements Runnable {
    * @param listener The ChannelListener to inform about changed channels and messages.
    */
   public ChannelManager(ChannelListener listener) {
+    this(listener, null);
+  }
+
+  /**
+   * Initializes a new ChannelManager.
+   *
+   * @param listener The ChannelListener to inform about changed channels and messages.
+   */
+  public ChannelManager(ChannelListener listener, ThreadGroup group) {
     if (listener == null) {
       throw new NullPointerException();
     }
 
     this.listener = listener;
-    thread = new Thread(this);
+    thread = new Thread(group, this);
     selector = null;
   }
 

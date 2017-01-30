@@ -37,6 +37,7 @@ public class PTP {
   private final boolean usePTPTor;
   private final Thread clientThread;
   private final boolean sharedTorProcess;
+  private final ThreadGroup ptpGroup = new PTPThreadGroup(Constants.threadGroupName);
 
   /** The logger for this class. */
   private Logger logger;
@@ -181,8 +182,6 @@ public class PTP {
     // Create the logger after the configuration sets the logger properties file.
     logger = Logger.getLogger(PTP.class.getName());
 
-    Thread.setDefaultUncaughtExceptionHandler(new UncaughtExceptionHandler());
-
     if (workingDirectory == null) {
       String ptphome = System.getenv(Constants.ptphome);
 
@@ -208,7 +207,7 @@ public class PTP {
     }
 
     connectionManager = new ConnectionManager(config.getHiddenServicePort(),
-        new PTPReceiveListener(), new PTPSendListener(), config,  authFactory);
+        new PTPReceiveListener(), new PTPSendListener(), config, ptpGroup, authFactory);
 
     tor.addSOCKSProxyListener(new SOCKSProxyPortListener());
     tor.addSOCKSProxyListener(connectionManager);
@@ -641,14 +640,21 @@ public class PTP {
     }
   }
 
-  private class UncaughtExceptionHandler implements Thread.UncaughtExceptionHandler {
+  private class PTPThreadGroup extends ThreadGroup {
+    public PTPThreadGroup(String name) {
+      super(name);
+    }
+
+    public PTPThreadGroup(ThreadGroup parent, String name) {
+      super(parent, name);
+    }
 
     @Override
     @SuppressFBWarnings(value = "DM_EXIT", justification = "Uncaught exception is critical")
     public void uncaughtException(Thread thread, Throwable exception) {
       synchronized (PTP.this) {
         logger.log(Level.SEVERE, "Thread " + thread.getName()
-                + " threw Exception: " + exception.getMessage());
+            + " threw Exception: " + exception.getMessage());
         logger.log(Level.SEVERE, "Shutting down");
       }
       System.exit(1);
