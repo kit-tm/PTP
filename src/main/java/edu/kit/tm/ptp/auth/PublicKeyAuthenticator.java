@@ -33,7 +33,7 @@ public class PublicKeyAuthenticator extends Authenticator {
 
   private static final Logger logger = Logger.getLogger(PublicKeyAuthenticator.class.getName());
   private static final byte AUTHENTICATION_SUCCESS_MESSAGE = 0x0;
-  private static final long TIMESTAMP_INTERVALL = 60 * 1000; // in ms
+  private static final long TIMESTAMP_INTERVALL = 180 * 1000; // in ms
 
   private final CryptHelper cryptHelper;
   private static Serializer serializer = null;
