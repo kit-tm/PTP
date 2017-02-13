@@ -13,6 +13,11 @@ import java.util.logging.Logger;
  *
  */
 public class Configuration {
+  public static final int DEFAULT_MESSAGESENDRETRYINTERVAL = 5 * 1000;
+  public static final int DEFAULT_CONNECTRETRYINTERVAL = 30 * 1000;
+  public static final int DEFAULT_ISALIVETIMEOUT = 60 * 1000;
+  public static final int DEFAULT_ISALIVESENDTIMEOUT = 20 * 1000;
+
   /** The logger for this class. */
   private Logger logger = null;
 
@@ -33,13 +38,10 @@ public class Configuration {
   private int torControlPort;
   /** The port number of the Tor SOCKS proxy. */
   private int torSocksProxyPort;
-  private int isAliveTimeout = 30 * 1000;
-  private int isAliveSendTimeout = 20 * 1000;
+  private int isAliveTimeout = DEFAULT_ISALIVETIMEOUT;
+  private int isAliveSendTimeout = DEFAULT_ISALIVESENDTIMEOUT;
   private int connectRetryInterval = DEFAULT_CONNECTRETRYINTERVAL;
   private int messageSendRetryInterval = DEFAULT_MESSAGESENDRETRYINTERVAL;
-
-  public static final int DEFAULT_MESSAGESENDRETRYINTERVAL = 5 * 1000;
-  public static final int DEFAULT_CONNECTRETRYINTERVAL = 30 * 1000;
 
   protected Configuration() {
 
