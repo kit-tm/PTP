@@ -299,10 +299,10 @@ public class PublicKeyAuthenticator extends Authenticator {
     return auth;
   }
 
-  private ByteBuffer getBytes(Identifier source, Identifier destination, byte[] pubKey,
+  protected ByteBuffer getBytes(Identifier source, Identifier destination, byte[] pubKey,
       long timestamp) throws UnsupportedEncodingException {
     byte[] sourceBytes = source.toString().getBytes(Constants.charset);
-    byte[] destinationBytes = source.toString().getBytes(Constants.charset);
+    byte[] destinationBytes = destination.toString().getBytes(Constants.charset);
 
     int length = sourceBytes.length + destinationBytes.length + pubKey.length + 8;
 

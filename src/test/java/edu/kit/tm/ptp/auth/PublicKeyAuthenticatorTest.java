@@ -1,5 +1,6 @@
 package edu.kit.tm.ptp.auth;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
 import edu.kit.tm.ptp.Identifier;
@@ -16,6 +17,8 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -189,4 +192,39 @@ public class PublicKeyAuthenticatorTest {
   }
 
 
+  @Test
+  public void testGetBytes() throws UnsupportedEncodingException {
+    Identifier source = ptp1.getIdentifier();
+    Identifier destination = ptp2.getIdentifier();
+
+    byte[] pubKey = cryptHelper.getPublicKeyBytes();
+    // Set all bits to make sure no bits get lost at the end
+    long timestamp = Long.MAX_VALUE;
+
+    int sourceLen = source.toString().getBytes(Constants.charset).length;
+    int destinationLen = destination.toString().getBytes(Constants.charset).length;
+    int pubKeyLen = pubKey.length;
+
+    ByteBuffer buffer = auth.getBytes(source, destination, pubKey, timestamp);
+
+    byte[] sourceEncoded = new byte[sourceLen];
+    byte[] destinationEncoded = new byte[destinationLen];
+    byte[] pubKeyEncoded = new byte[pubKeyLen];
+    long timestampEncoded;
+
+    int offset = 0;
+
+    buffer.get(sourceEncoded, offset, sourceLen);
+    buffer.get(destinationEncoded, offset, destinationLen);
+    buffer.get(pubKeyEncoded, offset, pubKeyLen);
+    timestampEncoded = buffer.getLong();
+
+    Identifier source2 = new Identifier(new String(sourceEncoded, Constants.charset));
+    Identifier destination2 = new Identifier(new String(destinationEncoded, Constants.charset));
+
+    assertEquals(source, source2);
+    assertEquals(destination, destination2);
+    assertArrayEquals(pubKey, pubKeyEncoded);
+    assertEquals(timestamp, timestampEncoded);
+  }
 }
