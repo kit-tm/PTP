@@ -128,6 +128,20 @@ public class PublicKeyAuthenticatorTest {
   }
 
   @Test
+  public void testChangeSource() throws IOException, GeneralSecurityException {
+    auth.own = new Identifier("aaaaaaaaaaaaaaaa.onion");
+    auth.other = ptp2.getIdentifier();
+    AuthenticationMessage authMessage = auth.createAuthenticationMessage();
+
+    authMessage.source = ptp1.getIdentifier();
+
+    auth2.own = ptp2.getIdentifier();
+    auth2.other = ptp1.getIdentifier();
+
+    assertEquals(false, auth2.authenticationMessageValid(authMessage));
+  }
+
+  @Test
   public void testInvalidSourceIdentifier() throws IOException, GeneralSecurityException {
     auth.own = new Identifier("xyz");
     auth.other = ptp2.getIdentifier();
@@ -164,13 +178,26 @@ public class PublicKeyAuthenticatorTest {
   }
 
   @Test
+  public void testChangeDestination() throws GeneralSecurityException, UnsupportedEncodingException {
+    auth.own = ptp1.getIdentifier();
+    auth.other = new Identifier("aaaaaaaaaaaaaaaa.onion");
+    AuthenticationMessage authMessage = auth.createAuthenticationMessage();
+
+    authMessage.destination = ptp2.getIdentifier();
+
+    auth2.own = ptp2.getIdentifier();
+
+    assertEquals(false, auth2.authenticationMessageValid(authMessage));
+  }
+
+  @Test
   public void testOldTimestamp() throws IOException, GeneralSecurityException {
     auth.own = ptp1.getIdentifier();
     auth.other = ptp2.getIdentifier();
 
-    // 2 minutes old authenticator
+    // 4 minutes old authenticator
     AuthenticationMessage authMessage =
-        auth.createAuthenticationMessage(System.currentTimeMillis() - 120 * 1000);
+        auth.createAuthenticationMessage(System.currentTimeMillis() - 4 * 60 * 1000);
 
     auth2.own = ptp2.getIdentifier();
 
@@ -182,9 +209,9 @@ public class PublicKeyAuthenticatorTest {
     auth.own = ptp1.getIdentifier();
     auth.other = ptp2.getIdentifier();
 
-    // timestamp 2 minutes in the future
+    // timestamp 4 minutes in the future
     AuthenticationMessage authMessage =
-        auth.createAuthenticationMessage(System.currentTimeMillis() + 120 * 1000);
+        auth.createAuthenticationMessage(System.currentTimeMillis() + 4 * 60 * 1000);
 
     auth2.own = ptp2.getIdentifier();
 
@@ -226,5 +253,18 @@ public class PublicKeyAuthenticatorTest {
     assertEquals(destination, destination2);
     assertArrayEquals(pubKey, pubKeyEncoded);
     assertEquals(timestamp, timestampEncoded);
+  }
+
+  @Test
+  public void testChangePublicKey() throws GeneralSecurityException, UnsupportedEncodingException {
+    auth.own = ptp1.getIdentifier();
+    auth.other = ptp2.getIdentifier();
+    AuthenticationMessage authMessage = auth.createAuthenticationMessage();
+
+    authMessage.pubKey = cryptHelper2.getPublicKeyBytes();
+
+    auth2.own = ptp2.getIdentifier();
+
+    assertEquals(false, auth2.authenticationMessageValid(authMessage));
   }
 }
