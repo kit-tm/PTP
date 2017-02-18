@@ -657,6 +657,7 @@ public class PTP {
             + " threw Exception: " + exception.getMessage());
         logger.log(Level.SEVERE, "Shutting down");
       }
+      exception.printStackTrace();
       System.exit(1);
     }
   }
