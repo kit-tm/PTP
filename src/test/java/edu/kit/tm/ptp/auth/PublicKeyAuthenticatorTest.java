@@ -21,10 +21,12 @@ import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.spec.InvalidKeySpecException;
 
+import javax.crypto.Cipher;
 
 
 public class PublicKeyAuthenticatorTest {
@@ -266,5 +268,66 @@ public class PublicKeyAuthenticatorTest {
     auth2.own = ptp2.getIdentifier();
 
     assertEquals(false, auth2.authenticationMessageValid(authMessage));
+  }
+
+  /**
+   * Test to check the padding of the signatures. Right now we use PKCS #1 v1.5 with SHA256.
+   * If that is changed the test fails of course. The test decrypts the signature with
+   * the public key and only checks if it ends with the right hash.
+   * The test is also helpful for manual investigation of the signature.
+   */
+  @Test
+  public void testVerifyPKCS15Padding() throws GeneralSecurityException, UnsupportedEncodingException {
+    Identifier source = ptp1.getIdentifier();
+    Identifier destination = ptp2.getIdentifier();
+    long timestamp = System.currentTimeMillis();
+
+    ByteBuffer tosign = auth.getBytes(source, destination, cryptHelper.getPublicKeyBytes(),
+        timestamp);
+
+    // Hash message
+    MessageDigest sha256 = MessageDigest.getInstance("SHA256");
+    byte[] hash = sha256.digest(tosign.array());
+
+    // Sign message
+    byte[] signature = cryptHelper.sign(tosign);
+
+    Cipher c = Cipher.getInstance("RSA/ECB/NoPadding");
+    // Encryption with public key decrypts signature
+    c.init(Cipher.ENCRYPT_MODE, cryptHelper.decodePublicKey(cryptHelper.getPublicKeyBytes()));
+
+    // Decrypt signature with public key
+    byte[] decrypted = c.doFinal(signature);
+
+    byte[] decryptedHash = new byte[hash.length];
+
+    // Copy hash out of decrypted data
+    System.arraycopy(decrypted, decrypted.length - hash.length, decryptedHash, 0, hash.length);
+
+    /* // Use to examine signature
+    System.out.println("Bytes to sign (length " + tosign.array().length + ")");
+    System.out.println(toHex(tosign.array()));
+
+    System.out.println("SHA256 Hash (length " + hash.length + ")");
+    System.out.println(toHex(hash));
+
+    System.out.println("Signature (length " + signature.length + ")");
+    System.out.println(toHex(signature));
+
+    System.out.println("Decrypted Signature (length " + decrypted.length + ")");
+    System.out.println(toHex(decrypted));
+
+    System.out.println("Decrypted Hash (length " + decryptedHash.length + ")");
+    System.out.println(toHex(decryptedHash));*/
+
+    assertArrayEquals(hash, decryptedHash);
+  }
+
+  private String toHex(byte[] bytes) {
+    StringBuilder sb = new StringBuilder();
+    for (byte b : bytes) {
+      sb.append(String.format("%02X ", b));
+    }
+    return sb.toString();
   }
 }
