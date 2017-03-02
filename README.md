@@ -77,3 +77,7 @@ Run `./chutneyTests.sh` to set up a local tor network and start the tests.
 ## Projects using PTP
 
 [AluShare](https://github.com/weichweich/AluShare)
+
+## License
+
+PTP is licensed under the GNU General Public License (GPL) v3. See [LICENSE.txt](LICENSE.txt).
