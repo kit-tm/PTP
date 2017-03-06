@@ -1,10 +1,16 @@
 import static groovy.io.FileType.*
 
+plugins {
+    id "com.jfrog.bintray" version "1.7.3"
+}
+
 apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'checkstyle'
 apply plugin: 'jacoco'
 apply plugin: 'findbugs'
+apply plugin: 'maven'
+apply plugin: 'maven-publish'
 
 sourceCompatibility = 1.7
 
@@ -102,3 +108,35 @@ test.testLogging {
   events = ['started', 'failed', 'passed', 'skipped']
   exceptionFormat = 'full'
 } 
+
+bintray {
+    user = project.hasProperty('bintrayUser') ? project.property('bintrayUser') : System.getenv('BINTRAY_USER')
+    key = project.hasProperty('bintrayApiKey') ? project.property('bintrayApiKey') : System.getenv('BINTRAY_API_KEY')
+    publications = ['MyPublication']
+
+    pkg {
+        repo = 'PTP'
+        name = 'ptp'
+        userOrg = 'kit-tm'
+        licenses = ['GPL-3.0']
+        vcsUrl = 'https://github.com/kit-tm/PTP.git'
+
+        version {
+            name = 'v0.4.1'
+            desc = ''
+            released  = new Date()
+            vcsTag = 'v0.4.1'
+        }
+    }
+}
+
+publishing {
+    publications {
+        MyPublication(MavenPublication) {
+            from components.java
+            groupId 'edu.kit.tm.ptp'
+            artifactId 'ptp'
+            version 'v0.4.1'
+        }
+    }
+}
