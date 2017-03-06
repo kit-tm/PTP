@@ -8,6 +8,7 @@ applications not using PTP is not planned.
 Good starting points:
 
 * [Usage](README.md#usage)
+* [The Wiki](https://github.com/kit-tm/PTP/wiki)
 * javadoc (see [Javadoc](README.md#javadoc))
 * the examples, especially `edu.kit.tm.ptp.examples.PTPSendExample`
 * the JUnit tests, especially `edu.kit.tm.ptp.test.PTPTest`
@@ -66,6 +67,10 @@ You can also set up your own tor network for testing purposes and run the tests 
 For this to work you need chutney (https://git.torproject.org/chutney.git).
 Set the location of chutney in the variable `CHUTNEY_DIR` in chutneyTests.sh.
 Run `./chutneyTests.sh` to set up a local tor network and start the tests.
+
+## Wiki
+
+Find more information in our [Wiki](https://github.com/kit-tm/PTP/wiki).
 
 ## Android support
 
