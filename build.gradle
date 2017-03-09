@@ -1,5 +1,6 @@
 import static groovy.io.FileType.*
 
+// Plugins
 plugins {
     id "com.jfrog.bintray" version "1.7.3"
 }
@@ -14,6 +15,7 @@ apply plugin: 'maven-publish'
 
 sourceCompatibility = 1.7
 
+// Project structure
 sourceSets {
 	main {
 		java {
@@ -27,6 +29,29 @@ sourceSets {
 	}
 }
 
+// Use jcenter
+repositories {
+	jcenter()
+}
+
+// Dependencies
+dependencies {
+	compile group: 'net.freehaven.tor.control', name: 'jtorctl', version: '0.2'
+	compile group: 'commons-net', name: 'commons-net', version: '3.3'
+	compile group: 'commons-codec', name: 'commons-codec', version: '1.10'
+	compile group: 'org.bouncycastle', name: 'bcprov-jdk15on', version: '1.54'
+	compile group: 'org.bouncycastle', name: 'bcpkix-jdk15on', version: '1.54'
+	compile group: 'com.esotericsoftware', name: 'kryo', version: '4.0.0'
+	compile group: 'com.google.code.findbugs', name: 'findbugs-annotations', version: '3.0.1'
+	testCompile group: 'junit', name: 'junit', version: '4.+'
+}
+
+// Checkstyle
+checkstyle {
+	toolVersion = "6.12.1"
+}
+
+// Test coverage
 jacocoTestReport {
     reports {
         xml.enabled false
@@ -41,30 +66,12 @@ jacocoTestReport {
     }
 }
 
+// Findbugs
 tasks.withType(FindBugs) {
     reports {
         xml.enabled = false
         html.enabled = true
     }
-}
-
-repositories {
-	jcenter()
-}
-
-dependencies {
-	compile group: 'net.freehaven.tor.control', name: 'jtorctl', version: '0.2'
-	compile group: 'commons-net', name: 'commons-net', version: '3.3'
-	compile group: 'commons-codec', name: 'commons-codec', version: '1.10'
-	compile group: 'org.bouncycastle', name: 'bcprov-jdk15on', version: '1.54'
-	compile group: 'org.bouncycastle', name: 'bcpkix-jdk15on', version: '1.54'
-	compile group: 'com.esotericsoftware', name: 'kryo', version: '4.0.0'
-	compile group: 'com.google.code.findbugs', name: 'findbugs-annotations', version: '3.0.1'
-	testCompile group: 'junit', name: 'junit', version: '4.+'
-}
-
-checkstyle {
-	toolVersion = "6.12.1"
 }
 
 // Create tasks to create a jar file for each example
@@ -92,6 +99,7 @@ jar {
 }
 
 // Pack all dependencies into the fat jar
+// For use in a non-Gradle Java project
 task fatjar (type: Jar) {
  from sourceSets.main.output
  from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
@@ -101,6 +109,7 @@ task fatjar (type: Jar) {
 
 jar.dependsOn fatjar
 
+// Outputs when running tests
 test.testLogging { 
   showExceptions = true
   showCauses = true
@@ -109,7 +118,14 @@ test.testLogging {
   exceptionFormat = 'full'
 } 
 
+// Required for package to be included in jCenter
+task sourceJar(type: Jar) {
+    from sourceSets.main.allJava
+}
+
+// Upload to Bintray to add package to jCenter
 bintray {
+    // Set bintrayUser and bintrayApiKey in gradle.properties
     user = project.hasProperty('bintrayUser') ? project.property('bintrayUser') : System.getenv('BINTRAY_USER')
     key = project.hasProperty('bintrayApiKey') ? project.property('bintrayApiKey') : System.getenv('BINTRAY_API_KEY')
     publications = ['MyPublication']
@@ -137,6 +153,10 @@ publishing {
             groupId 'edu.kit.tm.ptp'
             artifactId 'ptp'
             version 'v0.4.1'
+
+            artifact sourceJar {
+                classifier "sources"
+            }
         }
     }
 }
