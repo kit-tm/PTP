@@ -17,7 +17,7 @@ Good starting points:
 
 ## How to build
 
-PeerTorPeer uses the gradle build system.
+PTP uses the gradle build system.
 Run `./gradlew assemble` to compile the code.
 
 If you want to use eclipse run `./gradlew eclipse` to create proper
