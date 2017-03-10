@@ -29,7 +29,7 @@ Run `./gradlew javadoc` to create the Javadoc in `build/docs/javadoc/`.
 
 ## Adding PTP to a Gradle (Maven) project
 Releases of PTP can be found on [Bintray](https://bintray.com/kit-tm/PTP/ptp).
-PTP is included in jCenter.
+PTP is included in jcenter.
 
 Add `compile 'edu.kit.tm.ptp:ptp:v0.4.1'` to your build.gradle file to use PTP in a gradle project.
 
