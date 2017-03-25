@@ -17,7 +17,7 @@ Good starting points:
 
 ## How to build
 
-PeerTorPeer uses the gradle build system.
+PTP uses the gradle build system.
 Run `./gradlew assemble` to compile the code.
 
 If you want to use eclipse run `./gradlew eclipse` to create proper
@@ -26,6 +26,12 @@ If you want to use eclipse run `./gradlew eclipse` to create proper
 ## Javadoc
 
 Run `./gradlew javadoc` to create the Javadoc in `build/docs/javadoc/`.
+
+## Adding PTP to a Gradle (Maven) project
+Releases of PTP can be found on [Bintray](https://bintray.com/kit-tm/PTP/ptp).
+PTP is included in jcenter.
+
+Add `compile 'edu.kit.tm.ptp:ptp:v0.4.1'` to your build.gradle file to use PTP in a gradle project.
 
 ## Adding PTP to a Java Application
 
