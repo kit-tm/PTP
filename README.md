@@ -1,6 +1,6 @@
 # Peer-Tor-Peer (PTP)
 
-A proof-of-concept prototyping library for peer-to-peer
+A prototyping library for peer-to-peer
 apps using Tor and Tor hidden services for connectivity.
 PTP is a library for Java only. Interoperability with
 applications not using PTP is not planned.
@@ -12,8 +12,6 @@ Good starting points:
 * javadoc (see [Javadoc](README.md#javadoc))
 * the examples, especially `edu.kit.tm.ptp.examples.PTPSendExample`
 * the JUnit tests, especially `edu.kit.tm.ptp.test.PTPTest`
-
-*WORK IN PROGRESS*
 
 ## How to build
 
