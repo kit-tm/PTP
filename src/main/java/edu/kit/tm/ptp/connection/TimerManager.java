@@ -26,6 +26,7 @@ public class TimerManager implements Runnable  {
   /** The interval in milliseconds at which the values are updated. */
   private final int step;
   private final Thread thread;
+  private LinkedList<TimerKey> closed;
   
   private static final class TimerKey {
     public Identifier identifier;
@@ -103,6 +104,7 @@ public class TimerManager implements Runnable  {
     logger.log(Level.INFO, "TimerManager entering execution loop.");
 
     while (!thread.isInterrupted()) {
+      closed = new LinkedList<TimerKey>();
       long start = System.currentTimeMillis();
       long elapsed = 0;
 
@@ -120,6 +122,10 @@ public class TimerManager implements Runnable  {
       try {
         // Update the timer values
         substract();
+        for (TimerKey key : closed) {
+          listener.expired(key.identifier, key.timeoutClass);
+          map.remove(key);
+        }
       } catch (IOException e) {
         logger.log(Level.WARNING, "Received IOException while closing a socket: " + e.getMessage());
       }
@@ -201,7 +207,6 @@ public class TimerManager implements Runnable  {
    *
    */
   private synchronized void substract() throws IOException {
-    LinkedList<TimerKey> closed = new LinkedList<TimerKey>();
     int timer;
 
     // Iterate over the entries and substract the step
@@ -213,13 +218,7 @@ public class TimerManager implements Runnable  {
       if (timer >= 0) {
         continue;
       }
-
-      listener.expired(entry.getKey().identifier, entry.getKey().timeoutClass);
       closed.add(entry.getKey());
-    }
-
-    for (TimerKey key : closed) {
-      map.remove(key);
     }
   }
 

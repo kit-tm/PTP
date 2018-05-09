@@ -4,7 +4,6 @@ import edu.kit.tm.ptp.connection.ExpireListener;
 import edu.kit.tm.ptp.connection.TimerManager;
 
 import java.io.IOException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -52,27 +51,11 @@ public class IsAliveManager implements ExpireListener {
    */
   public void messageReceived(Identifier source, boolean isAliveMsg) {
     // We received a message. Stop receive timer.
-    System.out.println("DEBUG: timerManage remove, try Lock");
-    //TODO connectManager threead is stuck here
-    try {
-      if (tmLock.tryLock(10, TimeUnit.SECONDS)) {
-        try {
-          System.out.println("DEBUG timerManage remove, got lock");
-          timerManager.remove(source, RECEIVETIMERCLASS);
-          if (!isAliveMsg) {
-            // It's not a isAliveMessage so we have to answer it. Set timer
-            timerManager.setTimerIfNoneExists(source, isAliveSendTimeout, SENDTIMERCLASS);
-          }
-        } finally {
-          System.out.println("DEBUG timerManage remove release lock");
-          tmLock.unlock();
-        }
-      } else {
-        System.out.println("Deadlock avoided, timerManager remove missed");
-        // retry after releasing resources
-      }
-    } catch (InterruptedException e) {
-      e.printStackTrace();
+    timerManager.remove(source, RECEIVETIMERCLASS);
+
+    if (!isAliveMsg) {
+      // It's not a isAliveMessage so we have to answer it. Set timer
+      timerManager.setTimerIfNoneExists(source, isAliveSendTimeout, SENDTIMERCLASS);
     }
   }
   
@@ -83,27 +66,11 @@ public class IsAliveManager implements ExpireListener {
    */
   public void messageSent(Identifier destination) {
     System.out.println("DEBUG: timerManage remove, try Lock");
-    //TODO connectManager threead is stuck here
-    try {
-      if (tmLock.tryLock(10, TimeUnit.SECONDS)) {
-        try {
-          System.out.println("DEBUG timerManage remove, got lock");
-          // We sent a regular message so we don't have to send an IsAliveMessage
-          timerManager.remove(destination, SENDTIMERCLASS);
+    // We sent a regular message so we don't have to send an IsAliveMessage
+    timerManager.remove(destination, SENDTIMERCLASS);
 
-          // We expect an answer. Set timer
-          timerManager.setTimerIfNoneExists(destination, isAliveTimeout, RECEIVETIMERCLASS);
-        } finally {
-          System.out.println("DEBUG timerManage remove release lock");
-          tmLock.unlock();
-        }
-      } else {
-        System.out.println("Deadlock avoided, timerManager remove missed");
-        // retry after releasing resources
-      }
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    }
+    // We expect an answer. Set timer
+    timerManager.setTimerIfNoneExists(destination, isAliveTimeout, RECEIVETIMERCLASS);
   }
 
 
@@ -135,26 +102,7 @@ public class IsAliveManager implements ExpireListener {
     // The sent timer expired so we didn't send a regular message since we received the last message
     logger.log(Level.INFO, "Sending IsAliveMessage to " + identifier);
     // Send an IsAliveMessage
-
-    try {
-      System.out.println("sendExpired try lock");
-      if (tmLock.tryLock(10, TimeUnit.SECONDS)) {
-        try {
-          System.out.println("sendExpired got lock");
-          ptp.sendIsAlive(identifier, isAliveTimeout - isAliveSendTimeout);
-          System.out.println("sendExpired successful");
-        } finally {
-          System.out.println("sendExpired lock released");
-          System.out.println("sendExpired queue length is: " + tmLock.getQueueLength());
-          tmLock.unlock();
-        }
-      } else {
-        System.out.println("Deadlock avoided, sendExpired missed");
-        // retry after releasing resources
-      }
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    }
+    ptp.sendIsAlive(identifier, isAliveTimeout - isAliveSendTimeout);
 
 
     // for test
