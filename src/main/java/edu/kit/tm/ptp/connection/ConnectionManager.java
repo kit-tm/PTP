@@ -1,10 +1,6 @@
 package edu.kit.tm.ptp.connection;
 
-import edu.kit.tm.ptp.Configuration;
-import edu.kit.tm.ptp.Identifier;
-import edu.kit.tm.ptp.ReceiveListener;
-import edu.kit.tm.ptp.SendListener;
-import edu.kit.tm.ptp.TorManager;
+import edu.kit.tm.ptp.*;
 import edu.kit.tm.ptp.auth.AuthenticationListener;
 import edu.kit.tm.ptp.auth.AuthenticatorFactory;
 import edu.kit.tm.ptp.auth.PublicKeyAuthenticatorFactory;
@@ -172,7 +168,10 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
 
     try {
       // Does nothing if thread isn't running
-      thread.join();
+      System.out.println("DEBUG: Thread join: " + System.currentTimeMillis());
+      long debugTime = System.currentTimeMillis();
+      thread.join(1000);
+      System.out.println("DEBUG: Thread has joined: " + (System.currentTimeMillis() - debugTime));
     } catch (InterruptedException e) {
       logger.log(Level.WARNING, "Failed to wait for thread to stop: " + e.getMessage());
     }
