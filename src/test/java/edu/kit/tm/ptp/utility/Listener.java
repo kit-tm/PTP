@@ -54,6 +54,8 @@ public class Listener implements ChannelListener {
     return passedChannel;
   }
 
+  @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "Only used within"
+      + " an read-only assert to verify the correct function of other methods.")
   public synchronized byte[] getPassedBytes() {
     return passedBytes;
   }
