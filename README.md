@@ -5,6 +5,8 @@ apps using Tor and Tor hidden services for connectivity.
 PTP is a library for Java only. Interoperability with
 applications not using PTP is not planned.
 
+**Warning: This library does not work with current Tor versions. It works fine with Tor 0.3.2.10, but new Tor versions (around 0.4.6.4) changed the file formats and configuration parameters, breaking the interaction between PTP and Tor.**
+
 Good starting points:
 
 * [Usage](README.md#usage)
