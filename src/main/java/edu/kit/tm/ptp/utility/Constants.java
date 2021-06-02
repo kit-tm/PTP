@@ -22,6 +22,10 @@ public class Constants {
   public static final String hsdirkeyword = "HiddenServiceDir";
   /** The Tor configuration keyword for the hidden service port property. */
   public static final String hsportkeyword = "HiddenServicePort";
+  /** The Tor configuration keyword for the hidden service version property. */
+  public static final String hsversionkeyword = "HiddenServiceVersion";
+  /** The version of hiddenservice that should be used. */
+  public static final String hsversion = "2";
   /** The .onion extension of Tor addresses. */
   public static final String onion = ".onion";
 
