@@ -5,7 +5,7 @@ apps using Tor and Tor hidden services for connectivity.
 PTP is a library for Java only. Interoperability with
 applications not using PTP is not planned.
 
-**Warning: This branch is not secure, see section below. **
+**Warning: This branch is not secure, see section below.**
 
 Good starting points:
 
