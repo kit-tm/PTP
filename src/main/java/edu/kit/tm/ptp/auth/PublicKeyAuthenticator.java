@@ -18,6 +18,8 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
+
 /**
  * Authenticator using an RSA signature. The initiator of the authentication sends an
  * AuthenticationMessage to the target. The target checks the validity of the AuthenticationMessage
@@ -257,7 +259,7 @@ public class PublicKeyAuthenticator extends Authenticator {
     }
 
     try {
-      PublicKey pubKey = cryptHelper.decodePublicKey(message.pubKey);
+      Ed25519PublicKeyParameters pubKey = cryptHelper.decodePublicKey(message.pubKey);
       Identifier pubKeyIdentifier = cryptHelper.calculateHiddenServiceIdentifier(pubKey);
 
       if (pubKeyIdentifier == null || !message.source.equals(pubKeyIdentifier)) {
