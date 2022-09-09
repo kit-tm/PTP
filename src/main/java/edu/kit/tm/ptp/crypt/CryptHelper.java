@@ -205,6 +205,7 @@ public class CryptHelper {
 
     // CHECKSUM = H(".onion checksum" | PUBKEY | VERSION)[:2]
     buffer.put(".onion checksum".getBytes("ASCII"));
+    buffer.put(pubKey.getEncoded());
     buffer.put((byte)'\3');
     buffer.rewind();
     byte[] arr = new byte[buffer.remaining()];
