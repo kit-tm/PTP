@@ -5,7 +5,7 @@ apps using Tor and Tor hidden services for connectivity.
 PTP is a library for Java only. Interoperability with
 applications not using PTP is not planned.
 
-**Warning: This library does not work with current Tor versions. It works fine with Tor 0.3.2.10, but new Tor versions (around 0.4.6.4) changed the file formats and configuration parameters, breaking the interaction between PTP and Tor.**
+** Warning: This branch is not secure, see section below. **
 
 Good starting points:
 
@@ -14,6 +14,21 @@ Good starting points:
 * javadoc (see [Javadoc](README.md#javadoc))
 * the examples, especially `edu.kit.tm.ptp.examples.PTPSendExample`
 * the JUnit tests, especially `edu.kit.tm.ptp.test.PTPTest`
+
+## About this branch
+
+Since this library has been created, Tor was updated to use another key format and different onion-addresses.
+These changes made the PTP library incompatible with the Tor network, meaning it no longer worked.
+This branch is an incomplete attempt to update the library for the new Tor versions.
+
+In its current state, this branch is able to create PTP connections through the Tor network.
+However, the connections are not secure since the signatures used to check the authenticity are ignored (see Buffer::verifySignature() in Ed25519SignerMod.java).
+The problem is that the private keys used within the library bouncycastle used by PTP are in a different format than the private keys generated and used by Tor for its hidden services (see https://stackoverflow.com/questions/71847121/generating-and-validating-a-signature-with-ed25519-expanded-private-key and https://crypto.stackexchange.com/questions/99639/generating-and-validating-a-signature-with-ed25519-expanded-private-key).
+Attempting to adapt parts of bouncycastle to accept the different private keys failed (see implSign() in Ed25519Mod.java, adapted based on sign.c in the Tor source code).
+It seems as if the two methods should do the same, so there must be something missing somewhere.
+
+So, this branch of the library can be used to create pseudonymous peer-to-peer connections through the Tor network, but if authenticity is needed the code needs to be fixed or some additional checks added.
+If the code is fixed, please open a pull request.
 
 ## How to build
 
