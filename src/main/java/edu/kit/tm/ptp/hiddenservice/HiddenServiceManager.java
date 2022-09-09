@@ -113,6 +113,17 @@ public class HiddenServiceManager {
   }
 
   /**
+   * Returns the public key file of the currently used hidden service.
+   */
+  public File getPublicKeyFile() {
+    if (currentDirectory == null) {
+      return null;
+    }
+
+    return new File(currentDirectory + File.separator + Constants.pubkey);
+  }
+
+  /**
    * Returns the private key file of the currently used hidden service.
    */
   public File getPrivateKeyFile() {
