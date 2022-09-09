@@ -14,12 +14,14 @@ import java.util.logging.Level;
  */
 
 public class EventSetIdentity extends Event {
+  private File publicKey;
   private File privateKey;
   private Identifier identifier;
 
-  public EventSetIdentity(ConnectionManager manager, File privateKey, Identifier identifier) {
+  public EventSetIdentity(ConnectionManager manager, File publicKey, File privateKey, Identifier identifier) {
     super(manager);
 
+    this.publicKey = publicKey;
     this.privateKey = privateKey;
     this.identifier = identifier;
   }
@@ -37,9 +39,9 @@ public class EventSetIdentity extends Event {
     }
 
     try {
-      manager.cryptHelper.setKeyPair(CryptHelper.readKeyPairFromFile(privateKey));
+      manager.cryptHelper.readKeysFromFiles(publicKey, privateKey);
     } catch (InvalidKeyException | InvalidKeySpecException | IOException e) {
-      manager.logger.log(Level.SEVERE, "Failed to set private key file.");
+      manager.logger.log(Level.SEVERE, "Failed to set private key file: " + e);
       return true;
     }
 
