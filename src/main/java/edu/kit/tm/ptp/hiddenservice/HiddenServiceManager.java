@@ -346,7 +346,6 @@ public class HiddenServiceManager {
         properties.add(Constants.hsdirkeyword + " " + hiddenService.getAbsolutePath());
         properties.add(Constants.hsportkeyword + " " + configuration.getHiddenServicePort() + " "
             + Constants.localhost + ":" + port);
-        properties.add(Constants.hsversionkeyword + " " + Constants.hsversion);
       }
     }
 
