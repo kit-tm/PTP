@@ -13,7 +13,7 @@ public class Identifier {
   /** The Tor hidden service address of this identifier. */
   private String address;
   
-  private static final Pattern validOnionAddress = Pattern.compile("[a-z2-7]{16}.onion");
+  private static final Pattern validOnionAddress = Pattern.compile("[a-z2-7]{16}|[a-z2-7]{56}.onion");
   
   public Identifier() {
     address = null;
