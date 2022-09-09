@@ -253,12 +253,12 @@ public class ConnectionManager implements Runnable, ChannelListener, Authenticat
   /**
    * Sets the identifier of the local hidden service and the private key used for authentication.
    */
-  public void setIdentity(File privateKey, Identifier identifier) {
+  public void setIdentity(File publicKey, File privateKey, Identifier identifier) {
     if (privateKey == null) {
       throw new IllegalArgumentException();
     }
 
-    eventQueue.add(new EventSetIdentity(this, privateKey, identifier));
+    eventQueue.add(new EventSetIdentity(this, publicKey, privateKey, identifier));
     semaphore.release();
   }
 

@@ -279,7 +279,7 @@ public class PTP {
     }
 
     hiddenServiceManager.reuseHiddenService();
-    connectionManager.setIdentity(hiddenServiceManager.getPrivateKeyFile(), getIdentifier());
+    connectionManager.setIdentity(hiddenServiceManager.getPublicKeyFile(), hiddenServiceManager.getPrivateKeyFile(), getIdentifier());
   }
 
   /**
@@ -292,7 +292,7 @@ public class PTP {
 
     // Create a fresh hidden service identifier.
     hiddenServiceManager.createHiddenService();
-    connectionManager.setIdentity(hiddenServiceManager.getPrivateKeyFile(), getIdentifier());
+    connectionManager.setIdentity(hiddenServiceManager.getPublicKeyFile(), hiddenServiceManager.getPrivateKeyFile(), getIdentifier());
   }
 
 
