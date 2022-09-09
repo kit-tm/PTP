@@ -16,8 +16,10 @@ public class Constants {
 
   /** The name of the Tor hostname file. */
   public static final String hostname = "hostname";
+  /** The name of the Tor public key file. */
+  public static final String pubkey = "hs_ed25519_public_key";
   /** The name of the Tor private key file. */
-  public static final String prkey = "private_key";
+  public static final String prkey = "hs_ed25519_secret_key";
   /** The Tor configuration keyword for the hidden service directory property. */
   public static final String hsdirkeyword = "HiddenServiceDir";
   /** The Tor configuration keyword for the hidden service port property. */
